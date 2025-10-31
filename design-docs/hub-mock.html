@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hayda Min - Family Hub</title>
+    
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Load Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Define Style Guide */
+        :root {
+            --color-bg: #FAF7F5;       /* Oat */
+            --color-bg-card: #F4F1EE; /* Light Oat */
+            --color-text: #4E4A47;     /* Coffee Bean */
+            --color-accent: #5F8575;   /* Sage Green */
+            --color-accent-warm: #d4a373; /* Warm Orange/Tan */
+            --color-accent-text: #FAF7F5; /* Oat (for use on accent bg) */
+        }
+        
+        .font-sans {
+            font-family: 'Poppins', sans-serif;
+        }
+        .font-arabic {
+            font-family: 'Tajawal', sans-serif;
+        }
+        
+        body {
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            font-family: 'Poppins', sans-serif;
+            font-size: 18px; /* Larger base font size */
+        }
+
+        /* Main card style for Parents */
+        .family-hub-card {
+            background-color: white;
+            border-radius: 1.5rem; /* 24px */
+            box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .family-hub-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+        }
+        .family-hub-card img {
+            aspect-ratio: 1 / 1;
+            object-fit: cover;
+        }
+        .family-hub-card .nav-indicator {
+            position: absolute;
+            top: 1.5rem; /* 24px */
+            right: 1.5rem; /* 24px */
+            background-color: var(--color-accent);
+            color: var(--color-accent-text);
+            border-radius: 50%;
+            width: 40px; /* Smaller */
+            height: 40px; /* Smaller */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            opacity: 0.9;
+        }
+
+        /* New Thumbnail card style for Children */
+        .family-thumbnail-card {
+            background-color: white;
+            border-radius: 1.5rem; /* 24px */
+            box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .family-thumbnail-card:hover {
+            transform: scale(1.03);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.07);
+        }
+        .family-thumbnail-card img {
+            aspect-ratio: 1 / 1;
+            object-fit: cover;
+        }
+        .family-thumbnail-card .nav-indicator {
+            position: absolute;
+            top: 1rem; /* 16px */
+            right: 1rem; /* 16px */
+            background-color: var(--color-accent);
+            color: var(--color-accent-text);
+            border-radius: 50%;
+            width: 36px; /* Smaller */
+            height: 36px; /* Smaller */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            opacity: 0.9;
+        }
+        
+        .tree-connector {
+            width: 4px;
+            height: 60px; /* Adjust height as needed */
+            background-color: var(--color-accent);
+            opacity: 0.3;
+            margin: 0 auto; /* Center the line */
+        }
+
+    </style>
+</head>
+<body class="p-6 md:p-12">
+
+    <div class="max-w-7xl mx-auto">
+
+        <!-- Breadcrumb Navigation -->
+        <nav class="mb-8" aria-label="Breadcrumb">
+            <ol class="flex items-center gap-2">
+                <li>
+                    <a href="#" class="font-sans text-xl" style="color: var(--color-accent);">Home</a>
+                </li>
+            </ol>
+        </nav>
+
+        <!-- Parents Row -->
+        <div class="mb-8">
+            <h2 class="font-sans text-4xl font-bold text-center mb-6" style="color: var(--color-text);">Parents</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 max-w-4xl mx-auto">
+                <!-- Card 1: Teta Salma -->
+                <a href="person-detail-page.html" class="family-hub-card">
+                    <div class="relative">
+                        <img src="https://placehold.co/600x600/d4a373/faf7f5?text=Teta+Salma" alt="Photo of Salma">
+                    </div>
+                    <div class="p-8 text-center" dir="rtl">
+                        <h2 class="font-arabic text-6xl font-bold">تيتة سلمى</h2>
+                        <p class="font-arabic text-4xl mt-2" style="color: var(--color-accent);">الأم</p>
+                    </div>
+                </a>
+                
+                <!-- Card 2: Jiddo Fouad -->
+                <a href="person-detail-page.html" class="family-hub-card">
+                    <div class="relative">
+                        <img src="https://placehold.co/600x600/585123/faf7f5?text=Jiddo+Fouad" alt="Photo of Fouad">
+                    </div>
+                    <div class="p-8 text-center" dir="rtl">
+                        <h2 class="font-arabic text-6xl font-bold">جدو فؤاد</h2>
+                        <p class="font-arabic text-4xl mt-2" style="color: var(--color-accent);">الأب</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Tree Connector -->
+        <div class="tree-connector mb-8"></div>
+
+        <!-- Children Row (Thumbnails) -->
+        <div>
+            <h2 class="font-sans text-4xl font-bold text-center mb-6" style="color: var(--color-text);">Children</h2>
+            
+            <!-- Changed to a non-scrolling grid, smaller cards -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
+                
+                <!-- Card 1: Daughter (with Nav Indicator) -->
+                <a href="#" class="family-thumbnail-card">
+                    <div class="relative">
+                        <img src="https://placehold.co/400x400/d4a373/faf7f5?text=Layla" alt="Photo of Layla">
+                        <!-- Nav Indicator: Has her own family -->
+                        <div class="nav-indicator">
+                            <!-- Heroicons: Chevron Right -->
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                            </svg>
+                        </div>
+                    </div>
+                    <!-- Smaller text for thumbnails -->
+                    <div class="p-5 text-center" dir="rtl">
+                        <h2 class="font-arabic text-4xl font-bold">ليلى</h2>
+                        <p class="font-arabic text-2xl mt-1" style="color: var(--color-accent);">ابنة</p>
+                    </div>
+                </a>
+
+                <!-- Card 2: Son (No Nav Indicator) -->
+                <a href="person-detail-page.html" class="family-thumbnail-card">
+                    <div class="relative">
+                        <img src="https://placehold.co/400x400/6b705c/faf7f5?text=Sami" alt="Photo of Sami">
+                    </div>
+                    <!-- Smaller text for thumbnails -->
+                    <div class="p-5 text-center" dir="rtl">
+                        <h2 class="font-arabic text-4xl font-bold">سامي</h2>
+                        <p class="font-arabic text-2xl mt-1" style="color: var(--color-accent);">ابن</p>
+                    </div>
+                </a>
+
+                <!-- Card 3: Daughter (No Nav Indicator) -->
+                <a href="person-detail-page.html" class="family-thumbnail-card">
+                    <div class="relative">
+                        <img src="https://placehold.co/400x400/a5a58d/faf7f5?text=Nadia" alt="Photo of Nadia" 
+                             onerror="this.onerror=null;this.src='https://placehold.co/400x400/a5a58d/faf7f5?text=Nadia';">
+                    </div>
+                    <!-- Smaller text for thumbnails -->
+                    <div class="p-5 text-center" dir="rtl">
+                        <h2 class="font-arabic text-4xl font-bold">نادية</h2>
+                        <p class="font-arabic text-2xl mt-1" style="color: var(--color-accent);">ابنة</p>
+                    </div>
+                </a>
+
+                <!-- Card 4: Son (No Nav Indicator) -->
+                <a href="person-detail-page.html" class="family-thumbnail-card">
+                    <div class="relative">
+                        <img src="https://placehold.co/400x400/b7b7a4/faf7f5?text=Ziad" alt="Photo of Ziad">
+                    </div>
+                    <!-- Smaller text for thumbnails -->
+                    <div class="p-5 text-center" dir="rtl">
+                        <h2 class="font-arabic text-4xl font-bold">زياد</h2>
+                        <p class="font-arabic text-2xl mt-1" style="color: var(--color-accent);">ابن</p>
+                    </div>
+                </a>
+
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
+

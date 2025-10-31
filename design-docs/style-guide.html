@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hayda Min - Style Guide</title>
+    
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Load Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- Root CSS Variables --- */
+        :root {
+            --color-bg: #FAF7F5;       /* Oat */
+            --color-bg-card: #F4F1EE; /* Light Oat */
+            --color-text: #4E4A47;     /* Coffee Bean */
+            --color-accent: #5F8575;   /* Sage Green */
+            --color-accent-warm: #d4a373; /* Warm Orange/Tan */
+            --color-accent-text: #FAF7F5; /* Oat (for use on accent bg) */
+        }
+        
+        .font-sans {
+            font-family: 'Poppins', sans-serif;
+        }
+        .font-arabic {
+            font-family: 'Tajawal', sans-serif;
+        }
+        
+        body {
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .swatch {
+            width: 100px;
+            height: 100px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        
+        .info-card {
+            background-color: var(--color-bg-card);
+            border-radius: 1.5rem; /* 24px */
+            padding: 2rem; /* 32px */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+        }
+    </style>
+</head>
+<body class="p-6 md:p-12">
+
+    <div class="max-w-7xl mx-auto">
+        <h1 class="font-sans text-6xl font-bold mb-4" style="color: var(--color-accent);">Hayda Min Style Guide</h1>
+        <p class="font-sans text-2xl mb-12">Theme: "Warm & Familiar"</p>
+
+        <!-- --- Color Palette --- -->
+        <section class="mb-16">
+            <h2 class="font-sans text-5xl font-bold mb-8 pb-2 border-b-4" style="border-color: var(--color-accent);">Color Palette</h2>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
+                
+                <!-- Primary -->
+                <div class="text-center">
+                    <div class="swatch mx-auto" style="background-color: var(--color-accent);"></div>
+                    <h3 class="font-sans text-2xl font-bold mt-4">Primary Accent</h3>
+                    <p class="font-sans text-lg">#5F8575 (Sage)</p>
+                    <p class="font-sans text-lg text-gray-500">Use: Main buttons, links, highlights</p>
+                </div>
+                
+                <!-- NEW Warm Accent -->
+                <div class="text-center">
+                    <div class="swatch mx-auto" style="background-color: var(--color-accent-warm);"></div>
+                    <h3 class="font-sans text-2xl font-bold mt-4">Warm Accent</h3>
+                    <p class="font-sans text-lg">#d4a373 (Tan)</p>
+                    <p class="font-sans text-lg text-gray-500">Use: Photos, illustrations, secondary highlights</p>
+                </div>
+
+                <!-- Secondary -->
+                <div class="text-center">
+                    <div class="swatch mx-auto" style="background-color: var(--color-bg-card);"></div>
+                    <h3 class="font-sans text-2xl font-bold mt-4">Secondary</h3>
+                    <p class="font-sans text-lg">#F4F1EE (Light Oat)</p>
+                    <p class="font-sans text-lg text-gray-500">Use: Card backgrounds</p>
+                </div>
+
+                <!-- Background -->
+                <div class="text-center">
+                    <div class="swatch mx-auto" style="background-color: var(--color-bg);"></div>
+                    <h3 class="font-sans text-2xl font-bold mt-4">Background</h3>
+                    <p class="font-sans text-lg">#FAF7F5 (Oat)</p>
+                    <p class="font-sans text-lg text-gray-500">Use: Page background</p>
+                </div>
+
+                <!-- Text -->
+                <div class="text-center">
+                    <div class="swatch mx-auto" style="background-color: var(--color-text);"></div>
+                    <h3 class="font-sans text-2xl font-bold mt-4">Text</h3>
+                    <p class="font-sans text-lg">#4E4A47 (Coffee)</p>
+                    <p class="font-sans text-lg text-gray-500">Use: All body text, headlines</p>
+                </div>
+
+                <!-- Accent Text -->
+                <div class="text-center">
+                    <div class="swatch mx-auto flex items-center justify-center" style="background-color: var(--color-accent); color: var(--color-accent-text);">
+                        <span class="font-bold text-3xl">Aa</span>
+                    </div>
+                    <h3 class="font-sans text-2xl font-bold mt-4">Accent Text</h3>
+                    <p class="font-sans text-lg">#FAF7F5 (Oat)</p>
+                    <p class="font-sans text-lg text-gray-500">Use: Text on accent background</p>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- --- Typography --- -->
+        <section class="mb-16">
+            <h2 class="font-sans text-5xl font-bold mb-8 pb-2 border-b-4" style="border-color: var(--color-accent);">Typography</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <!-- English -->
+                <div>
+                    <h3 class="font-sans text-4xl font-bold mb-6">Primary Font: 'Poppins'</h3>
+                    <p class="font-sans text-xl text-gray-600 mb-6">Used for all English UI elements, labels, and helper text.</p>
+                    <div class="space-y-6">
+                        <p class="font-sans text-6xl font-bold">Heading 1</p>
+                        <p class="font-sans text-5xl font-bold">Heading 2</p>
+                        <p class="font-sans text-4xl font-bold">Heading 3</p>
+                        <p class="font-sans text-2xl">Body Text (Large)</p>
+                        <p class="font-sans text-lg">Body Text (Base - 18px)</p>
+                    </div>
+                </div>
+                
+                <!-- Arabic -->
+                <div>
+                    <h3 class="font-sans text-4xl font-bold mb-6">Secondary Font: 'Tajawal'</h3>
+                    <p class="font-sans text-xl text-gray-600 mb-6">Used for all Arabic content, including names and relationships.</p>
+                    <div class="space-y-6" dir="rtl">
+                        <p class="font-arabic text-6xl font-bold">عنوان رئيسي 1</p>
+                        <p class="font-arabic text-5xl font-bold">عنوان رئيسي 2</p>
+                        <p class="font-arabic text-4xl font-bold">عنوان رئيسي 3</p>
+                        <p class="font-arabic text-2xl">نص المحتوى (كبير)</p>
+                        <p class="font-arabic text-lg">نص المحتوى (أساسي - 18 بكسل)</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- --- Components --- -->
+        <section>
+            <h2 class="font-sans text-5xl font-bold mb-8 pb-2 border-b-4" style="border-color: var(--color-accent);">Components</h2>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                
+                <!-- Buttons -->
+                <div class="space-y-8">
+                    <h3 class="font-sans text-4xl font-bold">Buttons</h3>
+                    
+                    <!-- Primary Button -->
+                    <div class="info-card">
+                        <p class="font-sans text-2xl font-semibold mb-4">Primary Action Button</p>
+                        <button class="font-arabic text-4xl font-bold py-8 px-12 rounded-2xl shadow-lg transition-transform duration-300 ease-out hover:shadow-xl hover:-translate-y-1 w-full"
+                                style="background-color: var(--color-accent); color: var(--color-bg);">
+                            ؟هايدا مين
+                        </button>
+                    </div>
+
+                    <!-- Back Button -->
+                    <div class="info-card">
+                        <p class="font-sans text-2xl font-semibold mb-4">Back Button</p>
+                        <a href="#" class="inline-flex items-center justify-center" style="background-color: var(--color-bg-card); color: var(--color-accent); font-size: 1.5rem; border-radius: 50%; width: 60px; height: 60px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: all 0.3s ease;">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-8 h-8">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Cards -->
+                <div class="space-y-8">
+                    <h3 class="font-sans text-4xl font-bold">Cards</h3>
+                    
+                    <!-- Info Card -->
+                    <div class="info-card">
+                        <h4 class="font-sans text-2xl font-semibold mb-4">Info Card</h4>
+                        <p class="font-sans text-lg">This is the base card style used for all main content blocks. It has large padding (2rem) and rounded corners (1.5rem).</p>
+                    </div>
+
+                    <!-- Reveal Card -->
+                    <div class="info-card">
+                        <h4 class="font-sans text-2xl font-semibold mb-4">Reveal Card</h4>
+                        <div class="info-card text-center" style="background-color: var(--color-bg);">
+                            <h2 class_name="font-arabic text-6xl font-bold" style="color: var(--color-text);" dir="rtl">ليلى</h2>
+                            <p class="font-arabic text-4xl mt-2" style="color: var(--color-accent);" dir="rtl">ابنتك</p>
+                        </div>
+                    </div>
+
+                    <!-- Family Link Card -->
+                    <div class="info-card">
+                        <h4 class="font-sans text-2xl font-semibold mb-4">Family Link Card</h4>
+                        <a href="#" class="inline-block" style="transition: all 0.3s ease; border-radius: 0.75rem; overflow: hidden; width: 160px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                            <img src="https://placehold.co/400x400/585123/faf7f5?text=Ziad" alt="Family member" class="w-full" style="aspect-ratio: 1/1; object-fit: cover;">
+                            <div class="p-3 bg-white">
+                                <p class="font-arabic text-2xl font-bold text-center" dir="rtl">زياد</p>
+                                <p class="font-arabic text-lg text-center" style="color: var(--color-accent);" dir="rtl">زوجها</p>
+                            </div>
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+</body>
+</html>
+
+

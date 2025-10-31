@@ -1,0 +1,78 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-background: #FAF7F5;
+  --color-card: #F4F1EE;
+  --color-text: #4E4A47;
+  --color-accent: #5F8575;
+  --color-accent-warm: #d4a373;
+  --color-accent-text: #FAF7F5;
+
+  --font-family-sans: 'Poppins', sans-serif;
+  --font-family-arabic: 'Tajawal', sans-serif;
+}
+
+/* Custom animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes reveal-name {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(30px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.05) translateY(-5px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes button-fade-out {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out forwards;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+.animate-reveal-name {
+  animation: reveal-name 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  opacity: 0;
+}
+
+.animate-button-fade-out {
+  animation: button-fade-out 0.3s ease-in forwards;
+}
