@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import PersonCard from '../components/PersonCard';
 import AddPersonCard from '../components/AddPersonCard';
 import BackButton from '../components/BackButton';
@@ -11,6 +11,7 @@ import { getPersonName, t } from '../utils/i18n';
 
 const FamilyHub = () => {
   const { personId } = useParams<{ personId: string }>();
+  const navigate = useNavigate();
   const { language } = useLanguage();
   const { people, loading, error } = usePeople();
   const [showNames, setShowNames] = useState(true);
@@ -95,9 +96,33 @@ const FamilyHub = () => {
 
   const fontClass = language === 'ar' ? 'font-arabic' : 'font-sans';
 
+  // Handle game mode button click
+  const handleGameMode = () => {
+    if (people.length === 0) return;
+    // Reset shown people list when starting a new game
+    localStorage.removeItem('haydamin_game_mode_shown_ids');
+    // Select a random person
+    const randomPerson = people[Math.floor(Math.random() * people.length)];
+    navigate(`/person/${randomPerson.id}?game=true`);
+  };
+
   return (
     <div className="p-6 md:p-12 bg-background min-h-screen">
       <LanguageToggle />
+      
+      {/* Game mode button */}
+      <button
+        onClick={handleGameMode}
+        disabled={people.length === 0}
+        className="fixed top-6 right-42 z-40 bg-card text-accent font-bold w-12 h-12 rounded-full shadow-lg transition-all duration-300 ease-out hover:shadow-xl hover:scale-110 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+        aria-label={language === 'ar' ? 'وضع اللعبة' : 'Game Mode'}
+        title={language === 'ar' ? 'وضع اللعبة' : 'Game Mode'}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 18a3.75 3.75 0 00.495-7.467 5.99 5.99 0 00-1.925 3.546 5.974 5.974 0 01-2.133-1A3.75 3.75 0 0012 18z" />
+        </svg>
+      </button>
       
       {/* Edit mode toggle button - to the left of eye button */}
       <button

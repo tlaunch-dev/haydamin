@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import imageCompression from 'browser-image-compression';
 import { usePeople } from '../hooks/usePeople';
 import { updatePerson, deletePerson } from '../services/firestore';
@@ -43,8 +43,22 @@ const formatBirthdayDisplay = (birthdayString: string | undefined, language: str
   });
 };
 
+// Helper function to get random unshown person
+const getRandomUnshownPerson = (people: Person[], shownIds: string[]): Person | null => {
+  const unshown = people.filter(p => !shownIds.includes(p.id));
+  if (unshown.length === 0) return null;
+  const randomIndex = Math.floor(Math.random() * unshown.length);
+  return unshown[randomIndex];
+};
+
+// LocalStorage keys for game mode
+const GAME_MODE_SHOWN_IDS_KEY = 'haydamin_game_mode_shown_ids';
+
 export function PersonDetail() {
   const { personId } = useParams<{ personId: string }>();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const isGameMode = searchParams.get('game') === 'true';
   const { language } = useLanguage();
   const { people, loading, error } = usePeople();
   const [isRevealed, setIsRevealed] = useState(false);
@@ -61,6 +75,8 @@ export function PersonDetail() {
   const [imageToCrop, setImageToCrop] = useState<string>('');
   const [showCropDialog, setShowCropDialog] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
+  const [touchEnd, setTouchEnd] = useState<{ x: number; y: number } | null>(null);
 
   // Helper functions
   const getPersonById = (id: string): Person | undefined => {
@@ -83,6 +99,75 @@ export function PersonDetail() {
   useEffect(() => {
     setIsRevealed(false);
   }, [personId]);
+
+  // Track shown person in game mode
+  useEffect(() => {
+    if (isGameMode && personId && !loading && people.length > 0) {
+      const shownIds = JSON.parse(localStorage.getItem(GAME_MODE_SHOWN_IDS_KEY) || '[]');
+      if (!shownIds.includes(personId)) {
+        shownIds.push(personId);
+        localStorage.setItem(GAME_MODE_SHOWN_IDS_KEY, JSON.stringify(shownIds));
+      }
+    }
+  }, [isGameMode, personId, loading, people.length]);
+
+  // Handle next person in game mode
+  const handleNextPerson = useCallback(() => {
+    if (!isGameMode || people.length === 0 || !isRevealed) return;
+    
+    const shownIds = JSON.parse(localStorage.getItem(GAME_MODE_SHOWN_IDS_KEY) || '[]');
+    const nextPerson = getRandomUnshownPerson(people, shownIds);
+    
+    if (nextPerson) {
+      navigate(`/person/${nextPerson.id}?game=true`, { replace: false });
+      setIsRevealed(false);
+    } else {
+      // All people have been shown - reset and start over
+      localStorage.removeItem(GAME_MODE_SHOWN_IDS_KEY);
+      const randomPerson = people[Math.floor(Math.random() * people.length)];
+      navigate(`/person/${randomPerson.id}?game=true`, { replace: false });
+      setIsRevealed(false);
+    }
+  }, [isGameMode, people, navigate, isRevealed]);
+
+  // Handle exiting game mode
+  const handleExitGameMode = useCallback(() => {
+    navigate('/');
+  }, [navigate]);
+
+  // Swipe gesture handlers for game mode
+  const minSwipeDistance = 50; // Minimum distance in pixels to register a swipe
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    if (!isGameMode || !isRevealed) return;
+    const touch = e.touches[0];
+    setTouchEnd(null);
+    setTouchStart({ x: touch.clientX, y: touch.clientY });
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (!isGameMode || !isRevealed) return;
+    const touch = e.touches[0];
+    setTouchEnd({ x: touch.clientX, y: touch.clientY });
+  };
+
+  const onTouchEnd = () => {
+    if (!isGameMode || !isRevealed || !touchStart || !touchEnd) return;
+    
+    const distanceX = touchStart.x - touchEnd.x;
+    const distanceY = touchStart.y - touchEnd.y;
+    const isLeftSwipe = distanceX > minSwipeDistance;
+    const isVerticalSwipe = Math.abs(distanceY) > Math.abs(distanceX);
+
+    // Only trigger on horizontal left swipe (not vertical scrolling)
+    if (isLeftSwipe && !isVerticalSwipe) {
+      handleNextPerson();
+    }
+    
+    // Reset touch positions
+    setTouchStart(null);
+    setTouchEnd(null);
+  };
 
   // Exit edit mode when navigating away (cleanup)
   useEffect(() => {
@@ -337,11 +422,16 @@ export function PersonDetail() {
 
   return (
     <>
-      <div className="p-6 md:p-12 bg-background min-h-screen">
+      <div 
+        className="p-6 md:p-12 bg-background min-h-screen"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
         <LanguageToggle />
         
         {/* Edit button - next to language toggle */}
-        {isRevealed && !isEditing && (
+        {isRevealed && !isEditing && !isGameMode && (
           <button
             onClick={handleEdit}
             className="fixed top-6 right-20 z-40 bg-accent text-accent-text font-bold w-12 h-12 rounded-full shadow-lg transition-all duration-300 ease-out hover:shadow-xl hover:scale-110 flex items-center justify-center"
@@ -353,8 +443,30 @@ export function PersonDetail() {
           </button>
         )}
         
+        {/* Next button in game mode - visible but disabled until revealed */}
+        {isGameMode && (
+          <button
+            onClick={handleNextPerson}
+            disabled={!isRevealed}
+            className="fixed top-6 right-20 z-40 bg-accent text-accent-text font-bold w-12 h-12 rounded-full shadow-lg transition-all duration-300 ease-out hover:shadow-xl hover:scale-110 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-lg"
+            aria-label={language === 'ar' ? 'التالي' : 'Next'}
+          >
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              strokeWidth={2.5} 
+              stroke="currentColor" 
+              className="w-6 h-6"
+              style={{ transform: language === 'ar' ? 'scaleX(-1)' : 'none' }}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+            </svg>
+          </button>
+        )}
+        
         {/* Save/Cancel buttons when editing */}
-        {isEditing && (
+        {isEditing && !isGameMode && (
           <div className="fixed top-6 right-20 z-40 flex gap-2">
             <button
               onClick={handleCancel}
@@ -389,9 +501,32 @@ export function PersonDetail() {
         {/* Header with Back Button and Title/Button */}
         <div className="mb-8 max-w-7xl mx-auto">
           <div className="relative flex items-center">
-            <div className="absolute left-0">
-              <BackButton />
-            </div>
+            {!isGameMode && (
+              <div className="absolute left-0">
+                <BackButton />
+              </div>
+            )}
+            {isGameMode && (
+              <div className="absolute left-0">
+                <button
+                  onClick={handleExitGameMode}
+                  className="bg-card text-accent text-2xl rounded-full w-14 h-14 flex items-center justify-center shadow-md transition-all duration-300 ease-out hover:shadow-lg hover:scale-105"
+                  aria-label={language === 'ar' ? 'خروج من وضع اللعبة' : 'Exit Game Mode'}
+                  title={language === 'ar' ? 'خروج من وضع اللعبة' : 'Exit Game Mode'}
+                >
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    strokeWidth={2.5} 
+                    stroke="currentColor" 
+                    className="w-7 h-7"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
             
             <div className="flex-1 flex justify-center">
               {!isRevealed && (
