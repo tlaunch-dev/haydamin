@@ -1,6 +1,7 @@
 import { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import CedarBackground from '../components/CedarBackground';
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -28,8 +29,9 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden">
+      <CedarBackground />
+      <div className="w-full max-w-md relative z-10">
         <div className="bg-card rounded-3xl shadow-lg p-8">
           <h1 className="text-4xl font-bold text-text text-center mb-8 font-sans">
             Hayda Min

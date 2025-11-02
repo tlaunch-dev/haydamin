@@ -7,6 +7,7 @@ import { uploadPhoto, deletePhoto } from '../services/storage';
 import { translateToArabic } from '../services/translate';
 import BackButton from '../components/BackButton';
 import PersonCard from '../components/PersonCard';
+import CedarBackground from '../components/CedarBackground';
 import { CollapsibleButtonMenu, ButtonConfig } from '../components/CollapsibleButtonMenu';
 import ImageCropDialog from '../components/ImageCropDialog';
 import PhotoGalleryModal from '../components/PhotoGalleryModal';
@@ -458,13 +459,15 @@ export function PersonDetail() {
   return (
     <>
       <div
-        className={`p-3 sm:p-4 md:p-6 lg:p-12 pt-20 sm:pt-24 md:pt-24 lg:pt-12 bg-background min-h-screen ${isEditing && !isGameMode ? 'pb-24 md:pb-6' : ''}`}
+        className={`p-3 sm:p-4 md:p-6 lg:p-12 pt-20 sm:pt-24 md:pt-24 lg:pt-12 bg-background min-h-screen relative overflow-hidden ${isEditing && !isGameMode ? 'pb-24 md:pb-6' : ''}`}
         {...(isGameMode && isRevealed ? {
           onTouchStart,
           onTouchMove,
           onTouchEnd
         } : {})}
       >
+        <CedarBackground />
+
         {/* Constrain button positioning on wide screens */}
         <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none">
           <div className="max-w-7xl mx-auto relative h-20 pointer-events-none px-3 md:px-8 lg:px-12">
@@ -597,7 +600,7 @@ export function PersonDetail() {
             <>
 
               {/* Profile + About Card */}
-              <div className="bg-card rounded-3xl p-4 md:p-8 lg:p-12 shadow-sm mt-4 animate-fade-in-up" style={{animationDelay: '0.3s'}}>
+              <div className="bg-card/50 rounded-3xl p-4 md:p-8 lg:p-12 shadow-sm mt-4 animate-fade-in-up" style={{animationDelay: '0.3s'}}>
                 
                 {/* Profile photo - show at top on mobile, side on desktop */}
                 <div className={`${isEditing ? 'w-full flex justify-center mb-6' : 'w-full flex justify-center mb-6 md:hidden'}`}>
@@ -982,7 +985,7 @@ export function PersonDetail() {
 
           {/* Family Card - Only show after reveal and not in edit mode */}
           {isRevealed && !isEditing && familyMembers.length > 0 && (
-            <div className="bg-card rounded-3xl p-4 md:p-6 lg:p-8 shadow-sm animate-fade-in-up" style={{animationDelay: '0.5s'}}>
+            <div className="bg-card/50 rounded-3xl p-4 md:p-6 lg:p-8 shadow-sm animate-fade-in-up" style={{animationDelay: '0.5s'}}>
               <h3 className={`${fontClass} text-3xl md:text-4xl lg:text-5xl font-bold mb-6 md:mb-8 text-text`}>{t('family_section', language)}</h3>
 
               {/* Centered flex wrap layout */}

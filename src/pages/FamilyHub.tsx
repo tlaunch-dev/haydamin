@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import PersonCard from '../components/PersonCard';
 import AddPersonCard from '../components/AddPersonCard';
 import BackButton from '../components/BackButton';
+import CedarBackground from '../components/CedarBackground';
 import { CollapsibleButtonMenu, ButtonConfig } from '../components/CollapsibleButtonMenu';
 import { useLanguage } from '../context/LanguageContext';
 import { usePeople } from '../hooks/usePeople';
@@ -140,7 +141,9 @@ const FamilyHub = () => {
   ];
 
   return (
-    <div className="p-3 sm:p-4 md:p-6 lg:p-8 pt-20 sm:pt-24 md:pt-20 lg:pt-20 bg-background min-h-screen flex flex-col justify-center">
+    <div className="p-3 sm:p-4 md:p-6 lg:p-8 pt-20 sm:pt-24 md:pt-20 lg:pt-20 bg-background min-h-screen flex flex-col justify-center relative overflow-hidden">
+      <CedarBackground />
+
       {/* Constrain button positioning on wide screens */}
       <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none">
         <div className="max-w-7xl mx-auto relative h-20 pointer-events-none px-3 md:px-8 lg:px-12">
@@ -154,13 +157,13 @@ const FamilyHub = () => {
       </div>
 
       {/* Header */}
-      <div className="mb-4 md:mb-6 lg:mb-8 max-w-7xl mx-auto w-full">
+      <div className="mb-4 md:mb-6 lg:mb-8 max-w-7xl mx-auto w-full relative z-10">
         <div className="text-center">
           <h1 className={`${fontClass} text-4xl md:text-5xl lg:text-6xl font-bold text-text`}>{headerText}</h1>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto w-full">
+      <div className="max-w-7xl mx-auto w-full relative z-10">
         {/* Center Person(s) Row - Always side by side */}
         <div className="mb-4 md:mb-6 lg:mb-8">
           <div className="flex flex-row justify-center gap-4 sm:gap-6 md:gap-6 lg:gap-8">
