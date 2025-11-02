@@ -9,7 +9,7 @@ const BackButton = () => {
   return (
     <button
       onClick={() => navigate(-1)}
-      className="bg-card text-accent text-2xl rounded-full w-14 h-14 flex items-center justify-center shadow-md transition-all duration-300 ease-out hover:shadow-lg hover:scale-105"
+      className="bg-card text-accent text-2xl rounded-full w-14 h-14 md:w-16 md:h-16 flex items-center justify-center shadow-md transition-all duration-300 ease-out hover:shadow-lg hover:scale-105"
       aria-label={t('back', language)}
     >
       <svg 
@@ -18,7 +18,7 @@ const BackButton = () => {
         viewBox="0 0 24 24" 
         strokeWidth={2.5} 
         stroke="currentColor" 
-        className="w-7 h-7"
+        className="w-7 h-7 md:w-8 md:h-8"
         style={{ transform: language === 'ar' ? 'scaleX(-1)' : 'none' }}
       >
         <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />

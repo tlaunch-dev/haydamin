@@ -6,7 +6,7 @@ import { updatePerson, deletePerson } from '../services/firestore';
 import { uploadPhoto, deletePhoto } from '../services/storage';
 import { translateToArabic } from '../services/translate';
 import BackButton from '../components/BackButton';
-import FamilyLinkCard from '../components/FamilyLinkCard';
+import PersonCard from '../components/PersonCard';
 import { CollapsibleButtonMenu, ButtonConfig } from '../components/CollapsibleButtonMenu';
 import ImageCropDialog from '../components/ImageCropDialog';
 import PhotoGalleryModal from '../components/PhotoGalleryModal';
@@ -458,64 +458,105 @@ export function PersonDetail() {
   return (
     <>
       <div
-        className={`p-3 sm:p-4 md:p-6 lg:p-12 pt-20 sm:pt-24 md:pt-6 bg-background min-h-screen ${isEditing && !isGameMode ? 'pb-24 md:pb-6' : ''}`}
+        className={`p-3 sm:p-4 md:p-6 lg:p-12 pt-20 sm:pt-24 md:pt-24 lg:pt-12 bg-background min-h-screen ${isEditing && !isGameMode ? 'pb-24 md:pb-6' : ''}`}
         {...(isGameMode && isRevealed ? {
           onTouchStart,
           onTouchMove,
           onTouchEnd
         } : {})}
       >
-        <CollapsibleButtonMenu buttons={menuButtons} />
+        {/* Constrain button positioning on wide screens */}
+        <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none">
+          <div className="max-w-7xl mx-auto relative h-20 pointer-events-none px-3 md:px-8 lg:px-12">
+            {/* Left side buttons */}
+            <div className="absolute top-6 left-3 md:left-0 pointer-events-auto">
+              {!isGameMode && <BackButton />}
+              {isGameMode && (
+                <button
+                  onClick={handleExitGameMode}
+                  className="bg-card text-accent text-2xl rounded-full w-14 h-14 md:w-16 md:h-16 flex items-center justify-center shadow-md transition-all duration-300 ease-out hover:shadow-lg hover:scale-105"
+                  aria-label={language === 'ar' ? 'خروج من وضع اللعبة' : 'Exit Game Mode'}
+                  title={language === 'ar' ? 'خروج من وضع اللعبة' : 'Exit Game Mode'}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2.5}
+                    stroke="currentColor"
+                    className="w-7 h-7 md:w-8 md:h-8"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
 
-        {/* Edit mode Save/Cancel buttons - next to hamburger on desktop */}
-        {isEditing && !isGameMode && (
-          <div className="hidden md:flex fixed top-6 right-24 z-50 gap-2">
-            <button
-              onClick={handleCancel}
-              disabled={isUploadingPhotos}
-              className={`${fontClass} px-4 py-2 rounded-full bg-card/80 backdrop-blur-md shadow-lg border border-border/50 flex items-center justify-center hover:bg-card transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed text-text font-semibold`}
-              aria-label="Cancel"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={isUploadingPhotos}
-              className={`${fontClass} px-4 py-2 rounded-full bg-card/80 backdrop-blur-md shadow-lg border border-border/50 flex items-center justify-center hover:bg-card transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed text-accent font-semibold`}
-              aria-label="Save"
-            >
-              {isUploadingPhotos ? '⏳' : 'Save'}
-            </button>
-          </div>
-        )}
+            {/* Right side buttons */}
+            <div className="absolute top-6 right-3 md:right-0 pointer-events-auto flex items-center gap-2">
+              {/* Edit mode Save/Cancel buttons - show on desktop */}
+              {isEditing && !isGameMode && (
+                <div className="hidden md:flex gap-2">
+                  <button
+                    onClick={handleCancel}
+                    disabled={isUploadingPhotos}
+                    className={`${fontClass} px-4 py-2 rounded-full bg-card/80 backdrop-blur-md shadow-lg border border-border/50 flex items-center justify-center hover:bg-card transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed text-text font-semibold`}
+                    aria-label="Cancel"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    disabled={isUploadingPhotos}
+                    className={`${fontClass} px-4 py-2 rounded-full bg-card/80 backdrop-blur-md shadow-lg border border-border/50 flex items-center justify-center hover:bg-card transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed text-accent font-semibold`}
+                    aria-label="Save"
+                  >
+                    {isUploadingPhotos ? '⏳' : 'Save'}
+                  </button>
+                </div>
+              )}
 
-        {/* Back/Exit button - aligned with hamburger */}
-        {!isGameMode && (
-          <div className="fixed top-6 left-6 z-50">
-            <BackButton />
+              {/* Game mode Next button - desktop only, show when revealed */}
+              {isGameMode && isRevealed && (
+                <div className="hidden md:flex">
+                  <button
+                    onClick={handleNextPerson}
+                    className={`${fontClass} px-4 py-2 rounded-full bg-card/80 backdrop-blur-md shadow-lg border border-border/50 flex items-center justify-center gap-2 hover:bg-card transition-all hover:scale-105 text-accent font-semibold`}
+                    aria-label={language === 'ar' ? 'التالي' : 'Next'}
+                  >
+                    {language === 'ar' ? 'التالي' : 'Next'}
+                    <ArrowRight
+                      className="w-5 h-5"
+                      style={{ transform: language === 'ar' ? 'scaleX(-1)' : 'none' }}
+                    />
+                  </button>
+                </div>
+              )}
+
+              {/* Hamburger menu */}
+              <CollapsibleButtonMenu buttons={menuButtons} />
+            </div>
+
+            {/* Swipe indicator - mobile/tablet only, show when revealed in game mode */}
+            {isGameMode && isRevealed && (
+              <div className="absolute top-6 left-1/2 transform -translate-x-1/2 pointer-events-auto flex md:hidden items-center gap-2 bg-accent/90 backdrop-blur-md shadow-lg rounded-full px-4 py-2 animate-pulse">
+                <span className={`${fontClass} text-sm text-accent-text font-semibold`}>
+                  {language === 'ar' ? 'اسحب' : 'Swipe'}
+                </span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2.5}
+                  stroke="currentColor"
+                  className={`w-5 h-5 text-accent-text ${language === 'ar' ? 'rotate-180' : ''}`}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
+              </div>
+            )}
           </div>
-        )}
-        {isGameMode && (
-          <div className="fixed top-6 left-6 z-50">
-            <button
-              onClick={handleExitGameMode}
-              className="bg-card text-accent text-2xl rounded-full w-12 h-12 flex items-center justify-center shadow-md transition-all duration-300 ease-out hover:shadow-lg hover:scale-105"
-              aria-label={language === 'ar' ? 'خروج من وضع اللعبة' : 'Exit Game Mode'}
-              title={language === 'ar' ? 'خروج من وضع اللعبة' : 'Exit Game Mode'}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2.5}
-                stroke="currentColor"
-                className="w-6 h-6"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        )}
+        </div>
 
         {/* Header */}
         <div className="mb-4 md:mb-6 lg:mb-8 max-w-7xl mx-auto">
@@ -523,17 +564,17 @@ export function PersonDetail() {
             {!isRevealed && (
               <button
                 onClick={handleReveal}
-                className={`${fontClass} text-3xl md:text-4xl font-bold py-6 px-12 rounded-2xl shadow-lg transition-all duration-300 ease-out hover:shadow-xl hover:scale-105 bg-accent text-accent-text animate-fade-in`}
+                className={`${fontClass} text-3xl md:text-4xl lg:text-5xl font-bold py-6 px-12 lg:py-8 lg:px-16 rounded-2xl shadow-lg transition-all duration-300 ease-out hover:shadow-xl hover:scale-105 bg-accent text-accent-text animate-fade-in`}
               >
                 {t('whos_this', language)}
               </button>
             )}
             {isRevealed && (
               <div className="text-center animate-reveal-name">
-                <h2 className={`${fontClass} text-5xl md:text-6xl font-bold text-text`}>
+                <h2 className={`${fontClass} text-5xl md:text-6xl lg:text-7xl font-bold text-text`}>
                   {getPersonName(person, language)}
                 </h2>
-                <p className={`${fontClass} text-2xl md:text-3xl mt-2 text-accent`}>
+                <p className={`${fontClass} text-2xl md:text-3xl lg:text-4xl mt-2 text-accent`}>
                   {getRelationship(person, language)}
                 </p>
               </div>
@@ -548,7 +589,7 @@ export function PersonDetail() {
               <img
                 src={person.primaryPhoto}
                 alt={`Photo`}
-                className="w-80 h-80 md:w-96 md:h-96 rounded-full object-cover shadow-xl transition-all duration-500 ease-out"
+                className="w-80 h-80 md:w-96 md:h-96 lg:w-[450px] lg:h-[450px] rounded-full object-cover shadow-xl transition-all duration-500 ease-out"
               />
             </div>
           ) : (
@@ -556,41 +597,51 @@ export function PersonDetail() {
             <>
 
               {/* Profile + About Card */}
-              <div className="bg-card rounded-3xl p-4 md:p-8 shadow-sm mt-4 animate-fade-in-up" style={{animationDelay: '0.3s'}}>
-                <div className={`flex ${isEditing ? 'flex-col' : 'flex-col md:flex-row'} items-center md:items-start gap-8 md:gap-16 ${language === 'ar' && !isEditing ? 'md:flex-row-reverse' : ''}`}>
-
-                  {/* Profile photo - show first when editing */}
-                  {isEditing && (
-                    <div className="w-full flex justify-center mb-6">
-                      <div className="relative">
-                        <img
-                          src={newPrimaryPhotoPreview || person.primaryPhoto}
-                          alt={`${getPersonName(person, language)}`}
-                          className="w-48 h-48 md:w-64 md:h-64 rounded-full object-cover shadow-lg"
+              <div className="bg-card rounded-3xl p-4 md:p-8 lg:p-12 shadow-sm mt-4 animate-fade-in-up" style={{animationDelay: '0.3s'}}>
+                
+                {/* Profile photo - show at top on mobile, side on desktop */}
+                <div className={`${isEditing ? 'w-full flex justify-center mb-6' : 'w-full flex justify-center mb-6 md:hidden'}`}>
+                  <div className="relative">
+                    <img
+                      src={newPrimaryPhotoPreview || person.primaryPhoto}
+                      alt={`${getPersonName(person, language)}`}
+                      className={`w-48 h-48 md:w-64 md:h-64 lg:w-80 lg:h-80 rounded-full object-cover shadow-lg ${!isEditing ? 'cursor-pointer transition-transform duration-300 ease-out hover:scale-105 hover:shadow-xl' : ''}`}
+                      onClick={!isEditing ? () => openModal(0) : undefined}
+                    />
+                    {isEditing && (
+                      <label className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full cursor-pointer opacity-0 hover:opacity-100 transition-opacity">
+                        <div className="text-center text-white">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-12 h-12 mx-auto mb-2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                          </svg>
+                          <span className="text-sm font-semibold">{t('change_photo', language)}</span>
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handlePrimaryPhotoChange}
+                          className="hidden"
                         />
-                        <label className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full cursor-pointer opacity-0 hover:opacity-100 transition-opacity">
-                          <div className="text-center text-white">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-12 h-12 mx-auto mb-2">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
-                            </svg>
-                            <span className="text-sm font-semibold">{t('change_photo', language)}</span>
-                          </div>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handlePrimaryPhotoChange}
-                            className="hidden"
-                          />
-                        </label>
+                      </label>
+                    )}
+                    
+                    {/* Gallery indicator badge - show when there are additional photos and not editing */}
+                    {!isEditing && person.photos && person.photos.length > 0 && (
+                      <div className="absolute bottom-2 right-2 bg-accent text-accent-text rounded-full w-10 h-10 md:w-12 md:h-12 flex items-center justify-center shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 md:w-6 md:h-6">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                        </svg>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
+                </div>
 
+                <div className={`flex ${isEditing ? 'flex-col' : 'flex-col md:flex-row'} items-center md:items-start gap-8 md:gap-16 ${language === 'ar' && !isEditing ? 'md:flex-row-reverse' : ''}`}>
                   <div className="flex-1 w-full">
                     {!isEditing ? (
                       <>
-                        <div className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-3 text-lg md:text-xl text-text" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+                        <div className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-3 text-lg md:text-xl lg:text-2xl text-text" dir={language === 'ar' ? 'rtl' : 'ltr'}>
                           {person.birthday && (
                             <>
                               <span className={`${fontClass} font-semibold`}>{t('birthday', language)}</span>
@@ -615,7 +666,7 @@ export function PersonDetail() {
                         {/* More About section */}
                         {(person.about || person.aboutAr) && (
                           <div className="mt-6 pt-6 border-t border-accent/20">
-                            <p className={`${fontClass} text-base md:text-lg text-text leading-relaxed`}>
+                            <p className={`${fontClass} text-base md:text-lg lg:text-xl text-text leading-relaxed`}>
                               {getAbout(person, language)}
                             </p>
                           </div>
@@ -760,15 +811,15 @@ export function PersonDetail() {
                     )}
                   </div>
 
-                  {/* Profile Photo - only show on side when NOT editing */}
+                  {/* Profile Photo - only show on side when NOT editing, hidden on mobile */}
                   {!isEditing && (
-                    <div className="shrink-0">
+                    <div className="shrink-0 hidden md:block">
                     <div className="relative">
                       <img
                         src={newPrimaryPhotoPreview || person.primaryPhoto}
                         alt={`Main photo of ${getPersonName(person, language)}`}
-                        className="w-48 h-48 md:w-64 md:h-64 rounded-full object-cover shadow-lg cursor-pointer transition-transform duration-300 ease-out hover:scale-105 hover:shadow-xl"
-                        onClick={isEditing ? undefined : () => openModal(0)}
+                        className="w-48 h-48 md:w-64 md:h-64 lg:w-80 lg:h-80 xl:w-96 xl:h-96 rounded-full object-cover shadow-lg cursor-pointer transition-transform duration-300 ease-out hover:scale-105 hover:shadow-xl"
+                        onClick={() => openModal(0)}
                       />
                       {isEditing && (
                         <label className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full cursor-pointer opacity-0 hover:opacity-100 transition-opacity">
@@ -932,19 +983,14 @@ export function PersonDetail() {
           {/* Family Card - Only show after reveal and not in edit mode */}
           {isRevealed && !isEditing && familyMembers.length > 0 && (
             <div className="bg-card rounded-3xl p-4 md:p-6 lg:p-8 shadow-sm animate-fade-in-up" style={{animationDelay: '0.5s'}}>
-              <h3 className={`${fontClass} text-3xl font-bold mb-4 md:mb-6 text-text`}>{t('family_section', language)}</h3>
+              <h3 className={`${fontClass} text-3xl md:text-4xl lg:text-5xl font-bold mb-6 md:mb-8 text-text`}>{t('family_section', language)}</h3>
 
-              {/* Mobile: 2-column grid */}
-              <div className="grid grid-cols-2 gap-3 md:hidden justify-items-center max-w-md mx-auto">
+              {/* Centered flex wrap layout */}
+              <div className="flex flex-wrap justify-center gap-4 md:gap-6 lg:gap-8">
                 {familyMembers.map((member) => (
-                  <FamilyLinkCard key={member.id} person={member} showRelationship={member.id === spouse?.id} />
-                ))}
-              </div>
-
-              {/* iPad+: Flexible wrap layout */}
-              <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6 pb-4">
-                {familyMembers.map((member) => (
-                  <FamilyLinkCard key={member.id} person={member} showRelationship={member.id === spouse?.id} />
+                  <div key={member.id} className="w-40 sm:w-44 md:w-44 lg:w-48">
+                    <PersonCard person={member} variant="thumbnail" showName={true} />
+                  </div>
                 ))}
               </div>
             </div>

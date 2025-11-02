@@ -140,38 +140,41 @@ const FamilyHub = () => {
   ];
 
   return (
-    <div className="p-3 sm:p-4 md:p-6 lg:p-12 pt-20 sm:pt-24 md:pt-6 bg-background min-h-screen flex flex-col justify-center">
-      <CollapsibleButtonMenu buttons={menuButtons} />
-
-      {/* Back button - aligned with hamburger */}
-      {!isRootHub && (
-        <div className="fixed top-6 left-6 z-50">
-          <BackButton />
+    <div className="p-3 sm:p-4 md:p-6 lg:p-8 pt-20 sm:pt-24 md:pt-20 lg:pt-20 bg-background min-h-screen flex flex-col justify-center">
+      {/* Constrain button positioning on wide screens */}
+      <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none">
+        <div className="max-w-7xl mx-auto relative h-20 pointer-events-none px-3 md:px-8 lg:px-12">
+          <div className="absolute top-6 left-3 md:left-0 pointer-events-auto">
+            {!isRootHub && <BackButton />}
+          </div>
+          <div className="absolute top-6 right-3 md:right-0 pointer-events-auto">
+            <CollapsibleButtonMenu buttons={menuButtons} />
+          </div>
         </div>
-      )}
+      </div>
 
       {/* Header */}
-      <div className="mb-8 md:mb-10 lg:mb-12 max-w-7xl mx-auto w-full">
+      <div className="mb-4 md:mb-6 lg:mb-8 max-w-7xl mx-auto w-full">
         <div className="text-center">
-          <h1 className={`${fontClass} text-5xl md:text-6xl font-bold text-text`}>{headerText}</h1>
+          <h1 className={`${fontClass} text-4xl md:text-5xl lg:text-6xl font-bold text-text`}>{headerText}</h1>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto w-full">
         {/* Center Person(s) Row - Always side by side */}
-        <div className="mb-4 md:mb-6">
-          <div className="flex flex-row justify-center gap-3 sm:gap-4 md:gap-6 lg:gap-8">
-            <div className="w-40 sm:w-44 md:w-48 lg:w-52">
+        <div className="mb-4 md:mb-6 lg:mb-8">
+          <div className="flex flex-row justify-center gap-4 sm:gap-6 md:gap-6 lg:gap-8">
+            <div className="w-40 sm:w-44 md:w-44 lg:w-48">
               <PersonCard person={centerPerson} variant="hub" isRootLevel={true} showName={showNames} />
             </div>
             {spousePerson && (
-              <div className="w-40 sm:w-44 md:w-48 lg:w-52">
+              <div className="w-40 sm:w-44 md:w-44 lg:w-48">
                 <PersonCard person={spousePerson} variant="hub" isRootLevel={true} showName={showNames} />
               </div>
             )}
             {/* Add Spouse Card - only show in edit mode when no spouse exists */}
             {isEditMode && !spousePerson && (
-              <div className="w-40 sm:w-44 md:w-48 lg:w-52">
+              <div className="w-40 sm:w-44 md:w-44 lg:w-48">
                 <AddPersonCard
                   spouseId={centerPerson.id}
                   variant="spouse"
@@ -183,47 +186,25 @@ const FamilyHub = () => {
 
         {/* Tree Connector */}
         {(childrenList.length > 0 || isEditMode) && (
-          <div className="h-8 md:h-12 w-1 bg-accent opacity-30 mx-auto mb-4 md:mb-6"></div>
+          <div className="h-6 md:h-8 lg:h-10 w-1 bg-accent opacity-30 mx-auto mb-4 md:mb-6 lg:mb-8"></div>
         )}
 
-        {/* Children Row - Grid on mobile, horizontal scroll on iPad+ */}
+        {/* Children Row - Responsive grid */}
         {(childrenList.length > 0 || isEditMode) && (
-          <div>
-            {/* Mobile: 2-column grid */}
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:hidden justify-items-center max-w-lg mx-auto">
-              {childrenList.map((child) => (
-                <div key={child.id} className="w-40 sm:w-44">
-                  <PersonCard person={child} variant="thumbnail" showName={showNames} />
-                </div>
-              ))}
-              {/* Add Person Card - only show in edit mode */}
-              {isEditMode && (
+          <div className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-4 lg:gap-6">
+            {childrenList.map((child) => (
+              <div key={child.id} className="w-40 sm:w-44 md:w-44 lg:w-48">
+                <PersonCard person={child} variant="thumbnail" showName={showNames} />
+              </div>
+            ))}
+            {/* Add Person Card - only show in edit mode */}
+            {isEditMode && (
+              <div className="w-40 sm:w-44 md:w-44 lg:w-48">
                 <AddPersonCard
                   parentIds={spousePerson ? [centerPerson.id, spousePerson.id] : [centerPerson.id]}
                 />
-              )}
-            </div>
-
-            {/* iPad+: Horizontal scroll */}
-            <div className="hidden md:block overflow-x-auto relative scrollbar-hide">
-              <div className="flex justify-center gap-6 min-w-min px-4">
-                {childrenList.map((child) => (
-                  <div key={child.id} className="w-48 lg:w-52">
-                    <PersonCard person={child} variant="thumbnail" showName={showNames} />
-                  </div>
-                ))}
-                {/* Add Person Card - only show in edit mode */}
-                {isEditMode && (
-                  <AddPersonCard
-                    parentIds={spousePerson ? [centerPerson.id, spousePerson.id] : [centerPerson.id]}
-                  />
-                )}
               </div>
-              {/* Scroll fade indicator on right edge */}
-              {childrenList.length > 4 && (
-                <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-background to-transparent pointer-events-none"></div>
-              )}
-            </div>
+            )}
           </div>
         )}
       </div>

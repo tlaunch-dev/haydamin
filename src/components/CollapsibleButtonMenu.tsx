@@ -48,25 +48,25 @@ export function CollapsibleButtonMenu({ buttons, className = '' }: CollapsibleBu
   };
 
   return (
-    <div ref={menuRef} className={`fixed top-6 right-6 z-50 ${className}`}>
-      <div className="flex flex-col items-end gap-2">
+    <div ref={menuRef} className={`${className}`}>
+      <div className="flex flex-col items-end gap-3">
         {/* Menu Toggle Button */}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="w-12 h-12 rounded-full bg-card/80 backdrop-blur-md shadow-lg border border-border/50 flex items-center justify-center hover:bg-card transition-all"
+          className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-card/80 backdrop-blur-md shadow-lg border border-border/50 flex items-center justify-center hover:bg-card transition-all"
           aria-label={isExpanded ? 'Close menu' : 'Open menu'}
           aria-expanded={isExpanded}
         >
           {isExpanded ? (
-            <X className="w-5 h-5 text-foreground" />
+            <X className="w-6 h-6 md:w-7 md:h-7 text-foreground" />
           ) : (
-            <Menu className="w-5 h-5 text-foreground" />
+            <Menu className="w-6 h-6 md:w-7 md:h-7 text-foreground" />
           )}
         </button>
 
         {/* Expanded Buttons */}
         <div
-          className={`flex flex-col items-end gap-2 overflow-hidden transition-all duration-300 ease-in-out ${
+          className={`flex flex-col items-end gap-3 overflow-hidden transition-all duration-300 ease-in-out ${
             isExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
           }`}
         >
@@ -74,7 +74,7 @@ export function CollapsibleButtonMenu({ buttons, className = '' }: CollapsibleBu
             <button
               key={button.id}
               onClick={() => handleButtonClick(button.onClick)}
-              className={`w-12 h-12 rounded-full bg-card/80 backdrop-blur-md shadow-lg border border-border/50 flex items-center justify-center hover:bg-card transition-all transform hover:scale-105 ${button.hideOnMobile ? 'hidden md:flex' : ''}`}
+              className={`w-14 h-14 md:w-16 md:h-16 rounded-full bg-card/80 backdrop-blur-md shadow-lg border border-border/50 flex items-center justify-center hover:bg-card transition-all transform hover:scale-105 ${button.hideOnMobile ? 'hidden md:flex' : ''}`}
               aria-label={button.ariaLabel || button.label}
               title={button.label}
             >
