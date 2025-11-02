@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Lebanese Cedar Silhouette -->
+  <g fill="#000000">
+    <!-- Trunk -->
+    <rect x="14" y="26" width="4" height="4"/>
+
+    <!-- Bottom branches -->
+    <polygon points="16,24 8,24 10,22 8,22 16,16 24,22 22,22 24,24"/>
+
+    <!-- Middle branches -->
+    <polygon points="16,20 10,20 11.5,18 10,18 16,13 22,18 20.5,18 22,20"/>
+
+    <!-- Upper branches -->
+    <polygon points="16,16 12,16 13,14.5 12,14.5 16,10 20,14.5 19,14.5 20,16"/>
+
+    <!-- Top -->
+    <polygon points="16,12 14,12 16,8 18,12"/>
+  </g>
+</svg>
