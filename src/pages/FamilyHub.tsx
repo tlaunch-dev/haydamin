@@ -160,18 +160,18 @@ const FamilyHub = () => {
       <div className="max-w-7xl mx-auto w-full">
         {/* Center Person(s) Row - Always side by side */}
         <div className="mb-4 md:mb-6">
-          <div className="flex flex-row justify-center gap-2 sm:gap-3 md:gap-4 lg:gap-6">
-            <div className="w-[45%] sm:w-[40%] md:w-52 lg:w-60 min-w-[120px] max-w-[200px]">
+          <div className="flex flex-row justify-center gap-3 sm:gap-4 md:gap-6 lg:gap-8">
+            <div className="w-40 sm:w-44 md:w-48 lg:w-52">
               <PersonCard person={centerPerson} variant="hub" isRootLevel={true} showName={showNames} />
             </div>
             {spousePerson && (
-              <div className="w-[45%] sm:w-[40%] md:w-52 lg:w-60 min-w-[120px] max-w-[200px]">
+              <div className="w-40 sm:w-44 md:w-48 lg:w-52">
                 <PersonCard person={spousePerson} variant="hub" isRootLevel={true} showName={showNames} />
               </div>
             )}
             {/* Add Spouse Card - only show in edit mode when no spouse exists */}
             {isEditMode && !spousePerson && (
-              <div className="w-[45%] sm:w-[40%] md:w-52 lg:w-60 min-w-[120px] max-w-[200px]">
+              <div className="w-40 sm:w-44 md:w-48 lg:w-52">
                 <AddPersonCard
                   spouseId={centerPerson.id}
                   variant="spouse"
@@ -190,9 +190,11 @@ const FamilyHub = () => {
         {(childrenList.length > 0 || isEditMode) && (
           <div>
             {/* Mobile: 2-column grid */}
-            <div className="grid grid-cols-2 gap-2 sm:gap-3 md:hidden justify-items-center max-w-md mx-auto">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:hidden justify-items-center max-w-lg mx-auto">
               {childrenList.map((child) => (
-                <PersonCard key={child.id} person={child} variant="thumbnail" showName={showNames} />
+                <div key={child.id} className="w-40 sm:w-44">
+                  <PersonCard person={child} variant="thumbnail" showName={showNames} />
+                </div>
               ))}
               {/* Add Person Card - only show in edit mode */}
               {isEditMode && (
@@ -203,10 +205,12 @@ const FamilyHub = () => {
             </div>
 
             {/* iPad+: Horizontal scroll */}
-            <div className="hidden md:block overflow-x-auto relative">
-              <div className="flex justify-center gap-4 min-w-min px-4">
+            <div className="hidden md:block overflow-x-auto relative scrollbar-hide">
+              <div className="flex justify-center gap-6 min-w-min px-4">
                 {childrenList.map((child) => (
-                  <PersonCard key={child.id} person={child} variant="thumbnail" showName={showNames} />
+                  <div key={child.id} className="w-48 lg:w-52">
+                    <PersonCard person={child} variant="thumbnail" showName={showNames} />
+                  </div>
                 ))}
                 {/* Add Person Card - only show in edit mode */}
                 {isEditMode && (

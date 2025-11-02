@@ -14,46 +14,21 @@ const PersonCard = ({ person, variant = 'hub', isRootLevel = false, showName = t
   const { language } = useLanguage();
   const hasChildren = person.childrenIds && person.childrenIds.length > 0;
 
-  const cardClasses =
-    variant === 'hub'
-      ? 'family-hub-card w-44 md:w-52'
-      : 'family-thumbnail-card w-32 md:w-40';
-
-  const textContainerClasses = variant === 'hub' ? 'p-4' : 'p-3';
-  const nameClasses =
-    variant === 'hub' ? 'text-3xl md:text-4xl' : 'text-2xl md:text-3xl';
-
   // Navigate to hub if person has children AND is not at root level
   // Otherwise go to person detail page
   const linkTo = (hasChildren && !isRootLevel) ? `/hub/${person.id}` : `/person/${person.id}`;
 
   const fontClass = language === 'ar' ? 'font-arabic' : 'font-sans';
 
-  return (
-    <Link
-      to={linkTo}
-      className={`${cardClasses} transition-all duration-500 ease-out hover:-translate-y-1 block ${
-        showName
-          ? 'bg-white rounded-2xl shadow-lg hover:shadow-xl'
-          : 'hover:scale-110'
-      }`}
-    >
-      {showName ? (
-        <>
-          <div className="relative overflow-hidden">
-            <img
-              src={person.primaryPhoto}
-              alt={`Photo of ${getPersonName(person, language)}`}
-              className="aspect-square object-cover w-full rounded-t-2xl transition-all duration-500 ease-out"
-            />
-          </div>
-          <div className={`${textContainerClasses} text-center flex items-center justify-center min-h-16 md:min-h-20 px-2 transition-all duration-500 ease-out`}>
-            <h2 className={`${fontClass} font-bold text-text ${nameClasses} wrap-break-word hyphens-auto leading-tight px-1 transition-all duration-500 ease-out`}>
-              {getPersonName(person, language)}
-            </h2>
-          </div>
-        </>
-      ) : (
+  // Both hub and thumbnail variants with names: circular with name underneath
+  if (showName) {
+    const nameSize = variant === 'hub' ? 'text-xl md:text-2xl' : 'text-lg md:text-xl';
+
+    return (
+      <Link
+        to={linkTo}
+        className="flex flex-col items-center gap-3 transition-all duration-500 ease-out hover:scale-105"
+      >
         <div className="p-1 bg-white rounded-full shadow-xl transition-all duration-500 ease-out">
           <img
             src={person.primaryPhoto}
@@ -61,7 +36,26 @@ const PersonCard = ({ person, variant = 'hub', isRootLevel = false, showName = t
             className="aspect-square object-cover w-full rounded-full ring-2 ring-accent/30 transition-all duration-500 ease-out"
           />
         </div>
-      )}
+        <h2 className={`${fontClass} font-light text-accent ${nameSize} text-center leading-tight transition-all duration-500 ease-out`}>
+          {getPersonName(person, language)}
+        </h2>
+      </Link>
+    );
+  }
+
+  // Hidden names: circular only
+  return (
+    <Link
+      to={linkTo}
+      className="transition-all duration-500 ease-out hover:scale-110 block"
+    >
+      <div className="p-1 bg-white rounded-full shadow-xl transition-all duration-500 ease-out">
+        <img
+          src={person.primaryPhoto}
+          alt={`Photo of ${getPersonName(person, language)}`}
+          className="aspect-square object-cover w-full rounded-full ring-2 ring-accent/30 transition-all duration-500 ease-out"
+        />
+      </div>
     </Link>
   );
 };
