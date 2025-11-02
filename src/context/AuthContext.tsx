@@ -21,12 +21,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    // Set a timeout to prevent infinite loading if auth fails to initialize
+    const timeout = setTimeout(() => {
+      console.error('Auth initialization timeout');
       setLoading(false);
-    });
+    }, 5000);
 
-    return unsubscribe;
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      (user) => {
+        clearTimeout(timeout);
+        setUser(user);
+        setLoading(false);
+      },
+      (error) => {
+        clearTimeout(timeout);
+        console.error('Auth state change error:', error);
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      clearTimeout(timeout);
+      unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
