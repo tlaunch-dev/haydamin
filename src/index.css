@@ -76,3 +76,14 @@
 .animate-button-fade-out {
   animation: button-fade-out 0.3s ease-in forwards;
 }
+
+/* Safe area support for notched devices (iPhone X+, etc.) */
+@supports (padding: env(safe-area-inset-top)) {
+  /* Adjust body padding for safe areas */
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}

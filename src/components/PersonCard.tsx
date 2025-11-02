@@ -30,28 +30,36 @@ const PersonCard = ({ person, variant = 'hub', isRootLevel = false, showName = t
   const fontClass = language === 'ar' ? 'font-arabic' : 'font-sans';
 
   return (
-    <Link 
-      to={linkTo} 
+    <Link
+      to={linkTo}
       className={`${cardClasses} transition-all duration-300 ease-out hover:-translate-y-1 block ${
-        showName 
-          ? 'bg-white rounded-2xl shadow-lg hover:shadow-xl' 
-          : 'hover:scale-105'
+        showName
+          ? 'bg-white rounded-2xl shadow-lg hover:shadow-xl'
+          : 'hover:scale-110'
       }`}
     >
-      <div className="relative">
-        <img 
-          src={person.primaryPhoto} 
-          alt={`Photo of ${getPersonName(person, language)}`} 
-          className={`aspect-square object-cover w-full ${
-            showName ? 'rounded-t-2xl' : 'rounded-full shadow-lg'
-          }`} 
-        />
-      </div>
-      {showName && (
-        <div className={`${textContainerClasses} text-center flex items-center justify-center min-h-16 md:min-h-20 px-2`}>
-          <h2 className={`${fontClass} font-bold text-text ${nameClasses} wrap-break-word hyphens-auto leading-tight px-1`}>
-            {getPersonName(person, language)}
-          </h2>
+      {showName ? (
+        <>
+          <div className="relative">
+            <img
+              src={person.primaryPhoto}
+              alt={`Photo of ${getPersonName(person, language)}`}
+              className="aspect-square object-cover w-full rounded-t-2xl"
+            />
+          </div>
+          <div className={`${textContainerClasses} text-center flex items-center justify-center min-h-16 md:min-h-20 px-2`}>
+            <h2 className={`${fontClass} font-bold text-text ${nameClasses} wrap-break-word hyphens-auto leading-tight px-1`}>
+              {getPersonName(person, language)}
+            </h2>
+          </div>
+        </>
+      ) : (
+        <div className="p-1 bg-white rounded-full shadow-xl">
+          <img
+            src={person.primaryPhoto}
+            alt={`Photo of ${getPersonName(person, language)}`}
+            className="aspect-square object-cover w-full rounded-full ring-2 ring-accent/30"
+          />
         </div>
       )}
     </Link>

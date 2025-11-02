@@ -5,11 +5,12 @@ import { addPerson, updatePerson } from '../services/firestore';
 import { uploadPhoto } from '../services/storage';
 import { translateToArabic } from '../services/translate';
 import BackButton from '../components/BackButton';
-import LanguageToggle from '../components/LanguageToggle';
+import { CollapsibleButtonMenu, ButtonConfig } from '../components/CollapsibleButtonMenu';
 import ImageCropDialog from '../components/ImageCropDialog';
 import { useLanguage } from '../context/LanguageContext';
 import { t } from '../utils/i18n';
 import { Person } from '../types';
+import { Globe, Save, X } from 'lucide-react';
 
 export function AddPerson() {
   const navigate = useNavigate();
@@ -223,59 +224,56 @@ export function AddPerson() {
     navigate(-1);
   };
 
-  return (
-    <div className="p-6 md:p-12 bg-background min-h-screen">
-      <LanguageToggle />
+  // Handle language toggle
+  const { toggleLanguage } = useLanguage();
 
-      {/* Save/Cancel buttons */}
-      <div className="fixed top-6 right-20 z-40 flex gap-2">
-        <button
-          onClick={handleCancel}
-          disabled={isSaving}
-          className="bg-card text-text font-bold w-12 h-12 md:w-auto md:h-auto md:px-6 md:py-3 rounded-full shadow-lg transition-all duration-300 ease-out hover:shadow-xl hover:scale-105 flex items-center justify-center disabled:opacity-50"
-          aria-label="Cancel"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6 md:hidden">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-          <span className="hidden md:inline">Cancel</span>
-        </button>
-        <button
-          onClick={handleSubmit}
-          disabled={isSaving}
-          className="bg-accent text-accent-text font-bold w-12 h-12 md:w-auto md:h-auto md:px-6 md:py-3 rounded-full shadow-lg transition-all duration-300 ease-out hover:shadow-xl hover:scale-105 flex items-center justify-center disabled:opacity-50"
-          aria-label="Save"
-        >
-          {isSaving ? (
-            <span className="animate-spin">⏳</span>
-          ) : (
-            <>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6 md:hidden">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-              </svg>
-              <span className="hidden md:inline">Save</span>
-            </>
-          )}
-        </button>
+  // Configure menu buttons
+  const menuButtons: ButtonConfig[] = [
+    {
+      id: 'cancel',
+      icon: <X className="w-5 h-5 text-text" />,
+      label: 'Cancel',
+      onClick: handleCancel,
+    },
+    {
+      id: 'save',
+      icon: isSaving ? (
+        <span className="animate-spin">⏳</span>
+      ) : (
+        <Save className="w-5 h-5 text-accent" />
+      ),
+      label: 'Save',
+      onClick: handleSubmit,
+    },
+    {
+      id: 'language',
+      icon: <Globe className="w-5 h-5 text-accent" />,
+      label: language === 'ar' ? 'العربية' : 'English',
+      onClick: toggleLanguage,
+    },
+  ];
+
+  return (
+    <div className="p-3 sm:p-4 md:p-6 lg:p-12 pt-20 sm:pt-24 md:pt-6 bg-background min-h-screen">
+      <CollapsibleButtonMenu buttons={menuButtons} />
+
+      {/* Back button - aligned with hamburger */}
+      <div className="fixed top-6 left-6 z-50">
+        <BackButton />
       </div>
 
       {/* Header */}
-      <div className="mb-8 max-w-7xl mx-auto">
-        <div className="relative flex items-center">
-          <div className="absolute left-0">
-            <BackButton />
-          </div>
-          <div className="flex-1 text-center">
-            <h2 className={`${fontClass} text-5xl md:text-6xl font-bold text-text`}>
-              {t('add_person', language)}
-            </h2>
-          </div>
+      <div className="mb-4 md:mb-6 lg:mb-8 max-w-7xl mx-auto">
+        <div className="text-center">
+          <h2 className={`${fontClass} text-5xl md:text-6xl font-bold text-text`}>
+            {t('add_person', language)}
+          </h2>
         </div>
       </div>
 
       {/* Form */}
       <div className="max-w-7xl mx-auto">
-        <div className="bg-card rounded-3xl p-6 md:p-8 shadow-sm">
+        <div className="bg-card rounded-3xl p-4 md:p-6 lg:p-8 shadow-sm">
           
           {/* Photo Upload */}
           <div className="mb-8 text-center">

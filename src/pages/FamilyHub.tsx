@@ -3,11 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import PersonCard from '../components/PersonCard';
 import AddPersonCard from '../components/AddPersonCard';
 import BackButton from '../components/BackButton';
-import LanguageToggle from '../components/LanguageToggle';
+import { CollapsibleButtonMenu, ButtonConfig } from '../components/CollapsibleButtonMenu';
 import { useLanguage } from '../context/LanguageContext';
 import { usePeople } from '../hooks/usePeople';
 import { Person } from '../types';
 import { getPersonName, t } from '../utils/i18n';
+import { Globe, Eye, EyeOff, Pencil, Dices } from 'lucide-react';
 
 const FamilyHub = () => {
   const { personId } = useParams<{ personId: string }>();
@@ -106,102 +107,117 @@ const FamilyHub = () => {
     navigate(`/person/${randomPerson.id}?game=true`);
   };
 
-  return (
-    <div className="p-6 md:p-12 bg-background min-h-screen">
-      <LanguageToggle />
-      
-      {/* Game mode button */}
-      <button
-        onClick={handleGameMode}
-        disabled={people.length === 0}
-        className="fixed top-6 right-42 z-40 bg-card text-accent font-bold w-12 h-12 rounded-full shadow-lg transition-all duration-300 ease-out hover:shadow-xl hover:scale-110 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-        aria-label={language === 'ar' ? 'وضع اللعبة' : 'Game Mode'}
-        title={language === 'ar' ? 'وضع اللعبة' : 'Game Mode'}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 18a3.75 3.75 0 00.495-7.467 5.99 5.99 0 00-1.925 3.546 5.974 5.974 0 01-2.133-1A3.75 3.75 0 0012 18z" />
-        </svg>
-      </button>
-      
-      {/* Edit mode toggle button - to the left of eye button */}
-      <button
-        onClick={() => setIsEditMode(!isEditMode)}
-        className={`fixed top-6 right-30 z-40 font-bold w-12 h-12 rounded-full shadow-lg transition-all duration-300 ease-out hover:shadow-xl hover:scale-110 flex items-center justify-center ${
-          isEditMode ? 'bg-accent text-accent-text' : 'bg-card text-accent'
-        }`}
-        aria-label={isEditMode ? 'Exit edit mode' : 'Enter edit mode'}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
-        </svg>
-      </button>
-      
-      {/* Eye toggle button - to the left of language button */}
-      <button
-        onClick={() => setShowNames(!showNames)}
-        className="fixed top-6 right-18 z-40 bg-card text-accent font-bold w-12 h-12 rounded-full shadow-lg transition-all duration-300 ease-out hover:shadow-xl hover:scale-110 flex items-center justify-center"
-        aria-label={showNames ? 'Hide names' : 'Show names'}
-      >
-        {showNames ? (
-          // Eye open icon
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-        ) : (
-          // Eye closed icon
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-          </svg>
-        )}
-      </button>
+  // Handle language toggle
+  const { toggleLanguage } = useLanguage();
 
-      {/* Header with optional back button */}
-      <div className="mb-8 max-w-7xl mx-auto relative">
-        {!isRootHub && (
-          <div className="absolute left-0 top-0">
-            <BackButton />
-          </div>
-        )}
+  // Configure menu buttons
+  const menuButtons: ButtonConfig[] = [
+    {
+      id: 'game-mode',
+      icon: <Dices className="w-5 h-5 text-accent" />,
+      label: language === 'ar' ? 'وضع اللعبة' : 'Game Mode',
+      onClick: handleGameMode,
+      show: people.length > 0,
+    },
+    {
+      id: 'edit-mode',
+      icon: <Pencil className="w-5 h-5 text-accent" />,
+      label: isEditMode ? 'Exit edit mode' : 'Enter edit mode',
+      onClick: () => setIsEditMode(!isEditMode),
+    },
+    {
+      id: 'toggle-names',
+      icon: showNames ? <Eye className="w-5 h-5 text-accent" /> : <EyeOff className="w-5 h-5 text-accent" />,
+      label: showNames ? 'Hide names' : 'Show names',
+      onClick: () => setShowNames(!showNames),
+    },
+    {
+      id: 'language',
+      icon: <Globe className="w-5 h-5 text-accent" />,
+      label: language === 'ar' ? 'العربية' : 'English',
+      onClick: toggleLanguage,
+    },
+  ];
+
+  return (
+    <div className="p-3 sm:p-4 md:p-6 lg:p-12 pt-20 sm:pt-24 md:pt-6 bg-background min-h-screen flex flex-col justify-center">
+      <CollapsibleButtonMenu buttons={menuButtons} />
+
+      {/* Back button - aligned with hamburger */}
+      {!isRootHub && (
+        <div className="fixed top-6 left-6 z-50">
+          <BackButton />
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="mb-4 md:mb-6 lg:mb-8 max-w-7xl mx-auto w-full">
         <div className="text-center">
           <h1 className={`${fontClass} text-5xl md:text-6xl font-bold text-text`}>{headerText}</h1>
         </div>
       </div>
-      
-      <div className="max-w-7xl mx-auto">
-        {/* Center Person(s) Row */}
-        <div className="mb-6">
-          <div className="flex justify-center gap-4 md:gap-6 flex-wrap">
-            <PersonCard person={centerPerson} variant="hub" isRootLevel={true} showName={showNames} />
-            {spousePerson && <PersonCard person={spousePerson} variant="hub" isRootLevel={true} showName={showNames} />}
+
+      <div className="max-w-7xl mx-auto w-full">
+        {/* Center Person(s) Row - Always side by side */}
+        <div className="mb-4 md:mb-6">
+          <div className="flex flex-row justify-center gap-2 sm:gap-3 md:gap-4 lg:gap-6">
+            <div className="w-[45%] sm:w-[40%] md:w-52 lg:w-60 min-w-[120px] max-w-[200px]">
+              <PersonCard person={centerPerson} variant="hub" isRootLevel={true} showName={showNames} />
+            </div>
+            {spousePerson && (
+              <div className="w-[45%] sm:w-[40%] md:w-52 lg:w-60 min-w-[120px] max-w-[200px]">
+                <PersonCard person={spousePerson} variant="hub" isRootLevel={true} showName={showNames} />
+              </div>
+            )}
             {/* Add Spouse Card - only show in edit mode when no spouse exists */}
             {isEditMode && !spousePerson && (
-              <AddPersonCard 
-                spouseId={centerPerson.id}
-                variant="spouse"
-              />
+              <div className="w-[45%] sm:w-[40%] md:w-52 lg:w-60 min-w-[120px] max-w-[200px]">
+                <AddPersonCard
+                  spouseId={centerPerson.id}
+                  variant="spouse"
+                />
+              </div>
             )}
           </div>
         </div>
 
         {/* Tree Connector */}
         {(childrenList.length > 0 || isEditMode) && (
-          <div className="h-12 w-1 bg-accent opacity-30 mx-auto mb-6"></div>
+          <div className="h-8 md:h-12 w-1 bg-accent opacity-30 mx-auto mb-4 md:mb-6"></div>
         )}
 
-        {/* Children Row - Single Line */}
+        {/* Children Row - Grid on mobile, horizontal scroll on iPad+ */}
         {(childrenList.length > 0 || isEditMode) && (
-          <div className="overflow-x-auto">
-            <div className="flex justify-center gap-3 md:gap-4 min-w-min px-4">
+          <div>
+            {/* Mobile: 2-column grid */}
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 md:hidden justify-items-center max-w-md mx-auto">
               {childrenList.map((child) => (
                 <PersonCard key={child.id} person={child} variant="thumbnail" showName={showNames} />
               ))}
               {/* Add Person Card - only show in edit mode */}
               {isEditMode && (
-                <AddPersonCard 
-                  parentIds={spousePerson ? [centerPerson.id, spousePerson.id] : [centerPerson.id]} 
+                <AddPersonCard
+                  parentIds={spousePerson ? [centerPerson.id, spousePerson.id] : [centerPerson.id]}
                 />
+              )}
+            </div>
+
+            {/* iPad+: Horizontal scroll */}
+            <div className="hidden md:block overflow-x-auto relative">
+              <div className="flex justify-center gap-4 min-w-min px-4">
+                {childrenList.map((child) => (
+                  <PersonCard key={child.id} person={child} variant="thumbnail" showName={showNames} />
+                ))}
+                {/* Add Person Card - only show in edit mode */}
+                {isEditMode && (
+                  <AddPersonCard
+                    parentIds={spousePerson ? [centerPerson.id, spousePerson.id] : [centerPerson.id]}
+                  />
+                )}
+              </div>
+              {/* Scroll fade indicator on right edge */}
+              {childrenList.length > 4 && (
+                <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-background to-transparent pointer-events-none"></div>
               )}
             </div>
           </div>
