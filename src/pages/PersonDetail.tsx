@@ -423,29 +423,7 @@ export function PersonDetail() {
   // Configure menu buttons based on mode
   const menuButtons: ButtonConfig[] = [];
 
-  if (isEditing && !isGameMode) {
-    // Edit mode: Save/Cancel only in hamburger on desktop (they're in bottom banner on mobile)
-    menuButtons.push(
-      {
-        id: 'cancel',
-        icon: <X className="w-5 h-5 text-text" />,
-        label: 'Cancel',
-        onClick: handleCancel,
-        hideOnMobile: true,
-      },
-      {
-        id: 'save',
-        icon: isUploadingPhotos ? (
-          <span className="animate-spin">⏳</span>
-        ) : (
-          <Save className="w-5 h-5 text-accent" />
-        ),
-        label: 'Save',
-        onClick: handleSave,
-        hideOnMobile: true,
-      }
-    );
-  } else if (isGameMode) {
+  if (isGameMode) {
     // Game mode: Show Next button
     menuButtons.push({
       id: 'next',
@@ -488,6 +466,28 @@ export function PersonDetail() {
         } : {})}
       >
         <CollapsibleButtonMenu buttons={menuButtons} />
+
+        {/* Edit mode Save/Cancel buttons - next to hamburger on desktop */}
+        {isEditing && !isGameMode && (
+          <div className="hidden md:flex fixed top-6 right-24 z-50 gap-2">
+            <button
+              onClick={handleCancel}
+              disabled={isUploadingPhotos}
+              className={`${fontClass} px-4 py-2 rounded-full bg-card/80 backdrop-blur-md shadow-lg border border-border/50 flex items-center justify-center hover:bg-card transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed text-text font-semibold`}
+              aria-label="Cancel"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isUploadingPhotos}
+              className={`${fontClass} px-4 py-2 rounded-full bg-card/80 backdrop-blur-md shadow-lg border border-border/50 flex items-center justify-center hover:bg-card transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed text-accent font-semibold`}
+              aria-label="Save"
+            >
+              {isUploadingPhotos ? '⏳' : 'Save'}
+            </button>
+          </div>
+        )}
 
         {/* Back/Exit button - aligned with hamburger */}
         {!isGameMode && (
