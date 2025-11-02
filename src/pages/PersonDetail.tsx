@@ -136,25 +136,21 @@ export function PersonDetail() {
     navigate('/');
   }, [navigate]);
 
-  // Swipe gesture handlers for game mode
-  const minSwipeDistance = 50; // Minimum distance in pixels to register a swipe
+  // Swipe gesture handlers for game mode - only active when revealed
+  const minSwipeDistance = 50;
 
   const onTouchStart = (e: React.TouchEvent) => {
-    if (!isGameMode || !isRevealed) return;
-    const touch = e.touches[0];
     setTouchEnd(null);
-    setTouchStart({ x: touch.clientX, y: touch.clientY });
+    setTouchStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
   };
 
   const onTouchMove = (e: React.TouchEvent) => {
-    if (!isGameMode || !isRevealed) return;
-    const touch = e.touches[0];
-    setTouchEnd({ x: touch.clientX, y: touch.clientY });
+    setTouchEnd({ x: e.touches[0].clientX, y: e.touches[0].clientY });
   };
 
   const onTouchEnd = () => {
-    if (!isGameMode || !isRevealed || !touchStart || !touchEnd) return;
-    
+    if (!touchStart || !touchEnd) return;
+
     const distanceX = touchStart.x - touchEnd.x;
     const distanceY = touchStart.y - touchEnd.y;
     const isLeftSwipe = distanceX > minSwipeDistance;
@@ -164,7 +160,7 @@ export function PersonDetail() {
     if (isLeftSwipe && !isVerticalSwipe) {
       handleNextPerson();
     }
-    
+
     // Reset touch positions
     setTouchStart(null);
     setTouchEnd(null);
@@ -485,9 +481,11 @@ export function PersonDetail() {
     <>
       <div
         className={`p-3 sm:p-4 md:p-6 lg:p-12 pt-20 sm:pt-24 md:pt-6 bg-background min-h-screen ${isEditing && !isGameMode ? 'pb-24 md:pb-6' : ''}`}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
+        {...(isGameMode && isRevealed ? {
+          onTouchStart,
+          onTouchMove,
+          onTouchEnd
+        } : {})}
       >
         <CollapsibleButtonMenu buttons={menuButtons} />
 
@@ -550,7 +548,7 @@ export function PersonDetail() {
               <img
                 src={person.primaryPhoto}
                 alt={`Photo`}
-                className="w-64 h-64 md:w-80 md:h-80 rounded-full object-cover shadow-xl transition-all duration-500 ease-out"
+                className="w-80 h-80 md:w-96 md:h-96 rounded-full object-cover shadow-xl transition-all duration-500 ease-out"
               />
             </div>
           ) : (

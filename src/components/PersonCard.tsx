@@ -32,7 +32,7 @@ const PersonCard = ({ person, variant = 'hub', isRootLevel = false, showName = t
   return (
     <Link
       to={linkTo}
-      className={`${cardClasses} transition-all duration-300 ease-out hover:-translate-y-1 block ${
+      className={`${cardClasses} transition-all duration-500 ease-out hover:-translate-y-1 block ${
         showName
           ? 'bg-white rounded-2xl shadow-lg hover:shadow-xl'
           : 'hover:scale-110'
@@ -40,25 +40,25 @@ const PersonCard = ({ person, variant = 'hub', isRootLevel = false, showName = t
     >
       {showName ? (
         <>
-          <div className="relative">
+          <div className="relative overflow-hidden">
             <img
               src={person.primaryPhoto}
               alt={`Photo of ${getPersonName(person, language)}`}
-              className="aspect-square object-cover w-full rounded-t-2xl"
+              className="aspect-square object-cover w-full rounded-t-2xl transition-all duration-500 ease-out"
             />
           </div>
-          <div className={`${textContainerClasses} text-center flex items-center justify-center min-h-16 md:min-h-20 px-2`}>
-            <h2 className={`${fontClass} font-bold text-text ${nameClasses} wrap-break-word hyphens-auto leading-tight px-1`}>
+          <div className={`${textContainerClasses} text-center flex items-center justify-center min-h-16 md:min-h-20 px-2 transition-all duration-500 ease-out`}>
+            <h2 className={`${fontClass} font-bold text-text ${nameClasses} wrap-break-word hyphens-auto leading-tight px-1 transition-all duration-500 ease-out`}>
               {getPersonName(person, language)}
             </h2>
           </div>
         </>
       ) : (
-        <div className="p-1 bg-white rounded-full shadow-xl">
+        <div className="p-1 bg-white rounded-full shadow-xl transition-all duration-500 ease-out">
           <img
             src={person.primaryPhoto}
             alt={`Photo of ${getPersonName(person, language)}`}
-            className="aspect-square object-cover w-full rounded-full ring-2 ring-accent/30"
+            className="aspect-square object-cover w-full rounded-full ring-2 ring-accent/30 transition-all duration-500 ease-out"
           />
         </div>
       )}

@@ -77,6 +77,45 @@
   animation: button-fade-out 0.3s ease-in forwards;
 }
 
+/* View Transitions API support */
+@supports (view-transition-name: none) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.4s;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  ::view-transition-old(root) {
+    animation-name: fade-out-scale;
+  }
+
+  ::view-transition-new(root) {
+    animation-name: fade-in-scale;
+  }
+}
+
+@keyframes fade-out-scale {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
+
+@keyframes fade-in-scale {
+  from {
+    opacity: 0;
+    transform: scale(1.02);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 /* Safe area support for notched devices (iPhone X+, etc.) */
 @supports (padding: env(safe-area-inset-top)) {
   /* Adjust body padding for safe areas */

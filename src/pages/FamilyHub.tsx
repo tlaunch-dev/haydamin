@@ -151,7 +151,7 @@ const FamilyHub = () => {
       )}
 
       {/* Header */}
-      <div className="mb-4 md:mb-6 lg:mb-8 max-w-7xl mx-auto w-full">
+      <div className="mb-8 md:mb-10 lg:mb-12 max-w-7xl mx-auto w-full">
         <div className="text-center">
           <h1 className={`${fontClass} text-5xl md:text-6xl font-bold text-text`}>{headerText}</h1>
         </div>
