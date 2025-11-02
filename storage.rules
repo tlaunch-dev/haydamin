@@ -1,0 +1,23 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Photos in /photos/{personId}/{photoId}
+    match /photos/{personId}/{photoId} {
+      // Anyone can read photos (for viewing mode)
+      allow read: if true;
+      
+      // TEMPORARY: Allow writes without auth for development
+      // TODO: Re-enable auth requirement in Phase 7 (Authentication)
+      allow write: if true;
+      // allow write: if request.auth != null; // Restore this later
+    }
+    
+    // Deny all other access by default
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
+

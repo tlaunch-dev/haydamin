@@ -18,16 +18,17 @@ This document outlines the implementation plan for **Hayda Min** (هايدا م�
 - **Vite** - Build tool and dev server
 - **React 18** - UI framework
 - **TypeScript** - Type safety
-- **Tailwind CSS** - Styling (with custom theme)
-- **Firebase** - Backend services
+- **Tailwind CSS v4** - Styling (with custom theme via @theme directive)
+- **Firebase** - Backend services (planned)
   - **Authentication** - Google Sign-In
   - **Firestore** - Database
   - **Storage** - Image hosting
   - **Hosting** - Deployment
 - **React Router v6** - Client-side routing
-- **React Context API** - State management
-- **Vite PWA Plugin** - Offline support
-- **React Hook Form** - Form management
+- **React Context API** - State management (LanguageContext)
+- **Google Fonts** - Poppins (English) & Tajawal (Arabic)
+- **Vite PWA Plugin** - Offline support (planned)
+- **React Hook Form** - Form management (planned)
 
 ### Key Design Decisions
 - **No React Query**: Firebase SDK with custom hooks is sufficient
@@ -44,34 +45,43 @@ This document outlines the implementation plan for **Hayda Min** (هايدا م�
 haydamin/
 ├── src/
 │   ├── components/       # Reusable UI components
-│   │   ├── Button.tsx
-│   │   ├── Card.tsx
-│   │   └── index.ts
+│   │   ├── BackButton.tsx
+│   │   ├── FamilyLinkCard.tsx
+│   │   ├── LanguageToggle.tsx
+│   │   ├── PersonCard.tsx
+│   │   └── PhotoGallery.tsx
 │   ├── pages/            # Page-level components
-│   │   ├── Home.tsx
-│   │   ├── PersonDetail.tsx
-│   │   └── Hub.tsx
+│   │   ├── FamilyHub.tsx
+│   │   └── PersonDetail.tsx
+│   ├── context/          # React Context providers
+│   │   └── LanguageContext.tsx
 │   ├── hooks/            # Custom React hooks
-│   │   ├── useAuth.ts
 │   │   ├── usePerson.ts
 │   │   └── usePeople.ts
+│   ├── services/         # Firebase services
+│   │   ├── firebase.ts
+│   │   ├── firestore.ts
+│   │   └── storage.ts
 │   ├── types/            # TypeScript type definitions
 │   │   └── index.ts
-│   ├── services/         # Firebase and API services
-│   │   ├── firebase.ts
-│   │   └── storage.ts
-│   ├── context/          # React Context providers
-│   │   └── AuthContext.tsx
 │   ├── data/             # Mock data for development
 │   │   └── mockFamily.ts
-│   ├── styles/           # Design tokens and global styles
-│   │   ├── tokens.ts
-│   │   └── globals.css
-│   └── utils/            # Utility functions
-│       └── imageCompression.ts
+│   ├── utils/            # Utility functions
+│   │   └── i18n.ts
+│   ├── App.tsx           # Main app component
+│   ├── main.tsx          # App entry point
+│   └── index.css         # Global styles & Tailwind config
 ├── design-docs/          # Design and planning documents
 │   ├── hayda-min-prd.md
-│   └── implementation-plan.md
+│   ├── implementation-plan.md
+│   └── personal-page-mock.html
+├── .env                  # Environment variables (not in git)
+├── .env.example          # Template for env variables
+├── .envrc                # direnv config (gcloud config)
+├── firebase.json         # Firebase project configuration
+├── firestore.rules       # Firestore security rules
+├── firestore.indexes.json # Firestore indexes
+├── index.html            # HTML entry point
 └── public/               # Static assets
 ```
 
@@ -107,24 +117,52 @@ haydamin/
 ### ✅ Phase 4: Navigation & Hub System (Completed)
 - [x] Implement person-to-person navigation with mock data
 - [x] Back button functionality
-- [x] Route structure (/, /person/:personId)
+- [x] Route structure (/, /hub/:personId, /person/:personId)
 - [x] Smooth transitions between views
 - [x] Handle root level (grandmother + grandfather centered)
 - [x] Clickable family member thumbnails for navigation
+- [x] Dynamic hub pages for each family branch
+- [x] Intelligent navigation (children → hub, top-level → detail)
+- [x] Dynamic page headers with person names
 
-### Phase 5: Responsive Design & Testing
+### ✅ Phase 4.5: Internationalization (Completed)
+- [x] Language toggle between English and Arabic
+- [x] LanguageContext for global language state
+- [x] RTL/LTR layout switching based on language
+- [x] Dynamic HTML lang and dir attributes
+- [x] Font switching (Poppins for English, Tajawal for Arabic)
+- [x] Translation utilities (getPersonName, getRelationship, t function)
+- [x] Arabic translations for all UI text
+- [x] Arabic translations for all mock data
+- [x] Profile photo position flip in RTL mode
+- [x] Back button icon flip in RTL mode
+- [x] Date formatting with locale support
+
+### ✅ Phase 5: Responsive Design & Polish (Completed)
+- [x] Optimize layouts for different screen sizes
+- [x] Refine touch interactions
+- [x] Compact desktop layout (3-4 people per row)
+- [x] Single-row scrollable children layout
+- [x] Centered, responsive card layouts
+- [x] Beautiful animations for PersonDetail reveal
+- [x] Staggered fade-in animations
+- [x] Remove unnecessary UI elements (section headers, nav arrows)
 - [ ] Test on iPad/iPhone with placeholder data
-- [ ] Optimize layouts for different screen sizes
-- [ ] Refine touch interactions
 - [ ] **Test with grandmother** - validate UX before building edit mode
 
-### Phase 6: Firebase Setup & Real Data
-- [ ] Create Firebase project
-- [ ] Set up Firebase SDK (Auth, Firestore, Storage)
-- [ ] Create Firestore security rules
-- [ ] Create React hooks: useAuth, usePerson, usePeople
-- [ ] Replace mock data with real Firebase queries
-- [ ] Set up .env configuration
+### ✅ Phase 6: Firebase Setup & Real Data (Completed)
+- [x] Create Firebase project (haydamin)
+- [x] Set up Firebase SDK (Auth, Firestore, Storage)
+- [x] Configure firebase.json for Firestore and Hosting
+- [x] Create React hooks: usePerson, usePeople
+- [x] Create Firestore service functions (CRUD operations)
+- [x] Create Storage service functions (photo upload/delete)
+- [x] Set up .env configuration with Firebase credentials
+- [x] Fix naming convention (English as default, Arabic with Ar suffix)
+- [x] Write Firestore security rules
+- [x] Import real family data to Firestore (36 people)
+- [x] Replace mock data usage with Firebase hooks in components
+- [x] Add name visibility toggle (eye icon) for recognition practice
 
 ### Phase 7: Authentication
 - [ ] Implement Google Sign-In
@@ -152,79 +190,42 @@ haydamin/
 
 ---
 
-## Design System
-
-### Colors
-
-**Primary** (Blue tones - Trust, clarity)
-- Used for primary actions and key UI elements
-- Range: 50-900
-
-**Warmth** (Yellow/Gold tones - Comfort, familiarity)
-- Used for highlights and secondary actions
-- Range: 50-900
-
-**Gray** (Neutral tones)
-- Used for text and backgrounds
-- Range: 50-900
-
-### Typography
-
-**Font Family**
-- Primary: Noto Sans Arabic (for Arabic text)
-- Fallback: System fonts
-
-**Font Sizes** (Elderly-friendly sizing)
-- Minimum body text: 18px (1.125rem)
-- Headings: 24px - 80px
-- Names/Relationships: 48px+ for clear visibility
-
-**Font Weights**
-- Regular: 400
-- Medium: 500
-- Semibold: 600
-- Bold: 700
-
-### Spacing
-
-**Touch Targets**
-- Minimum: 60px × 60px
-- Comfortable: 72px × 72px
-
-**Container Max Width**
-- 1200px for readable content
-
-### Components
-
-All components follow these principles:
-- **No inline styles** - All styling via className
-- **Props for variants** - size, variant, color passed as props
-- **Consistent API** - Similar components have similar props
-- **Accessibility** - Large targets, clear focus states, WCAG AA contrast
-
----
-
 ## Data Model
 
 ### Person Type
 ```typescript
 interface Person {
   id: string;
-  name: string;              // English name
+  name: string;              // English name (default)
   nameAr: string;            // Arabic name
-  relationship: string;       // Arabic label (e.g., "ابنتك")
-  relationshipEn: string;    // English label (e.g., "your daughter")
-  primaryPhoto: string;       // URL to main photo
-  photos: string[];          // URLs to additional photos
+  relationship: string;       // English label (default) (e.g., "your daughter")
+  relationshipAr: string;    // Arabic label (e.g., "ابنتك")
+  primaryPhoto: string;       // URL to main photo (Storage URL)
+  photos: string[];          // URLs to additional photos (Storage URLs)
   spouseId: string | null;   // Reference to spouse
   parentIds: string[];       // References to parents
   childrenIds: string[];     // References to children
-  location?: string;         // e.g., "Beirut", "Montreal"
-  favoriteFood?: string;     // e.g., "Kibbeh", "Baklava"
-  facts?: string[];          // Other memorable details
+  birthday?: string;         // ISO date string (e.g., "1945-03-15")
+  location?: string;         // English (default) (e.g., "Beirut, Lebanon")
+  locationAr?: string;       // Arabic location (e.g., "بيروت، لبنان")
+  favoriteFood?: string;     // English (default) (e.g., "Kibbeh Nayyeh")
+  favoriteFoodAr?: string;   // Arabic favorite food (e.g., "كبة نية")
+  facts?: string[];          // English (default) memorable details
+  factsAr?: string[];        // Arabic memorable details
   createdAt: Date;
   updatedAt: Date;
 }
+```
+
+### Firestore Structure
+```
+/people/{personId}
+  - All Person fields
+```
+
+### Storage Structure
+```
+/photos/{personId}/{photoId}.{extension}
 ```
 
 ---

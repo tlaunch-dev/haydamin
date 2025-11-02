@@ -7,9 +7,10 @@ interface PersonCardProps {
   person: Person;
   variant?: 'hub' | 'thumbnail';
   isRootLevel?: boolean;
+  showName?: boolean;
 }
 
-const PersonCard = ({ person, variant = 'hub', isRootLevel = false }: PersonCardProps) => {
+const PersonCard = ({ person, variant = 'hub', isRootLevel = false, showName = true }: PersonCardProps) => {
   const { language } = useLanguage();
   const hasChildren = person.childrenIds && person.childrenIds.length > 0;
 
@@ -29,15 +30,30 @@ const PersonCard = ({ person, variant = 'hub', isRootLevel = false }: PersonCard
   const fontClass = language === 'ar' ? 'font-arabic' : 'font-sans';
 
   return (
-    <Link to={linkTo} className={`${cardClasses} bg-white rounded-2xl shadow-lg transition-all duration-300 ease-out hover:shadow-xl hover:-translate-y-1 block`}>
+    <Link 
+      to={linkTo} 
+      className={`${cardClasses} transition-all duration-300 ease-out hover:-translate-y-1 block ${
+        showName 
+          ? 'bg-white rounded-2xl shadow-lg hover:shadow-xl' 
+          : 'hover:scale-105'
+      }`}
+    >
       <div className="relative">
-        <img src={person.primaryPhoto} alt={`Photo of ${getPersonName(person, language)}`} className="aspect-square object-cover w-full rounded-t-2xl" />
+        <img 
+          src={person.primaryPhoto} 
+          alt={`Photo of ${getPersonName(person, language)}`} 
+          className={`aspect-square object-cover w-full ${
+            showName ? 'rounded-t-2xl' : 'rounded-full shadow-lg'
+          }`} 
+        />
       </div>
-      <div className={`${textContainerClasses} text-center`}>
-        <h2 className={`${fontClass} font-bold text-text ${nameClasses}`}>
-          {getPersonName(person, language)}
-        </h2>
-      </div>
+      {showName && (
+        <div className={`${textContainerClasses} text-center flex items-center justify-center min-h-16 md:min-h-20 px-2`}>
+          <h2 className={`${fontClass} font-bold text-text ${nameClasses} wrap-break-word hyphens-auto leading-tight px-1`}>
+            {getPersonName(person, language)}
+          </h2>
+        </div>
+      )}
     </Link>
   );
 };

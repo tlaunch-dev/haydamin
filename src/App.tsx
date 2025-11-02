@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import { useLanguage } from './context/LanguageContext';
 import FamilyHub from './pages/FamilyHub';
 import { PersonDetail } from './pages/PersonDetail';
+import { AddPerson } from './pages/AddPerson';
 
 function App() {
   const { language } = useLanguage();
@@ -18,6 +19,7 @@ function App() {
       <Route path="/" element={<FamilyHub />} />
       <Route path="/hub/:personId" element={<FamilyHub />} />
       <Route path="/person/:personId" element={<PersonDetail />} />
+      <Route path="/add-person" element={<AddPerson />} />
     </Routes>
   );
 }

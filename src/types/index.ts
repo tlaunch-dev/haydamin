@@ -4,21 +4,23 @@
 
 export interface Person {
   id: string;
-  name: string;              // English name
+  name: string;              // English name (default)
   nameAr: string;            // Arabic name
-  relationship: string;       // Arabic label (e.g., "ابنتك")
-  relationshipEn: string;    // English label (e.g., "your daughter")
+  relationship: string;       // English label (default) (e.g., "your daughter")
+  relationshipAr: string;    // Arabic label (e.g., "ابنتك")
   primaryPhoto: string;       // URL to main photo
   photos: string[];          // URLs to additional photos
   spouseId: string | null;   // Reference to spouse
   parentIds: string[];       // References to parents
   childrenIds: string[];     // References to children
-  location?: string;         // e.g., "Beirut", "Montreal"
+  birthday?: string;         // ISO date string (e.g., "1975-05-10")
+  location?: string;         // English (default) (e.g., "Beirut, Lebanon")
   locationAr?: string;       // Arabic location
-  birthday?: string;         // e.g., "1975-05-10"
-  favoriteFood?: string;     // e.g., "Kibbeh", "Baklava"
+  favoriteFood?: string;     // English (default) (e.g., "Kibbeh Nayyeh")
   favoriteFoodAr?: string;   // Arabic favorite food
-  facts?: string[];          // Other memorable details (English)
+  about?: string;            // English (default) longer description
+  aboutAr?: string;          // Arabic longer description
+  facts?: string[];          // English (default) memorable details
   factsAr?: string[];        // Arabic facts
   createdAt: Date;
   updatedAt: Date;
