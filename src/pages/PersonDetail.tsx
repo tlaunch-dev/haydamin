@@ -14,7 +14,7 @@ import PhotoGalleryModal from '../components/PhotoGalleryModal';
 import { useLanguage } from '../context/LanguageContext';
 import { getPersonName, getRelationship, getLocation, getFavoriteFood, getAbout, t } from '../utils/i18n';
 import { Person } from '../types';
-import { Globe, Pencil, ArrowRight, Save, X } from 'lucide-react';
+import { Pencil, ArrowRight, Save, X } from 'lucide-react';
 
 // Utility function - parse date as UTC to avoid timezone issues
 const calculateAge = (birthdayString: string | undefined) => {
@@ -451,8 +451,8 @@ export function PersonDetail() {
   // Always add language toggle at the end
   menuButtons.push({
     id: 'language',
-    icon: <Globe className="w-5 h-5 text-accent" />,
-    label: language === 'ar' ? 'العربية' : 'English',
+    icon: <span className="text-accent font-bold text-lg">{language === 'ar' ? 'EN' : 'ع'}</span>,
+    label: language === 'ar' ? 'English' : 'العربية',
     onClick: toggleLanguage,
   });
 

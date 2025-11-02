@@ -9,7 +9,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { usePeople } from '../hooks/usePeople';
 import { Person } from '../types';
 import { getPersonName, t } from '../utils/i18n';
-import { Globe, Eye, EyeOff, Pencil, Dices } from 'lucide-react';
+import { Eye, EyeOff, Pencil, Dices } from 'lucide-react';
 
 const FamilyHub = () => {
   const { personId } = useParams<{ personId: string }>();
@@ -134,8 +134,8 @@ const FamilyHub = () => {
     },
     {
       id: 'language',
-      icon: <Globe className="w-5 h-5 text-accent" />,
-      label: language === 'ar' ? 'العربية' : 'English',
+      icon: <span className="text-accent font-bold text-lg">{language === 'ar' ? 'EN' : 'ع'}</span>,
+      label: language === 'ar' ? 'English' : 'العربية',
       onClick: toggleLanguage,
     },
   ];

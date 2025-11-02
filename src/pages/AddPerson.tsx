@@ -11,7 +11,7 @@ import ImageCropDialog from '../components/ImageCropDialog';
 import { useLanguage } from '../context/LanguageContext';
 import { t } from '../utils/i18n';
 import { Person } from '../types';
-import { Globe, Save, X } from 'lucide-react';
+import { Save, X } from 'lucide-react';
 
 export function AddPerson() {
   const navigate = useNavigate();
@@ -248,8 +248,8 @@ export function AddPerson() {
     },
     {
       id: 'language',
-      icon: <Globe className="w-5 h-5 text-accent" />,
-      label: language === 'ar' ? 'العربية' : 'English',
+      icon: <span className="text-accent font-bold text-lg">{language === 'ar' ? 'EN' : 'ع'}</span>,
+      label: language === 'ar' ? 'English' : 'العربية',
       onClick: toggleLanguage,
     },
   ];
