@@ -19,9 +19,30 @@ function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
-      <Route path="/" element={<FamilyHub />} />
-      <Route path="/hub/:personId" element={<FamilyHub />} />
-      <Route path="/person/:personId" element={<PersonDetail />} />
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <FamilyHub />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/hub/:personId"
+        element={
+          <ProtectedRoute>
+            <FamilyHub />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/person/:personId"
+        element={
+          <ProtectedRoute>
+            <PersonDetail />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/add-person"
         element={
