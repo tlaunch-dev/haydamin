@@ -4,6 +4,8 @@ import { useLanguage } from './context/LanguageContext';
 import FamilyHub from './pages/FamilyHub';
 import { PersonDetail } from './pages/PersonDetail';
 import { AddPerson } from './pages/AddPerson';
+import Login from './pages/Login';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   const { language } = useLanguage();
@@ -16,10 +18,18 @@ function App() {
 
   return (
     <Routes>
+      <Route path="/login" element={<Login />} />
       <Route path="/" element={<FamilyHub />} />
       <Route path="/hub/:personId" element={<FamilyHub />} />
       <Route path="/person/:personId" element={<PersonDetail />} />
-      <Route path="/add-person" element={<AddPerson />} />
+      <Route
+        path="/add-person"
+        element={
+          <ProtectedRoute>
+            <AddPerson />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   );
 }

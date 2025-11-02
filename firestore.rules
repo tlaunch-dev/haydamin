@@ -12,11 +12,9 @@ service cloud.firestore {
     match /people/{personId} {
       // Anyone can read (for viewing mode)
       allow read: if true;
-      
-      // TEMPORARY: Allow writes without auth for development
-      // TODO: Re-enable auth requirement in Phase 7 (Authentication)
-      allow create, update, delete: if true;
-      // allow create, update, delete: if isAuthenticated(); // Restore this later
+
+      // Require authentication for write operations
+      allow create, update, delete: if isAuthenticated();
     }
     
     // Deny all other access by default
