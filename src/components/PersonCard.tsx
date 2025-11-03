@@ -31,12 +31,12 @@ const PersonCard = ({ person, variant = 'hub', isRootLevel = false, showName = t
         to={linkTo}
         className="flex flex-col items-center gap-3 transition-all duration-500 ease-out hover:scale-105"
       >
-        <div className="p-1 bg-white rounded-full shadow-xl transition-all duration-500 ease-out">
+        <div className="p-1 bg-background rounded-full shadow-xl transition-all duration-500 ease-out">
           <img
             src={person.primaryPhoto}
             alt={`Photo of ${getPersonName(person, language)}`}
             loading="lazy"
-            className="aspect-square object-cover w-full rounded-full ring-2 ring-accent/30 transition-all duration-500 ease-out bg-gray-100"
+            className="aspect-square object-cover w-full rounded-full ring-2 ring-accent/30 transition-all duration-500 ease-out bg-gray-100 animate-fade-in"
           />
         </div>
         <h2 className={`${fontClass} font-light text-accent ${nameSize} text-center leading-tight transition-all duration-500 ease-out`}>
@@ -52,12 +52,12 @@ const PersonCard = ({ person, variant = 'hub', isRootLevel = false, showName = t
       to={linkTo}
       className="transition-all duration-500 ease-out hover:scale-110 block"
     >
-      <div className="p-1 bg-white rounded-full shadow-xl transition-all duration-500 ease-out">
+      <div className="p-1 bg-background rounded-full shadow-xl transition-all duration-500 ease-out">
         <img
           src={person.primaryPhoto}
           alt={`Photo of ${getPersonName(person, language)}`}
           loading="lazy"
-          className="aspect-square object-cover w-full rounded-full ring-2 ring-accent/30 transition-all duration-500 ease-out bg-gray-100"
+          className="aspect-square object-cover w-full rounded-full ring-2 ring-accent/30 transition-all duration-500 ease-out bg-gray-100 animate-fade-in"
         />
       </div>
     </Link>

@@ -590,11 +590,13 @@ export function PersonDetail() {
           {!isRevealed ? (
             /* Initial State: Centered Photo */
             <div className="flex flex-col items-center gap-8 mt-12 animate-fade-in">
-              <img
-                src={person.primaryPhoto}
-                alt={`Photo`}
-                className="w-80 h-80 md:w-96 md:h-96 lg:w-[450px] lg:h-[450px] rounded-full object-cover shadow-xl transition-all duration-500 ease-out"
-              />
+              <div className="p-1 bg-background rounded-full shadow-xl transition-all duration-500 ease-out">
+                <img
+                  src={person.primaryPhoto}
+                  alt={`Photo`}
+                  className="w-80 h-80 md:w-96 md:h-96 lg:w-[450px] lg:h-[450px] rounded-full object-cover ring-2 ring-accent/30 transition-all duration-500 ease-out bg-gray-100 animate-fade-in"
+                />
+              </div>
             </div>
           ) : (
             /* Revealed State: Full Layout */
@@ -606,12 +608,14 @@ export function PersonDetail() {
                 {/* Profile photo - show at top on mobile, side on desktop */}
                 <div className={`${isEditing ? 'w-full flex justify-center mb-6' : 'w-full flex justify-center mb-6 md:hidden'}`}>
                   <div className="relative">
-                    <img
-                      src={newPrimaryPhotoPreview || person.primaryPhoto}
-                      alt={`${getPersonName(person, language)}`}
-                      className={`w-48 h-48 md:w-64 md:h-64 lg:w-80 lg:h-80 rounded-full object-cover shadow-lg ${!isEditing ? 'cursor-pointer transition-transform duration-300 ease-out hover:scale-105 hover:shadow-xl' : ''}`}
-                      onClick={!isEditing ? () => openModal(0) : undefined}
-                    />
+                    <div className="p-1 bg-background rounded-full shadow-xl transition-all duration-500 ease-out">
+                      <img
+                        src={newPrimaryPhotoPreview || person.primaryPhoto}
+                        alt={`${getPersonName(person, language)}`}
+                        className={`w-48 h-48 md:w-64 md:h-64 lg:w-80 lg:h-80 rounded-full object-cover ring-2 ring-accent/30 bg-gray-100 animate-fade-in ${!isEditing ? 'cursor-pointer transition-transform duration-300 ease-out hover:scale-105' : ''}`}
+                        onClick={!isEditing ? () => openModal(0) : undefined}
+                      />
+                    </div>
                     {isEditing && (
                       <label className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full cursor-pointer opacity-0 hover:opacity-100 transition-opacity">
                         <div className="text-center text-white">
@@ -819,12 +823,14 @@ export function PersonDetail() {
                   {!isEditing && (
                     <div className="shrink-0 hidden md:block">
                     <div className="relative">
-                      <img
-                        src={newPrimaryPhotoPreview || person.primaryPhoto}
-                        alt={`Main photo of ${getPersonName(person, language)}`}
-                        className="w-48 h-48 md:w-64 md:h-64 lg:w-80 lg:h-80 xl:w-96 xl:h-96 rounded-full object-cover shadow-lg cursor-pointer transition-transform duration-300 ease-out hover:scale-105 hover:shadow-xl"
-                        onClick={() => openModal(0)}
-                      />
+                      <div className="p-1 bg-background rounded-full shadow-xl transition-all duration-500 ease-out">
+                        <img
+                          src={newPrimaryPhotoPreview || person.primaryPhoto}
+                          alt={`Main photo of ${getPersonName(person, language)}`}
+                          className="w-48 h-48 md:w-64 md:h-64 lg:w-80 lg:h-80 xl:w-96 xl:h-96 rounded-full object-cover ring-2 ring-accent/30 bg-gray-100 animate-fade-in cursor-pointer transition-transform duration-300 ease-out hover:scale-105"
+                          onClick={() => openModal(0)}
+                        />
+                      </div>
                       {isEditing && (
                         <label className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full cursor-pointer opacity-0 hover:opacity-100 transition-opacity">
                           <div className="text-center text-white">
