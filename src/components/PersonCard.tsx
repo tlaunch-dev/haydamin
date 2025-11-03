@@ -1,4 +1,4 @@
-import { memo, useState, useEffect } from 'react';
+import { memo } from 'react';
 import { Person } from '../types';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
@@ -13,14 +13,8 @@ interface PersonCardProps {
 
 const PersonCard = ({ person, variant = 'hub', isRootLevel = false, showName = true }: PersonCardProps) => {
   const { language } = useLanguage();
-  const [imageLoaded, setImageLoaded] = useState(false);
   const hasChildren = person.childrenIds && person.childrenIds.length > 0;
   const hasSpouse = !!person.spouseId;
-
-  // Reset imageLoaded when person changes
-  useEffect(() => {
-    setImageLoaded(false);
-  }, [person.primaryPhoto]);
 
   // Navigate to hub if person has spouse or children AND is not at root level
   // Otherwise go to person detail page
@@ -42,10 +36,7 @@ const PersonCard = ({ person, variant = 'hub', isRootLevel = false, showName = t
             src={person.primaryPhoto}
             alt={`Photo of ${getPersonName(person, language)}`}
             loading="lazy"
-            onLoad={() => setImageLoaded(true)}
-            className={`aspect-square object-cover w-full rounded-full ring-2 ring-accent/30 transition-all duration-500 ease-out bg-gray-100 ${
-              imageLoaded ? 'opacity-100' : 'opacity-0'
-            }`}
+            className="aspect-square object-cover w-full rounded-full ring-2 ring-accent/30 transition-all duration-500 ease-out bg-gray-100"
           />
         </div>
         <h2 className={`${fontClass} font-light text-accent ${nameSize} text-center leading-tight transition-all duration-500 ease-out`}>
@@ -66,10 +57,7 @@ const PersonCard = ({ person, variant = 'hub', isRootLevel = false, showName = t
           src={person.primaryPhoto}
           alt={`Photo of ${getPersonName(person, language)}`}
           loading="lazy"
-          onLoad={() => setImageLoaded(true)}
-          className={`aspect-square object-cover w-full rounded-full ring-2 ring-accent/30 transition-all duration-500 ease-out bg-gray-100 ${
-            imageLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
+          className="aspect-square object-cover w-full rounded-full ring-2 ring-accent/30 transition-all duration-500 ease-out bg-gray-100"
         />
       </div>
     </Link>

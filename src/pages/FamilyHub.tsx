@@ -166,30 +166,23 @@ const FamilyHub = () => {
       <div className="max-w-7xl mx-auto w-full relative z-10">
         {/* Center Person(s) Row - Always side by side */}
         <div className="mb-4 md:mb-6 lg:mb-8">
-          <div className="relative">
-            <div className="flex flex-row justify-center gap-4 sm:gap-6 md:gap-6 lg:gap-8">
-              <div className="w-40 sm:w-44 md:w-44 lg:w-48">
-                <PersonCard key={centerPerson.id} person={centerPerson} variant="hub" isRootLevel={true} showName={showNames} />
-              </div>
-              {spousePerson && (
-                <div className="w-40 sm:w-44 md:w-44 lg:w-48">
-                  <PersonCard key={spousePerson.id} person={spousePerson} variant="hub" isRootLevel={true} showName={showNames} />
-                </div>
-              )}
-              {/* Add Spouse Card - only show in edit mode when no spouse exists */}
-              {isEditMode && !spousePerson && (
-                <div className="w-40 sm:w-44 md:w-44 lg:w-48">
-                  <AddPersonCard
-                    spouseId={centerPerson.id}
-                    variant="spouse"
-                  />
-                </div>
-              )}
+          <div className="flex flex-row justify-center gap-4 sm:gap-6 md:gap-6 lg:gap-8">
+            <div className="w-40 sm:w-44 md:w-44 lg:w-48">
+              <PersonCard key={centerPerson.id} person={centerPerson} variant="hub" isRootLevel={true} showName={showNames} />
             </div>
-
-            {/* Decorative line connecting the couple */}
-            {spousePerson && (childrenList.length > 0 || isEditMode) && (
-              <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-32 sm:w-36 md:w-40 h-0.5 bg-gradient-to-r from-accent/20 via-accent/40 to-accent/20"></div>
+            {spousePerson && (
+              <div className="w-40 sm:w-44 md:w-44 lg:w-48">
+                <PersonCard key={spousePerson.id} person={spousePerson} variant="hub" isRootLevel={true} showName={showNames} />
+              </div>
+            )}
+            {/* Add Spouse Card - only show in edit mode when no spouse exists */}
+            {isEditMode && !spousePerson && (
+              <div className="w-40 sm:w-44 md:w-44 lg:w-48">
+                <AddPersonCard
+                  spouseId={centerPerson.id}
+                  variant="spouse"
+                />
+              </div>
             )}
           </div>
         </div>
