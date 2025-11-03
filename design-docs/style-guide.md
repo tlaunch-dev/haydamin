@@ -1,5 +1,7 @@
 Hayda Min Style Guide
 
+Potential fonts: https://afkaristudio.com/product-category/display/
+
 Theme: "Warm & Familiar"
 
 Color Palette
