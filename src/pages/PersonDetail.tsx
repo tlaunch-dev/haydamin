@@ -140,16 +140,19 @@ export function PersonDetail() {
   // Swipe gesture handlers for game mode - only active when revealed
   const minSwipeDistance = 50;
 
-  const onTouchStart = (e: React.TouchEvent) => {
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    if (!isGameMode || !isRevealed) return;
     setTouchEnd(null);
     setTouchStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
-  };
+  }, [isGameMode, isRevealed]);
 
-  const onTouchMove = (e: React.TouchEvent) => {
+  const onTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isGameMode || !isRevealed) return;
     setTouchEnd({ x: e.touches[0].clientX, y: e.touches[0].clientY });
-  };
+  }, [isGameMode, isRevealed]);
 
-  const onTouchEnd = () => {
+  const onTouchEnd = useCallback(() => {
+    if (!isGameMode || !isRevealed) return;
     if (!touchStart || !touchEnd) return;
 
     const distanceX = touchStart.x - touchEnd.x;
@@ -165,7 +168,7 @@ export function PersonDetail() {
     // Reset touch positions
     setTouchStart(null);
     setTouchEnd(null);
-  };
+  }, [isGameMode, isRevealed, touchStart, touchEnd, handleNextPerson]);
 
   // Exit edit mode when navigating away (cleanup)
   useEffect(() => {
@@ -460,11 +463,9 @@ export function PersonDetail() {
     <>
       <div
         className={`p-3 sm:p-4 md:p-6 lg:p-12 pt-20 sm:pt-24 md:pt-24 lg:pt-12 bg-background min-h-screen relative overflow-hidden ${isEditing && !isGameMode ? 'pb-24 md:pb-6' : ''}`}
-        {...(isGameMode && isRevealed ? {
-          onTouchStart,
-          onTouchMove,
-          onTouchEnd
-        } : {})}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
       >
         <CedarBackground />
 

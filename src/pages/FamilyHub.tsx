@@ -208,7 +208,7 @@ const FamilyHub = () => {
 
                 {/* Vertical drops to each child */}
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 md:w-2/3 h-full flex justify-around">
-                  {childrenList.map((child, index) => (
+                  {childrenList.map((child) => (
                     <div
                       key={child.id}
                       className="w-0.5 md:w-1 bg-gradient-to-b from-accent/30 to-accent/10"
