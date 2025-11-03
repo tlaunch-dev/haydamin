@@ -1,3 +1,4 @@
+import { memo, useState } from 'react';
 import { Person } from '../types';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
@@ -13,10 +14,11 @@ interface PersonCardProps {
 const PersonCard = ({ person, variant = 'hub', isRootLevel = false, showName = true }: PersonCardProps) => {
   const { language } = useLanguage();
   const hasChildren = person.childrenIds && person.childrenIds.length > 0;
+  const hasSpouse = !!person.spouseId;
 
-  // Navigate to hub if person has children AND is not at root level
+  // Navigate to hub if person has spouse or children AND is not at root level
   // Otherwise go to person detail page
-  const linkTo = (hasChildren && !isRootLevel) ? `/hub/${person.id}` : `/person/${person.id}`;
+  const linkTo = ((hasSpouse || hasChildren) && !isRootLevel) ? `/hub/${person.id}` : `/person/${person.id}`;
 
   const fontClass = language === 'ar' ? 'font-arabic' : 'font-sans';
 
@@ -33,7 +35,8 @@ const PersonCard = ({ person, variant = 'hub', isRootLevel = false, showName = t
           <img
             src={person.primaryPhoto}
             alt={`Photo of ${getPersonName(person, language)}`}
-            className="aspect-square object-cover w-full rounded-full ring-2 ring-accent/30 transition-all duration-500 ease-out"
+            loading="lazy"
+            className="aspect-square object-cover w-full rounded-full ring-2 ring-accent/30 transition-all duration-500 ease-out bg-gray-100"
           />
         </div>
         <h2 className={`${fontClass} font-light text-accent ${nameSize} text-center leading-tight transition-all duration-500 ease-out`}>
@@ -53,11 +56,28 @@ const PersonCard = ({ person, variant = 'hub', isRootLevel = false, showName = t
         <img
           src={person.primaryPhoto}
           alt={`Photo of ${getPersonName(person, language)}`}
-          className="aspect-square object-cover w-full rounded-full ring-2 ring-accent/30 transition-all duration-500 ease-out"
+          loading="lazy"
+          className="aspect-square object-cover w-full rounded-full ring-2 ring-accent/30 transition-all duration-500 ease-out bg-gray-100"
         />
       </div>
     </Link>
   );
 };
 
-export default PersonCard;
+// Custom comparison function for memo
+// Only re-render if person data, variant, isRootLevel, or showName actually changes
+const areEqual = (prevProps: PersonCardProps, nextProps: PersonCardProps) => {
+  return (
+    prevProps.person.id === nextProps.person.id &&
+    prevProps.person.primaryPhoto === nextProps.person.primaryPhoto &&
+    prevProps.person.spouseId === nextProps.person.spouseId &&
+    JSON.stringify(prevProps.person.childrenIds) === JSON.stringify(nextProps.person.childrenIds) &&
+    prevProps.person.name === nextProps.person.name &&
+    prevProps.person.nameAr === nextProps.person.nameAr &&
+    prevProps.variant === nextProps.variant &&
+    prevProps.isRootLevel === nextProps.isRootLevel &&
+    prevProps.showName === nextProps.showName
+  );
+};
+
+export default memo(PersonCard, areEqual);

@@ -35,7 +35,7 @@ export const t = (key: string, language: Language): string => {
     'family_of': { en: "'s Family", ar: 'عائلة ' },
     
     // Person Detail
-    'whos_this': { en: "Who's this?", ar: 'هايدا مين؟' },
+    'whos_this': { en: "Who's this?", ar: 'هيدا مين؟' },
     'birthday': { en: 'Birthday:', ar: 'تاريخ الميلاد:' },
     'age': { en: 'Age:', ar: 'العمر:' },
     'lives_in': { en: 'Lives in:', ar: 'يسكن في:' },

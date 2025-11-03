@@ -8,7 +8,7 @@
 
 ## Overview
 
-This document outlines the implementation plan for **Hayda Min** (هايدا مين؟), a web application to help individuals with dementia recognize and maintain connections with family members.
+This document outlines the implementation plan for **Hayda Min** (هيدا مين؟), a web application to help individuals with dementia recognize and maintain connections with family members.
 
 ---
 

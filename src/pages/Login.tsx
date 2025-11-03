@@ -34,7 +34,7 @@ export default function Login() {
       <div className="w-full max-w-md relative z-10">
         <div className="bg-card rounded-3xl shadow-lg p-8">
           <h1 className="text-4xl font-bold text-text text-center mb-8 font-sans">
-            Hayda Min
+            Hayda Min?
           </h1>
 
           <form onSubmit={handleSubmit} className="space-y-6">

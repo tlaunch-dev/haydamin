@@ -168,11 +168,11 @@ const FamilyHub = () => {
         <div className="mb-4 md:mb-6 lg:mb-8">
           <div className="flex flex-row justify-center gap-4 sm:gap-6 md:gap-6 lg:gap-8">
             <div className="w-40 sm:w-44 md:w-44 lg:w-48">
-              <PersonCard person={centerPerson} variant="hub" isRootLevel={true} showName={showNames} />
+              <PersonCard key={centerPerson.id} person={centerPerson} variant="hub" isRootLevel={true} showName={showNames} />
             </div>
             {spousePerson && (
               <div className="w-40 sm:w-44 md:w-44 lg:w-48">
-                <PersonCard person={spousePerson} variant="hub" isRootLevel={true} showName={showNames} />
+                <PersonCard key={spousePerson.id} person={spousePerson} variant="hub" isRootLevel={true} showName={showNames} />
               </div>
             )}
             {/* Add Spouse Card - only show in edit mode when no spouse exists */}
