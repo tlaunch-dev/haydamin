@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import PersonCard from '../components/PersonCard';
 import AddPersonCard from '../components/AddPersonCard';
 import BackButton from '../components/BackButton';
 import CedarBackground from '../components/CedarBackground';
+import AnimatedTreeConnector from '../components/AnimatedTreeConnector';
+import { ZoomTransitionOverlay } from '../components/ZoomTransitionOverlay';
 import { CollapsibleButtonMenu, ButtonConfig } from '../components/CollapsibleButtonMenu';
 import { useLanguage } from '../context/LanguageContext';
 import { useHiddenMode } from '../context/HiddenModeContext';
@@ -12,17 +15,91 @@ import { Person } from '../types';
 import { getPersonName, t } from '../utils/i18n';
 import { Eye, EyeOff, Pencil, Dices, Images } from 'lucide-react';
 
+// Type alias for easing functions
+type Easing = [number, number, number, number];
+
 const FamilyHub = () => {
-  const { personId } = useParams<{ personId: string }>();
+  const { personId: routePersonId } = useParams<{ personId: string }>();
   const navigate = useNavigate();
   const { language } = useLanguage();
   const { showNames, toggleShowNames } = useHiddenMode();
   const { people, loading, error } = usePeople();
   const [isEditMode, setIsEditMode] = useState(false);
+  const [currentPersonId, setCurrentPersonId] = useState<string | undefined>(routePersonId);
+
+  // Zoom transition state
+  const [zoomTransition, setZoomTransition] = useState<{
+    person: Person;
+    startRect: DOMRect;
+    showName: boolean;
+    imageSrc: string;
+    targetPersonId: string;
+  } | null>(null);
+  const [zoomPhase, setZoomPhase] = useState<'zoom-in' | 'zoom-out' | 'reveal-card' | 'complete' | null>(null);
+  const [hiddenPersonId, setHiddenPersonId] = useState<string | null>(null);
   
+  // Sync with route on initial load
+  useEffect(() => {
+    if (routePersonId && routePersonId !== currentPersonId) {
+      setCurrentPersonId(routePersonId);
+    }
+  }, [routePersonId, currentPersonId]);
+  
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname;
+      const match = path.match(/\/hub\/(.+)/);
+      if (match) {
+        setCurrentPersonId(match[1]);
+      } else if (path === '/hub') {
+        setCurrentPersonId(undefined);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Handle zoom transition click
+  const handleZoomClick = useCallback((person: Person, rect: DOMRect, showName: boolean, imageSrc: string) => {
+    // Hide the clicked card on current page
+    setHiddenPersonId(person.id);
+
+    // Start zoom transition
+    setZoomTransition({
+      person,
+      startRect: rect,
+      showName,
+      imageSrc,
+      targetPersonId: person.id,
+    });
+
+    // Navigate immediately (content changes underneath animation)
+    window.history.pushState({}, '', `/hub/${person.id}`);
+    setCurrentPersonId(person.id);
+  }, []);
+
+  // Handle zoom animation phase changes
+  const handleZoomPhaseChange = useCallback((phase: 'zoom-in' | 'zoom-out' | 'reveal-card' | 'complete') => {
+    setZoomPhase(phase);
+
+    if (phase === 'reveal-card') {
+      // Show the card underneath before overlay fades
+      setHiddenPersonId(null);
+    } else if (phase === 'complete') {
+      // Clean up transition state
+      setZoomTransition(null);
+      setZoomPhase(null);
+    }
+  }, []);
+
   // Get root person IDs from environment
   const ROOT_PERSON_1 = import.meta.env.VITE_ROOT_PERSON_ID_1 || 'teta-1';
   const ROOT_PERSON_2 = import.meta.env.VITE_ROOT_PERSON_ID_2 || 'jiddo-1';
+  
+  // Use currentPersonId as the active person
+  const personId = currentPersonId;
   
   // Helper functions to query people array
   const getPersonById = (id: string): Person | undefined => {
@@ -45,7 +122,13 @@ const FamilyHub = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <h1 className="text-2xl font-sans text-text">Loading...</h1>
+        <motion.h1
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-2xl font-sans text-text"
+        >
+          Loading...
+        </motion.h1>
       </div>
     );
   }
@@ -54,7 +137,13 @@ const FamilyHub = () => {
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <h1 className="text-2xl font-sans text-text">Error loading family data</h1>
+        <motion.h1
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-2xl font-sans text-text"
+        >
+          Error loading family data
+        </motion.h1>
       </div>
     );
   }
@@ -102,9 +191,7 @@ const FamilyHub = () => {
   // Handle game mode button click
   const handleGameMode = () => {
     if (people.length === 0) return;
-    // Reset shown people list when starting a new game
     localStorage.removeItem('haydamin_game_mode_shown_ids');
-    // Select a random person
     const randomPerson = people[Math.floor(Math.random() * people.length)];
     navigate(`/person/${randomPerson.id}?game=true`);
   };
@@ -157,9 +244,145 @@ const FamilyHub = () => {
     },
   ];
 
+  // Animation variants - parents fade in first
+  const parentContainerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.15,
+        delayChildren: 0.2,
+      },
+    },
+  };
+
+  const parentItemVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        duration: 0.6,
+        ease: [0.4, 0, 0.2, 1] as Easing,
+      },
+    },
+    exit: {
+      opacity: 0,
+      transition: {
+        duration: 0.3,
+        ease: [0.4, 0, 0.2, 1] as Easing,
+      },
+    },
+  };
+
+  // Children drop from tree connectors - staggered left to right
+  const childrenContainerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.12, // Stagger from left to right
+        delayChildren: 1.2, // Start after tree connector finishes drawing
+      },
+    },
+  };
+
+  // Create variant function that varies per child
+  const getChildItemVariants = (index: number) => {
+    // Vary the drop height slightly for more organic feel
+    const startHeight = -150 + (index % 3) * 10; // Vary by 0-20px
+    // Vary the bounce overshoot slightly
+    const overshoot = 18 + (index % 2) * 4; // 18 or 22
+    const bounce1 = -10 - (index % 2) * 2; // -10 or -12
+    const bounce2 = 5 + (index % 3); // 5, 6, or 7
+    const bounce3 = -2 - (index % 2); // -2 or -3
+    
+    // Vary duration slightly for different drop speeds
+    const duration = 1.3 + (index % 4) * 0.15; // 1.3 to 1.75 seconds
+    
+    return {
+      hidden: { 
+        opacity: 0, 
+        scale: 0.3, 
+        y: startHeight,
+      },
+      visible: {
+        opacity: 1,
+        scale: 1,
+        // Keyframe bounce: drop from high position, overshoot down, bounce up, settle
+        y: [startHeight, overshoot, bounce1, bounce2, bounce3, 0],
+        transition: {
+          opacity: { duration: 0.2 },
+          scale: { 
+            duration: duration * 0.85,
+            ease: [0.34, 1.56, 0.64, 1] as Easing, // Bouncy easing for scale
+          },
+          y: {
+            duration: duration,
+            times: [0, 0.5, 0.68, 0.8, 0.9, 1], // Timing for bounce sequence
+            ease: "easeOut" as const,
+          },
+        },
+      },
+      exit: {
+        opacity: 0,
+        scale: 0.8,
+        y: 20,
+        transition: {
+          duration: 0.3,
+          ease: [0.4, 0, 0.2, 1] as Easing,
+        },
+      },
+    };
+  };
+
+  const headerVariants = {
+    hidden: { opacity: 0, y: -10 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.5,
+        ease: [0.4, 0, 0.2, 1] as Easing,
+        delay: 0.1,
+      },
+    },
+  };
+
   return (
-    <div className="p-3 sm:p-4 md:p-6 lg:p-8 pt-20 sm:pt-24 md:pt-20 lg:pt-20 bg-background min-h-screen flex flex-col justify-center relative overflow-hidden">
-      <CedarBackground />
+    <>
+      {/* Zoom Transition Overlay */}
+      {zoomTransition && (
+        <ZoomTransitionOverlay
+          person={zoomTransition.person}
+          startRect={zoomTransition.startRect}
+          targetPersonId={zoomTransition.targetPersonId}
+          showName={zoomTransition.showName}
+          imageSrc={zoomTransition.imageSrc}
+          onPhaseChange={handleZoomPhaseChange}
+        />
+      )}
+
+      <AnimatePresence>
+        <motion.div
+          key={personId || 'root'}
+          className="p-3 sm:p-4 md:p-6 lg:p-8 pt-20 sm:pt-24 md:pt-20 lg:pt-20 bg-background min-h-screen flex flex-col justify-center relative overflow-hidden"
+          initial={{ opacity: 0 }}
+          animate={{
+            opacity: zoomPhase === 'zoom-in' ? 0 : 1,
+            transition: {
+              duration: zoomPhase === 'zoom-out' ? 0.8 : 0.4,
+              ease: [0.4, 0, 0.2, 1] as Easing,
+            }
+          }}
+          exit={{
+            opacity: 0,
+            transition: {
+              duration: 0.6,
+              ease: [0.4, 0, 0.2, 1] as Easing,
+            }
+          }}
+        >
+          <CedarBackground />
 
       {/* Constrain button positioning on wide screens */}
       <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none">
@@ -174,24 +397,60 @@ const FamilyHub = () => {
       </div>
 
       {/* Header */}
-      <div className="mb-4 md:mb-6 lg:mb-8 max-w-7xl mx-auto w-full relative z-10">
+      <motion.div
+        className="mb-4 md:mb-6 lg:mb-8 max-w-7xl mx-auto w-full relative z-10"
+        variants={headerVariants}
+        initial="hidden"
+        animate="visible"
+      >
         <div className="text-center">
           <h1 className={`${fontClass} text-4xl md:text-5xl lg:text-6xl font-bold text-text`}>{headerText}</h1>
         </div>
-      </div>
+      </motion.div>
 
       <div className="max-w-7xl mx-auto w-full relative z-10">
-        {/* Center Person(s) Row - Always side by side */}
-        <div className="mb-4 md:mb-6 lg:mb-8">
+        {/* Center Person(s) Row - Fade in first */}
+        <motion.div
+          className="mb-4 md:mb-6 lg:mb-8"
+          variants={parentContainerVariants}
+          initial="hidden"
+          animate="visible"
+        >
           <div className="flex flex-row justify-center gap-4 sm:gap-6 md:gap-6 lg:gap-8">
-            <div className="w-40 sm:w-44 md:w-44 lg:w-48">
-              <PersonCard key={centerPerson.id} person={centerPerson} variant="hub" isRootLevel={true} showName={showNames} />
-            </div>
-            {spousePerson && (
-              <div className="w-40 sm:w-44 md:w-44 lg:w-48">
-                <PersonCard key={spousePerson.id} person={spousePerson} variant="hub" isRootLevel={true} showName={showNames} />
-              </div>
-            )}
+            <motion.div
+              key={centerPerson.id}
+              className="w-40 sm:w-44 md:w-44 lg:w-48"
+              variants={parentItemVariants}
+            >
+              <PersonCard
+                person={centerPerson}
+                variant="hub"
+                isRootLevel={true}
+                showName={showNames}
+                disableInitialAnimation={true}
+                isHidden={hiddenPersonId === centerPerson.id}
+              />
+            </motion.div>
+            <AnimatePresence>
+              {spousePerson && (
+                <motion.div
+                  key={spousePerson.id}
+                  className="w-40 sm:w-44 md:w-44 lg:w-48"
+                  variants={parentItemVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                >
+                  <PersonCard
+                    person={spousePerson}
+                    variant="hub"
+                    isRootLevel={true}
+                    showName={showNames}
+                    disableInitialAnimation={true}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
             {/* Add Spouse Card - only show in edit mode when no spouse exists */}
             {isEditMode && !spousePerson && (
               <div className="w-40 sm:w-44 md:w-44 lg:w-48">
@@ -202,55 +461,76 @@ const FamilyHub = () => {
               </div>
             )}
           </div>
-        </div>
+        </motion.div>
 
-        {/* Enhanced Tree Connector */}
-        {(childrenList.length > 0 || isEditMode) && (
-          <div className="relative mb-4 md:mb-6 lg:mb-8">
-            {/* Vertical trunk from parents */}
-            <div className="h-8 md:h-10 lg:h-12 w-0.5 md:w-1 bg-gradient-to-b from-accent/40 via-accent/30 to-accent/20 mx-auto"></div>
+        {/* Animated Tree Connector - Draws after parents fade in */}
+        <AnimatePresence>
+          {(childrenList.length > 0 || isEditMode) && (
+            <motion.div
+              key="tree-connector"
+              className="relative mb-4 md:mb-6 lg:mb-8"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ 
+                delay: 0.6, // Start after parents have faded in
+                duration: 0.4,
+                ease: [0.4, 0, 0.2, 1] as Easing,
+              }}
+            >
+              <AnimatedTreeConnector
+                parentCount={spousePerson ? 2 : 1}
+                childCount={childrenList.length}
+                containerWidth={800}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-            {/* Horizontal branch line connecting to children */}
-            {childrenList.length > 0 && (
-              <div className="relative h-8 md:h-10">
-                {/* Main horizontal line */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 md:w-2/3 h-0.5 md:h-1 bg-gradient-to-r from-transparent via-accent/30 to-transparent"></div>
-
-                {/* Vertical drops to each child */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 md:w-2/3 h-full flex justify-around">
-                  {childrenList.map((child) => (
-                    <div
-                      key={child.id}
-                      className="w-0.5 md:w-1 bg-gradient-to-b from-accent/30 to-accent/10"
-                      style={{ opacity: 0.6 }}
-                    ></div>
-                  ))}
+        {/* Children Row - Grow from tree connectors */}
+        <AnimatePresence>
+          {(childrenList.length > 0 || isEditMode) && (
+            <motion.div
+              key="children-container"
+              className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-4 lg:gap-6"
+              variants={childrenContainerVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              {childrenList.map((child, index) => (
+                <motion.div
+                  key={child.id}
+                  className="w-40 sm:w-44 md:w-44 lg:w-48"
+                  variants={getChildItemVariants(index)}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                >
+                  <PersonCard
+                    person={child}
+                    variant="thumbnail"
+                    showName={showNames}
+                    disableInitialAnimation={true}
+                    onZoomClick={handleZoomClick}
+                    isHidden={hiddenPersonId === child.id}
+                  />
+                </motion.div>
+              ))}
+              {/* Add Person Card - only show in edit mode */}
+              {isEditMode && (
+                <div className="w-40 sm:w-44 md:w-44 lg:w-48">
+                  <AddPersonCard
+                    parentIds={spousePerson ? [centerPerson.id, spousePerson.id] : [centerPerson.id]}
+                  />
                 </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Children Row - Responsive grid */}
-        {(childrenList.length > 0 || isEditMode) && (
-          <div className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-4 lg:gap-6">
-            {childrenList.map((child) => (
-              <div key={child.id} className="w-40 sm:w-44 md:w-44 lg:w-48">
-                <PersonCard person={child} variant="thumbnail" showName={showNames} />
-              </div>
-            ))}
-            {/* Add Person Card - only show in edit mode */}
-            {isEditMode && (
-              <div className="w-40 sm:w-44 md:w-44 lg:w-48">
-                <AddPersonCard
-                  parentIds={spousePerson ? [centerPerson.id, spousePerson.id] : [centerPerson.id]}
-                />
-              </div>
-            )}
-          </div>
-        )}
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-    </div>
+      </motion.div>
+    </AnimatePresence>
+    </>
   );
 };
 
