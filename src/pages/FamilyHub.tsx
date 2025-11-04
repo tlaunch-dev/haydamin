@@ -259,6 +259,28 @@ const FamilyHub = () => {
     },
   };
 
+  // Spouse fades in with tree animation
+  const spouseVariants = {
+    hidden: { opacity: 0, scale: 0.95 },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      transition: {
+        duration: 0.4,
+        ease: [0.4, 0, 0.2, 1] as Easing,
+        delay: TREE_WRAPPER_DELAY + TREE_WRAPPER_FADE + (TREE_DROP_DELAY * 0.5), // Fade in mid tree drop
+      },
+    },
+    exit: {
+      opacity: 0,
+      scale: 0.95,
+      transition: {
+        duration: 0.3,
+        ease: [0.4, 0, 0.2, 1] as Easing,
+      },
+    },
+  };
+
   // Children fade in and bounce when tree connector reaches them
   // Note: Timing controlled via showChildren state in useEffect
   const childrenContainerVariants = {
@@ -418,7 +440,7 @@ const FamilyHub = () => {
                 <motion.div
                   key={spousePerson.id}
                   className="w-40 sm:w-44 md:w-46 lg:w-48"
-                  variants={parentItemVariants}
+                  variants={spouseVariants}
                   initial="hidden"
                   animate="visible"
                   exit="exit"

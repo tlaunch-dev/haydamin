@@ -56,11 +56,7 @@ export const ZoomTransitionOverlay = ({
 
     const performAnimation = async () => {
       try {
-        console.log('[Zoom] Animation starting for person:', targetPersonId);
-        if (cancelled) {
-          console.log('[Zoom] Cancelled before start');
-          return;
-        }
+        if (cancelled) return;
 
         // Calculate positions
         const centerX = window.innerWidth / 2;
@@ -75,7 +71,6 @@ export const ZoomTransitionOverlay = ({
         opacity.set(1);
 
         // Phase 1: Zoom to center with scale up
-        console.log('[Zoom] Phase 1: Zoom-in starting');
         onPhaseChangeRef.current('zoom-in');
 
         // Run all three animations in parallel for zoom-in
@@ -85,48 +80,28 @@ export const ZoomTransitionOverlay = ({
           animate(scale, 2, { duration: 0.6, ease: [0.4, 0, 0.2, 1] }),
         ]);
 
-        console.log('[Zoom] Phase 1: Zoom-in complete');
-
-        if (cancelled) {
-          console.log('[Zoom] Cancelled after zoom-in');
-          return;
-        }
+        if (cancelled) return;
 
         // Navigate to new page while at center
-        console.log('[Zoom] Calling onNavigate');
         onNavigateRef.current();
-        console.log('[Zoom] onNavigate called');
 
         // Phase 2: Zoom to new position with scale down
         // Set phase BEFORE waiting to ensure page stays hidden
-        console.log('[Zoom] Phase 2: Zoom-out starting');
         onPhaseChangeRef.current('zoom-out');
 
         // Wait for new page to render and get the target element position
         // Need to wait for page animations to settle to get accurate position
         await new Promise(resolve => setTimeout(resolve, 400));
 
-        if (cancelled) {
-          console.log('[Zoom] Cancelled before finding target');
-          return;
-        }
+        if (cancelled) return;
 
         // Find the target card on the new page
-        console.log('[Zoom] Looking for target element with id:', targetPersonId);
         const targetElement = document.querySelector(`[data-person-id="${targetPersonId}"]`);
-        console.log('[Zoom] Target element found:', !!targetElement);
 
         if (targetElement) {
           const endRect = targetElement.getBoundingClientRect();
           const endX = endRect.left + endRect.width / 2 - centerX;
           const endY = endRect.top + endRect.height / 2 - centerY;
-          console.log('[Zoom] Animating to position:', { 
-            endX, 
-            endY, 
-            elementRect: { top: endRect.top, left: endRect.left, width: endRect.width, height: endRect.height },
-            centerX,
-            centerY
-          });
 
           // Animate position - overlay stays solid during zoom-out
           await Promise.all([
@@ -134,40 +109,27 @@ export const ZoomTransitionOverlay = ({
             animate(y, endY, { duration: 0.8, ease: [0.4, 0, 0.2, 1] }),
             animate(scale, 1, { duration: 0.8, ease: [0.4, 0, 0.2, 1] }),
           ]);
-          console.log('[Zoom] Phase 2: Zoom-out complete, landed at target');
         } else {
-          console.warn(`[Zoom] Target element with data-person-id="${targetPersonId}" not found, using fallback`);
           // Fallback: just scale down at center if target not found
           await animate(scale, 1, { duration: 0.8, ease: [0.4, 0, 0.2, 1] });
-          console.log('[Zoom] Fallback animation complete');
         }
 
-        if (cancelled) {
-          console.log('[Zoom] Cancelled after zoom-out');
-          return;
-        }
+        if (cancelled) return;
 
         // Now that we've landed, reveal the real card and remove overlay instantly
-        console.log('[Zoom] Revealing card and removing overlay');
         onPhaseChangeRef.current('reveal-card');
         opacity.set(0); // Instant removal
-        console.log('[Zoom] Overlay removed, real card revealed');
 
         // Small delay before cleanup
         await new Promise(resolve => setTimeout(resolve, 100));
 
-        if (cancelled) {
-          console.log('[Zoom] Cancelled before cleanup');
-          return;
-        }
+        if (cancelled) return;
 
         // Clean up - clear the zoom transition state
-        console.log('[Zoom] Cleaning up');
         clearZoomTransitionRef.current();
         isAnimating.current = false;
-        console.log('[Zoom] Animation complete');
       } catch (error) {
-        console.error('[Zoom] Animation error:', error);
+        console.error('Zoom transition error:', error);
         // Clean up on error
         clearZoomTransitionRef.current();
         isAnimating.current = false;
