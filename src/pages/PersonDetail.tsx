@@ -822,43 +822,26 @@ export function PersonDetail() {
                   {/* Profile Photo - only show on side when NOT editing, hidden on mobile */}
                   {!isEditing && (
                     <div className="shrink-0 hidden md:block">
-                    <div className="relative">
-                      <div className="p-1 bg-background rounded-full shadow-xl transition-all duration-500 ease-out">
-                        <img
-                          src={newPrimaryPhotoPreview || person.primaryPhoto}
-                          alt={`Main photo of ${getPersonName(person, language)}`}
-                          className="w-48 h-48 md:w-64 md:h-64 lg:w-80 lg:h-80 xl:w-96 xl:h-96 rounded-full object-cover ring-2 ring-accent/30 bg-gray-100 animate-fade-in cursor-pointer transition-transform duration-300 ease-out hover:scale-105"
-                          onClick={() => openModal(0)}
-                        />
-                      </div>
-                      {isEditing && (
-                        <label className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full cursor-pointer opacity-0 hover:opacity-100 transition-opacity">
-                          <div className="text-center text-white">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-12 h-12 mx-auto mb-2">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
-                            </svg>
-                            <span className="text-sm font-semibold">{t('change_photo', language)}</span>
-                          </div>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handlePrimaryPhotoChange}
-                            className="hidden"
+                      <div className="relative">
+                        <div className="p-1 bg-background rounded-full shadow-xl transition-all duration-500 ease-out">
+                          <img
+                            src={newPrimaryPhotoPreview || person.primaryPhoto}
+                            alt={`Main photo of ${getPersonName(person, language)}`}
+                            className="w-48 h-48 md:w-64 md:h-64 lg:w-80 lg:h-80 xl:w-96 xl:h-96 rounded-full object-cover ring-2 ring-accent/30 bg-gray-100 animate-fade-in cursor-pointer transition-transform duration-300 ease-out hover:scale-105"
+                            onClick={() => openModal(0)}
                           />
-                        </label>
-                      )}
-                      
-                      {/* Gallery indicator badge - show when there are additional photos */}
-                      {!isEditing && person.photos && person.photos.length > 0 && (
-                        <div className="absolute bottom-2 right-2 bg-accent text-accent-text rounded-full w-10 h-10 md:w-12 md:h-12 flex items-center justify-center shadow-lg">
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 md:w-6 md:h-6">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-                          </svg>
                         </div>
-                      )}
+                        
+                        {/* Gallery indicator badge - show when there are additional photos */}
+                        {person.photos && person.photos.length > 0 && (
+                          <div className="absolute bottom-2 right-2 bg-accent text-accent-text rounded-full w-10 h-10 md:w-12 md:h-12 flex items-center justify-center shadow-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 md:w-6 md:h-6">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
                   )}
                 </div>
 
