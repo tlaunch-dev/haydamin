@@ -2,9 +2,11 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePeople } from '../hooks/usePeople';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import { t } from '../utils/i18n';
 import { Person } from '../types';
 import CedarBackground from '../components/CedarBackground';
+import LoadingScreen from '../components/LoadingScreen';
 
 interface PhotoWithMetadata {
   url: string;
@@ -21,6 +23,7 @@ const minSwipeDistance = 50;
 export function GalleryMode() {
   const navigate = useNavigate();
   const { language } = useLanguage();
+  const { initialLoadComplete } = useAuth();
   const { people, loading, error } = usePeople();
   const [photos, setPhotos] = useState<PhotoWithMetadata[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -215,13 +218,13 @@ export function GalleryMode() {
     togglePause();
   }, [togglePause]);
 
-  // Show loading state
+  // Show loading state - only show full animation if initial load is not complete
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <h1 className={`${fontClass} text-2xl text-text`}>{t('loading', language)}</h1>
-      </div>
-    );
+    if (initialLoadComplete) {
+      // Return empty div to maintain component structure while loading data
+      return <div className="min-h-screen bg-background" />;
+    }
+    return <LoadingScreen />;
   }
 
   // Show error state

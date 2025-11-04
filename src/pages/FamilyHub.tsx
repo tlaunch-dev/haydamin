@@ -6,10 +6,12 @@ import AddPersonCard from '../components/AddPersonCard';
 import BackButton from '../components/BackButton';
 import CedarBackground from '../components/CedarBackground';
 import AnimatedTreeConnector from '../components/AnimatedTreeConnector';
+import LoadingScreen from '../components/LoadingScreen';
 import { CollapsibleButtonMenu, ButtonConfig } from '../components/CollapsibleButtonMenu';
 import { useLanguage } from '../context/LanguageContext';
 import { useHiddenMode } from '../context/HiddenModeContext';
 import { useZoomTransition } from '../context/ZoomTransitionContext';
+import { useAuth } from '../context/AuthContext';
 import { usePeople } from '../hooks/usePeople';
 import { Person } from '../types';
 import { getPersonName, t } from '../utils/i18n';
@@ -23,6 +25,7 @@ const FamilyHub = () => {
   const navigate = useNavigate();
   const { language } = useLanguage();
   const { showNames, toggleShowNames } = useHiddenMode();
+  const { initialLoadComplete } = useAuth();
   const { people, loading, error } = usePeople();
   const [isEditMode, setIsEditMode] = useState(false);
 
@@ -128,19 +131,14 @@ const FamilyHub = () => {
     childrenList = centerPerson ? getChildren(personId) : [];
   }
   
-  // Show loading state
+  // Show loading state - only show full animation if initial load is not complete
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <motion.h1
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-2xl font-sans text-text"
-        >
-          Loading...
-        </motion.h1>
-      </div>
-    );
+    // If we've already done the initial load, show empty background while loading data
+    // This prevents the loading screen from reappearing when navigating between pages
+    if (initialLoadComplete) {
+      return <div className="min-h-screen bg-background" />;
+    }
+    return <LoadingScreen />;
   }
   
   // Show error state

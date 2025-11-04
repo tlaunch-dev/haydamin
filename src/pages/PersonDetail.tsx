@@ -8,11 +8,13 @@ import { translateToArabic } from '../services/translate';
 import BackButton from '../components/BackButton';
 import PersonCard from '../components/PersonCard';
 import CedarBackground from '../components/CedarBackground';
+import LoadingScreen from '../components/LoadingScreen';
 import { CollapsibleButtonMenu, ButtonConfig } from '../components/CollapsibleButtonMenu';
 import ImageCropDialog from '../components/ImageCropDialog';
 import PhotoGalleryModal from '../components/PhotoGalleryModal';
 import { useLanguage } from '../context/LanguageContext';
 import { useHiddenMode } from '../context/HiddenModeContext';
+import { useAuth } from '../context/AuthContext';
 import { getPersonName, getRelationship, getLocation, getFavoriteFood, getAbout, t } from '../utils/i18n';
 import { Person } from '../types';
 import { Pencil, ArrowRight, Save, X } from 'lucide-react';
@@ -58,13 +60,21 @@ const getRandomUnshownPerson = (people: Person[], shownIds: string[]): Person | 
 const GAME_MODE_SHOWN_IDS_KEY = 'haydamin_game_mode_shown_ids';
 
 export function PersonDetail() {
+  // Router hooks
   const { personId } = useParams<{ personId: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const isGameMode = searchParams.get('game') === 'true';
+  
+  // Context hooks
   const { language } = useLanguage();
   const { showNames } = useHiddenMode();
+  const { initialLoadComplete } = useAuth();
+  
+  // Data hooks
   const { people, loading, error } = usePeople();
+  
+  // Derived values
+  const isGameMode = searchParams.get('game') === 'true';
   const [isRevealed, setIsRevealed] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [galleryStartIndex, setGalleryStartIndex] = useState(0);
@@ -224,13 +234,13 @@ export function PersonDetail() {
     };
   }, []);
   
-  // Show loading state
+  // Show loading state - only show full animation if initial load is not complete
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <h1 className="text-2xl font-sans text-text">Loading...</h1>
-      </div>
-    );
+    if (initialLoadComplete) {
+      // Return empty div to maintain component structure while loading data
+      return <div className="min-h-screen bg-background" />;
+    }
+    return <LoadingScreen />;
   }
   
   // Show error state
