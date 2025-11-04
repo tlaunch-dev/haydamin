@@ -79,6 +79,7 @@ export function PersonDetail() {
   const [showCropDialog, setShowCropDialog] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showPhotoSourceModal, setShowPhotoSourceModal] = useState(false);
+  const [showAdditionalPhotosSourceModal, setShowAdditionalPhotosSourceModal] = useState(false);
   const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
   const [touchEnd, setTouchEnd] = useState<{ x: number; y: number } | null>(null);
 
@@ -876,41 +877,17 @@ export function PersonDetail() {
                   <div className="mt-6 pt-6 border-t border-accent/20">
                     <h4 className={`${fontClass} text-xl font-semibold mb-4 text-text`}>{t('additional_photos', language)}</h4>
 
-                    {/* Upload buttons */}
-                    <div className="flex flex-col sm:flex-row gap-3 mb-4">
-                      <label className="inline-block cursor-pointer">
-                        <div className="bg-accent/10 border-2 border-dashed border-accent rounded-lg px-6 py-3 hover:bg-accent/20 transition-colors flex items-center gap-2">
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-accent">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                          </svg>
-                          <span className={`${fontClass} text-accent font-semibold`}>{t('add_photos', language)}</span>
-                        </div>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          onChange={handleAdditionalPhotosChange}
-                          className="hidden"
-                        />
-                      </label>
-
-                      {/* Divider text */}
-                      <div className="flex items-center gap-2">
-                        <span className={`${fontClass} text-gray-500 text-sm`}>
-                          {language === 'ar' ? 'أو' : 'or'}
-                        </span>
-                      </div>
-
-                      <GooglePhotosPickerButton
-                        onPhotosSelected={handleGooglePhotosAdditionalSelected}
-                        multiple={true}
-                        language={language}
-                        buttonText={{
-                          en: 'Add from Google Photos',
-                          ar: 'أضف من صور Google'
-                        }}
-                      />
-                    </div>
+                    {/* Upload button */}
+                    <button
+                      onClick={() => setShowAdditionalPhotosSourceModal(true)}
+                      className="bg-accent/10 border-2 border-dashed border-accent rounded-lg px-6 py-3 hover:bg-accent/20 transition-colors flex items-center gap-2 mb-4"
+                      type="button"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-accent">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                      </svg>
+                      <span className={`${fontClass} text-accent font-semibold`}>{t('add_photos', language)}</span>
+                    </button>
 
                     {/* Existing photos - can be deleted */}
                     {person.photos && person.photos.length > 0 && (
@@ -1179,6 +1156,71 @@ export function PersonDetail() {
               {/* Cancel */}
               <button
                 onClick={() => setShowPhotoSourceModal(false)}
+                className={`${fontClass} px-6 py-3 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors text-text font-semibold mt-2`}
+              >
+                {language === 'ar' ? 'إلغاء' : 'Cancel'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Additional Photos Source Selection Modal */}
+      {showAdditionalPhotosSourceModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-card rounded-2xl p-6 md:p-8 max-w-md w-full shadow-2xl">
+            <h3 className={`${fontClass} text-2xl font-bold mb-2 text-text`}>
+              {language === 'ar' ? 'اختر مصدر الصور' : 'Choose Photos Source'}
+            </h3>
+            <p className={`${fontClass} text-sm mb-6 text-text/70`}>
+              {language === 'ar' ? 'من أين تريد تحميل الصور؟' : 'Where would you like to upload photos from?'}
+            </p>
+
+            <div className="flex flex-col gap-3">
+              {/* Upload from Device */}
+              <label className="cursor-pointer">
+                <div className="bg-accent/10 border-2 border-accent rounded-lg px-6 py-4 hover:bg-accent/20 transition-colors flex items-center gap-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-accent">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                  </svg>
+                  <div className="flex-1">
+                    <div className={`${fontClass} text-accent font-semibold text-lg`}>
+                      {language === 'ar' ? 'تحميل من الجهاز' : 'Upload from Device'}
+                    </div>
+                    <div className={`${fontClass} text-text/60 text-sm`}>
+                      {language === 'ar' ? 'اختر صور من ملفاتك' : 'Choose photos from your files'}
+                    </div>
+                  </div>
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => {
+                    handleAdditionalPhotosChange(e);
+                    setShowAdditionalPhotosSourceModal(false);
+                  }}
+                  className="hidden"
+                />
+              </label>
+
+              {/* Select from Google Photos */}
+              <div onClick={() => setShowAdditionalPhotosSourceModal(false)}>
+                <GooglePhotosPickerButton
+                  onPhotosSelected={handleGooglePhotosAdditionalSelected}
+                  multiple={true}
+                  language={language}
+                  buttonText={{
+                    en: 'Add from Google Photos',
+                    ar: 'أضف من صور Google'
+                  }}
+                  className="w-full bg-white border-2 border-gray-300 rounded-lg px-6 py-4 hover:border-blue-500 hover:bg-blue-50 transition-colors text-gray-700 font-medium flex items-center gap-3"
+                />
+              </div>
+
+              {/* Cancel */}
+              <button
+                onClick={() => setShowAdditionalPhotosSourceModal(false)}
                 className={`${fontClass} px-6 py-3 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors text-text font-semibold mt-2`}
               >
                 {language === 'ar' ? 'إلغاء' : 'Cancel'}
