@@ -4,6 +4,7 @@ import { AnimatePresence, LayoutGroup } from 'framer-motion';
 import { useLanguage } from './context/LanguageContext';
 import { useZoomTransition } from './context/ZoomTransitionContext';
 import { ZoomTransitionOverlay } from './components/ZoomTransitionOverlay';
+import CedarBackground from './components/CedarBackground';
 import FamilyHub from './pages/FamilyHub';
 import { PersonDetail } from './pages/PersonDetail';
 import { AddPerson } from './pages/AddPerson';
@@ -24,6 +25,9 @@ function AppRoutes() {
 
   return (
     <div style={{ position: 'relative', minHeight: '100vh' }}>
+      {/* Global Cedar Background - always visible */}
+      <CedarBackground />
+      
       {/* Global Zoom Transition Overlay - renders once regardless of route changes */}
       {zoomTransition && (
         <ZoomTransitionOverlay

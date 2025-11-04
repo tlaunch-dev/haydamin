@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Menu, X } from 'lucide-react';
+import { X } from 'lucide-react';
 
 export interface ButtonConfig {
   id: string;
@@ -48,40 +48,41 @@ export function CollapsibleButtonMenu({ buttons, className = '' }: CollapsibleBu
   };
 
   return (
-    <div ref={menuRef} className={`${className}`}>
-      <div className="flex flex-col items-end gap-3">
-        {/* Menu Toggle Button */}
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-card/80 backdrop-blur-md shadow-lg border border-border/50 flex items-center justify-center hover:bg-card transition-all"
-          aria-label={isExpanded ? 'Close menu' : 'Open menu'}
-          aria-expanded={isExpanded}
-        >
-          {isExpanded ? (
-            <X className="w-6 h-6 md:w-7 md:h-7 text-foreground" />
-          ) : (
-            <Menu className="w-6 h-6 md:w-7 md:h-7 text-foreground" />
-          )}
-        </button>
+    <div ref={menuRef} className={`fixed top-0 right-0 z-50 ${className}`}>
+      {/* Semi-circle toggle button - touches both edges of corner */}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="absolute top-0 right-0 w-24 h-24 md:w-28 md:h-28 bg-accent hover:bg-accent-warm transition-all duration-300 cursor-pointer shadow-lg"
+        style={{
+          borderBottomLeftRadius: '100%',
+        }}
+        aria-label={isExpanded ? 'Close menu' : 'Open menu'}
+        aria-expanded={isExpanded}
+      >
+        {isExpanded && (
+          <div className="absolute bottom-2 left-2 md:bottom-3 md:left-3">
+            <X className="w-6 h-6 md:w-7 md:h-7 text-accent-text" />
+          </div>
+        )}
+      </button>
 
-        {/* Expanded Buttons */}
-        <div
-          className={`flex flex-col items-end gap-3 overflow-hidden transition-all duration-300 ease-in-out ${
-            isExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
-          }`}
-        >
-          {visibleButtons.map((button) => (
-            <button
-              key={button.id}
-              onClick={() => handleButtonClick(button.onClick)}
-              className={`w-14 h-14 md:w-16 md:h-16 rounded-full bg-card/80 backdrop-blur-md shadow-lg border border-border/50 flex items-center justify-center hover:bg-card transition-all transform hover:scale-105 ${button.hideOnMobile ? 'hidden md:flex' : ''}`}
-              aria-label={button.ariaLabel || button.label}
-              title={button.label}
-            >
-              {button.icon}
-            </button>
-          ))}
-        </div>
+      {/* Expanded Buttons - slide down from the semi-circle with original styling */}
+      <div
+        className={`absolute top-20 right-3 md:top-24 md:right-4 flex flex-col items-end gap-3 transition-all duration-300 ease-in-out ${
+          isExpanded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'
+        }`}
+      >
+        {visibleButtons.map((button) => (
+          <button
+            key={button.id}
+            onClick={() => handleButtonClick(button.onClick)}
+            className={`w-14 h-14 md:w-16 md:h-16 rounded-full bg-card/80 backdrop-blur-md shadow-lg border border-border/50 flex items-center justify-center hover:bg-card transition-all transform hover:scale-105 ${button.hideOnMobile ? 'hidden md:flex' : ''}`}
+            aria-label={button.ariaLabel || button.label}
+            title={button.label}
+          >
+            {button.icon}
+          </button>
+        ))}
       </div>
     </div>
   );

@@ -9,6 +9,7 @@ export default function LoadingScreen() {
       transition={{ duration: 0.3 }}
       className="fixed inset-0 bg-background z-50"
     >
+      {/* Animated cedar overlay - draws on top of global background */}
       <div className="fixed inset-0 pointer-events-none opacity-30">
         <svg
           className="absolute inset-0 w-full h-full"

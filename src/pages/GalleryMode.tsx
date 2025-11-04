@@ -5,7 +5,6 @@ import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { t } from '../utils/i18n';
 import { Person } from '../types';
-import CedarBackground from '../components/CedarBackground';
 import LoadingScreen from '../components/LoadingScreen';
 
 interface PhotoWithMetadata {
@@ -240,7 +239,6 @@ export function GalleryMode() {
   if (photos.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
-        <CedarBackground />
         <div className="text-center z-10">
           <h1 className={`${fontClass} text-3xl md:text-4xl font-bold text-text mb-4`}>
             {t('no_photos', language)}

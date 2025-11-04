@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import PersonCard from '../components/PersonCard';
 import AddPersonCard from '../components/AddPersonCard';
 import BackButton from '../components/BackButton';
-import CedarBackground from '../components/CedarBackground';
 import AnimatedTreeConnector from '../components/AnimatedTreeConnector';
 import LoadingScreen from '../components/LoadingScreen';
 import { CollapsibleButtonMenu, ButtonConfig } from '../components/CollapsibleButtonMenu';
@@ -343,11 +342,6 @@ const FamilyHub = () => {
 
   return (
     <>
-      {/* Cedar Background - always visible, never fades */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <CedarBackground />
-      </div>
-
       <AnimatePresence>
         <motion.div
           key={personId || 'root'}
@@ -375,17 +369,15 @@ const FamilyHub = () => {
           }}
         >
 
-      {/* Constrain button positioning on wide screens */}
-      <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none">
-        <div className="max-w-7xl mx-auto relative h-20 pointer-events-none px-3 md:px-8 lg:px-12">
-          <div className="absolute top-6 left-3 md:left-0 pointer-events-auto">
-            {!isRootHub && <BackButton />}
-          </div>
-          <div className="absolute top-6 right-3 md:right-0 pointer-events-auto">
-            <CollapsibleButtonMenu buttons={menuButtons} />
-          </div>
+      {/* Back Button */}
+      {!isRootHub && (
+        <div className="fixed top-6 left-6 z-50">
+          <BackButton />
         </div>
-      </div>
+      )}
+      
+      {/* Corner Menu */}
+      <CollapsibleButtonMenu buttons={menuButtons} />
 
       {/* Header */}
       <div className="mb-4 md:mb-6 lg:mb-8 max-w-7xl mx-auto w-full relative z-10">

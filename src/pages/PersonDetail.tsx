@@ -7,7 +7,6 @@ import { uploadPhoto, deletePhoto } from '../services/storage';
 import { translateToArabic } from '../services/translate';
 import BackButton from '../components/BackButton';
 import PersonCard from '../components/PersonCard';
-import CedarBackground from '../components/CedarBackground';
 import LoadingScreen from '../components/LoadingScreen';
 import { CollapsibleButtonMenu, ButtonConfig } from '../components/CollapsibleButtonMenu';
 import ImageCropDialog from '../components/ImageCropDialog';
@@ -484,105 +483,56 @@ export function PersonDetail() {
   return (
     <>
       <div
-        className={`p-3 sm:p-4 md:p-6 lg:p-12 pt-20 sm:pt-24 md:pt-24 lg:pt-12 bg-background min-h-screen relative overflow-hidden ${isEditing && !isGameMode ? 'pb-24 md:pb-6' : ''}`}
+        className={`p-3 sm:p-4 md:p-6 lg:p-12 pt-20 sm:pt-24 md:pt-24 lg:pt-12 min-h-screen relative overflow-hidden ${isEditing && !isGameMode ? 'pb-24 md:pb-6' : ''}`}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
-        <CedarBackground />
-
-        {/* Constrain button positioning on wide screens */}
-        <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none">
-          <div className="max-w-7xl mx-auto relative h-20 pointer-events-none px-3 md:px-8 lg:px-12">
-            {/* Left side buttons */}
-            <div className="absolute top-6 left-3 md:left-0 pointer-events-auto">
-              {!isGameMode && <BackButton />}
-              {isGameMode && (
-                <button
-                  onClick={handleExitGameMode}
-                  className="bg-card text-accent text-2xl rounded-full w-14 h-14 md:w-16 md:h-16 flex items-center justify-center shadow-md transition-all duration-300 ease-out hover:shadow-lg hover:scale-105"
-                  aria-label={language === 'ar' ? 'خروج من وضع اللعبة' : 'Exit Game Mode'}
-                  title={language === 'ar' ? 'خروج من وضع اللعبة' : 'Exit Game Mode'}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={2.5}
-                    stroke="currentColor"
-                    className="w-7 h-7 md:w-8 md:h-8"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
-            </div>
-
-            {/* Right side buttons */}
-            <div className="absolute top-6 right-3 md:right-0 pointer-events-auto flex items-center gap-2">
-              {/* Edit mode Save/Cancel buttons - show on desktop */}
-              {isEditing && !isGameMode && (
-                <div className="hidden md:flex gap-2">
-                  <button
-                    onClick={handleCancel}
-                    disabled={isUploadingPhotos}
-                    className={`${fontClass} px-4 py-2 rounded-full bg-card/80 backdrop-blur-md shadow-lg border border-border/50 flex items-center justify-center hover:bg-card transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed text-text font-semibold`}
-                    aria-label="Cancel"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleSave}
-                    disabled={isUploadingPhotos}
-                    className={`${fontClass} px-4 py-2 rounded-full bg-card/80 backdrop-blur-md shadow-lg border border-border/50 flex items-center justify-center hover:bg-card transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed text-accent font-semibold`}
-                    aria-label="Save"
-                  >
-                    {isUploadingPhotos ? '⏳' : 'Save'}
-                  </button>
-                </div>
-              )}
-
-              {/* Game mode Next button - desktop only, show when revealed */}
-              {isGameMode && isRevealed && (
-                <div className="hidden md:flex">
-                  <button
-                    onClick={handleNextPerson}
-                    className={`${fontClass} px-4 py-2 rounded-full bg-card/80 backdrop-blur-md shadow-lg border border-border/50 flex items-center justify-center gap-2 hover:bg-card transition-all hover:scale-105 text-accent font-semibold`}
-                    aria-label={language === 'ar' ? 'التالي' : 'Next'}
-                  >
-                    {language === 'ar' ? 'التالي' : 'Next'}
-                    <ArrowRight
-                      className="w-5 h-5"
-                      style={{ transform: language === 'ar' ? 'scaleX(-1)' : 'none' }}
-                    />
-                  </button>
-                </div>
-              )}
-
-              {/* Hamburger menu */}
-              <CollapsibleButtonMenu buttons={menuButtons} />
-            </div>
-
-            {/* Swipe indicator - mobile/tablet only, show when revealed in game mode */}
-            {isGameMode && isRevealed && (
-              <div className="absolute top-6 left-1/2 transform -translate-x-1/2 pointer-events-auto flex md:hidden items-center gap-2 bg-accent/90 backdrop-blur-md shadow-lg rounded-full px-4 py-2 animate-pulse">
-                <span className={`${fontClass} text-sm text-accent-text font-semibold`}>
-                  {language === 'ar' ? 'اسحب' : 'Swipe'}
-                </span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={2.5}
-                  stroke="currentColor"
-                  className={`w-5 h-5 text-accent-text ${language === 'ar' ? 'rotate-180' : ''}`}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                </svg>
-              </div>
-            )}
-          </div>
+        {/* Back/Exit Button - Top Left */}
+        <div className="fixed top-6 left-6 z-50">
+          {!isGameMode && <BackButton />}
+          {isGameMode && (
+            <button
+              onClick={handleExitGameMode}
+              className="bg-card text-accent text-2xl rounded-full w-14 h-14 md:w-16 md:h-16 flex items-center justify-center shadow-md transition-all duration-300 ease-out hover:shadow-lg hover:scale-105"
+              aria-label={language === 'ar' ? 'خروج من وضع اللعبة' : 'Exit Game Mode'}
+              title={language === 'ar' ? 'خروج من وضع اللعبة' : 'Exit Game Mode'}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2.5}
+                stroke="currentColor"
+                className="w-7 h-7 md:w-8 md:h-8"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
         </div>
+
+        {/* Corner Menu */}
+        <CollapsibleButtonMenu buttons={menuButtons} />
+
+        {/* Swipe indicator - mobile/tablet only, show when revealed in game mode */}
+        {isGameMode && isRevealed && (
+          <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-40 flex md:hidden items-center gap-2 bg-accent/90 backdrop-blur-md shadow-lg rounded-full px-4 py-2 animate-pulse">
+            <span className={`${fontClass} text-sm text-accent-text font-semibold`}>
+              {language === 'ar' ? 'اسحب' : 'Swipe'}
+            </span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2.5}
+              stroke="currentColor"
+              className={`w-5 h-5 text-accent-text ${language === 'ar' ? 'rotate-180' : ''}`}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+            </svg>
+          </div>
+        )}
 
         {/* Header */}
         <div className="mb-4 md:mb-6 lg:mb-8 max-w-7xl mx-auto">

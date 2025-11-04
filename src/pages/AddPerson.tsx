@@ -5,7 +5,6 @@ import { addPerson, updatePerson } from '../services/firestore';
 import { uploadPhoto } from '../services/storage';
 import { translateToArabic } from '../services/translate';
 import BackButton from '../components/BackButton';
-import CedarBackground from '../components/CedarBackground';
 import { CollapsibleButtonMenu, ButtonConfig } from '../components/CollapsibleButtonMenu';
 import ImageCropDialog from '../components/ImageCropDialog';
 import { useLanguage } from '../context/LanguageContext';
@@ -256,7 +255,6 @@ export function AddPerson() {
 
   return (
     <div className="p-3 sm:p-4 md:p-6 lg:p-12 pt-20 sm:pt-24 md:pt-6 bg-background min-h-screen relative overflow-hidden">
-      <CedarBackground />
       <CollapsibleButtonMenu buttons={menuButtons} />
 
       {/* Back button - aligned with hamburger */}
