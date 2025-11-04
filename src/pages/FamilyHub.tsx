@@ -343,19 +343,6 @@ const FamilyHub = () => {
     };
   };
 
-  const headerVariants = {
-    hidden: { opacity: 0, y: -10 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.5,
-        ease: [0.4, 0, 0.2, 1] as Easing,
-        delay: 0.1,
-      },
-    },
-  };
-
   return (
     <>
       {/* Cedar Background - always visible, never fades */}
@@ -366,7 +353,7 @@ const FamilyHub = () => {
       <AnimatePresence>
         <motion.div
           key={personId || 'root'}
-          className="p-3 sm:p-4 md:p-6 lg:p-8 pt-20 sm:pt-24 md:pt-20 min-h-screen flex flex-col justify-center relative overflow-hidden"
+          className="p-3 sm:p-4 md:p-6 lg:p-8 pt-20 sm:pt-24 md:pt-20 min-h-screen flex flex-col relative overflow-hidden"
           initial={{ opacity: 0 }}
           animate={{
             // Hidden during zoom-in, reveal during zoom-out
@@ -374,9 +361,11 @@ const FamilyHub = () => {
           }}
           transition={{
             opacity: {
-              // Fade in smoothly during zoom-out
-              duration: zoomPhase === 'zoom-out' ? 0.4 : 0.5,
+              // Fade in during entire zoom-out duration (0.8s)
+              duration: zoomPhase === 'zoom-out' ? 0.8 : 0.5,
               ease: [0.4, 0, 0.2, 1] as Easing,
+              // Delay to sync with when zoom-out position animation actually starts (after 400ms wait)
+              delay: zoomPhase === 'zoom-out' ? 0.4 : 0,
             }
           }}
           exit={{
@@ -401,16 +390,11 @@ const FamilyHub = () => {
       </div>
 
       {/* Header */}
-      <motion.div
-        className="mb-4 md:mb-6 lg:mb-8 max-w-7xl mx-auto w-full relative z-10"
-        variants={headerVariants}
-        initial="hidden"
-        animate="visible"
-      >
+      <div className="mb-4 md:mb-6 lg:mb-8 max-w-7xl mx-auto w-full relative z-10">
         <div className="text-center">
           <h1 className={`${fontClass} text-4xl md:text-5xl lg:text-6xl font-bold text-text`}>{headerText}</h1>
         </div>
-      </motion.div>
+      </div>
 
       <div className="max-w-7xl mx-auto w-full relative z-10">
         {/* Center Person(s) Row - Fade in first */}
