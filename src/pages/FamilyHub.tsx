@@ -10,7 +10,7 @@ import { useHiddenMode } from '../context/HiddenModeContext';
 import { usePeople } from '../hooks/usePeople';
 import { Person } from '../types';
 import { getPersonName, t } from '../utils/i18n';
-import { Eye, EyeOff, Pencil, Dices } from 'lucide-react';
+import { Eye, EyeOff, Pencil, Dices, Images } from 'lucide-react';
 
 const FamilyHub = () => {
   const { personId } = useParams<{ personId: string }>();
@@ -109,6 +109,15 @@ const FamilyHub = () => {
     navigate(`/person/${randomPerson.id}?game=true`);
   };
 
+  // Check if gallery mode should be available
+  const hasAdditionalPhotos = people.some(person => person.photos && person.photos.length > 0);
+
+  // Handle gallery mode button click
+  const handleGalleryMode = () => {
+    if (!hasAdditionalPhotos) return;
+    navigate('/gallery');
+  };
+
   // Handle language toggle
   const { toggleLanguage } = useLanguage();
 
@@ -120,6 +129,13 @@ const FamilyHub = () => {
       label: language === 'ar' ? 'وضع اللعبة' : 'Game Mode',
       onClick: handleGameMode,
       show: people.length > 0,
+    },
+    {
+      id: 'gallery-mode',
+      icon: <Images className="w-5 h-5 text-accent" />,
+      label: t('gallery_mode', language),
+      onClick: handleGalleryMode,
+      show: hasAdditionalPhotos,
     },
     {
       id: 'edit-mode',
