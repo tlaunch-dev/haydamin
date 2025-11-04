@@ -12,11 +12,11 @@ interface AnimatedTreeConnectorProps {
  * Inspired by TreeChart connector patterns with progressive path drawing
  */
 export default function AnimatedTreeConnector({
-  parentCount,
   childCount,
   containerWidth = 800,
   className = '',
 }: AnimatedTreeConnectorProps) {
+  // parentCount is kept in the interface for future use but not currently needed
   if (childCount === 0) return null;
 
   // Calculate positions - responsive to container width
