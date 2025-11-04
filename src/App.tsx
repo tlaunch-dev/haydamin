@@ -4,6 +4,7 @@ import { useLanguage } from './context/LanguageContext';
 import FamilyHub from './pages/FamilyHub';
 import { PersonDetail } from './pages/PersonDetail';
 import { AddPerson } from './pages/AddPerson';
+import { GalleryMode } from './pages/GalleryMode';
 import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -48,6 +49,14 @@ function App() {
         element={
           <ProtectedRoute>
             <AddPerson />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/gallery"
+        element={
+          <ProtectedRoute>
+            <GalleryMode />
           </ProtectedRoute>
         }
       />
