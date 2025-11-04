@@ -8,8 +8,28 @@
   --color-accent-warm: #d4a373;
   --color-accent-text: #FAF7F5;
 
-  --font-family-sans: 'Poppins', sans-serif;
+  --font-family-sans: 'Tajawal', sans-serif;
   --font-family-arabic: 'Tajawal', sans-serif;
+  
+  /* Font weight variants */
+  --font-weight-extralight: 200;
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  --font-weight-black: 900;
+}
+
+/* Font family utilities - Override Tailwind defaults */
+.font-sans,
+.font-arabic {
+  font-family: 'Tajawal', sans-serif !important;
+}
+
+/* Apply Tajawal globally */
+body {
+  font-family: 'Tajawal', sans-serif !important;
 }
 
 /* Custom animations */
