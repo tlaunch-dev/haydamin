@@ -25,7 +25,11 @@ This document outlines the implementation plan for **Hayda Min** (هيدا مي�
   - **Storage** - Image hosting
   - **Hosting** - Deployment
 - **React Router v6** - Client-side routing
-- **React Context API** - State management (LanguageContext)
+- **React Context API** - State management
+  - `LanguageContext` - Language switching (EN/AR)
+  - `AuthContext` - Authentication state
+  - `HiddenModeContext` - Name visibility toggle
+  - `ZoomTransitionContext` - Cross-route animation state
 - **Google Fonts** - Poppins (English) & Tajawal (Arabic)
 - **Vite PWA Plugin** - Offline support (planned)
 - **React Hook Form** - Form management (planned)
@@ -329,6 +333,27 @@ The MVP is considered successful when:
 
 ---
 
+## Recent Updates
+
+### November 4, 2025 - Zoom Transition Fix
+**Problem:** When navigating between family hub pages, the zoom transition animation would flash directly to the new page instead of completing the smooth zoom-out animation.
+
+**Root Cause:** The zoom transition state was stored locally in the `FamilyHub` component. When React Router navigated to a new personId, the component would unmount and remount with fresh state, losing the animation phase information.
+
+**Solution:** Implemented a proper React Context-based solution:
+- Created `ZoomTransitionContext` to persist zoom state across route changes
+- Updated `FamilyHub` to use the context instead of local state
+- Modified `ZoomTransitionOverlay` to clear state through the context
+- Added the provider to the app's provider stack in `main.tsx`
+
+**Benefits:**
+- Clean, best-practice React state management
+- No hacks or workarounds
+- State persists correctly across navigation
+- Proper separation of concerns
+
+---
+
 ## Next Steps
 
 1. Create TypeScript types for Person model
@@ -339,5 +364,5 @@ The MVP is considered successful when:
 
 ---
 
-**Last Updated:** October 31, 2025
+**Last Updated:** November 4, 2025
 **Document Owner:** Development Team
