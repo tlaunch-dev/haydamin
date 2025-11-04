@@ -47,14 +47,15 @@ export default function AnimatedTreeConnector({
   // Smooth animation variants
   const smoothEase = [0.4, 0, 0.2, 1] as [number, number, number, number];
   
+  // 30% faster timing
   const trunkVariants = {
     hidden: { pathLength: 0, opacity: 0 },
     visible: {
       pathLength: 1,
       opacity: 1,
       transition: {
-        pathLength: { duration: 0.6, ease: smoothEase },
-        opacity: { duration: 0.4 },
+        pathLength: { duration: 0.42, ease: smoothEase },
+        opacity: { duration: 0.28 },
       },
     },
   };
@@ -65,8 +66,8 @@ export default function AnimatedTreeConnector({
       pathLength: 1,
       opacity: 1,
       transition: {
-        pathLength: { duration: 0.7, ease: smoothEase, delay: 0.3 },
-        opacity: { duration: 0.4, delay: 0.3 },
+        pathLength: { duration: 0.49, ease: smoothEase, delay: 0.21 },
+        opacity: { duration: 0.28, delay: 0.21 },
       },
     },
   };
@@ -77,8 +78,8 @@ export default function AnimatedTreeConnector({
       pathLength: 1,
       opacity: 0.6,
       transition: {
-        pathLength: { duration: 0.5, ease: smoothEase, delay: 0.7 + index * 0.05 },
-        opacity: { duration: 0.4, delay: 0.7 + index * 0.05 },
+        pathLength: { duration: 0.35, ease: smoothEase, delay: 0.7 + index * 0.035 },
+        opacity: { duration: 0.28, delay: 0.7 + index * 0.035 },
       },
     },
   });
@@ -86,10 +87,9 @@ export default function AnimatedTreeConnector({
   return (
     <div className={`relative flex justify-center ${className}`} style={{ height: trunkHeight + branchHeight }}>
       <svg
-        className="absolute top-0 left-1/2 -translate-x-1/2"
+        className="absolute top-0 left-1/2 -translate-x-1/2 overflow-visible"
         width={branchWidth}
         height={trunkHeight + branchHeight}
-        style={{ overflow: 'visible' }}
         viewBox={`${-branchWidth / 2} 0 ${branchWidth} ${trunkHeight + branchHeight}`}
       >
         {/* Vertical trunk from parents */}
@@ -102,9 +102,7 @@ export default function AnimatedTreeConnector({
           variants={trunkVariants}
           initial="hidden"
           animate="visible"
-          style={{
-            opacity: 0.4,
-          }}
+          className="opacity-40"
         />
 
         {/* Horizontal branch line */}
@@ -118,9 +116,7 @@ export default function AnimatedTreeConnector({
             variants={branchVariants}
             initial="hidden"
             animate="visible"
-            style={{
-              opacity: 0.3,
-            }}
+            className="opacity-30"
           />
         )}
 

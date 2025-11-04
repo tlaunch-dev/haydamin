@@ -25,7 +25,12 @@ const FamilyHub = () => {
   const { showNames, toggleShowNames } = useHiddenMode();
   const { people, loading, error } = usePeople();
   const [isEditMode, setIsEditMode] = useState(false);
-  const [currentPersonId, setCurrentPersonId] = useState<string | undefined>(routePersonId);
+
+  // Tree animation timing constants (match AnimatedTreeConnector.tsx)
+  // 30% faster than original timing
+  const TREE_WRAPPER_DELAY = 0.14;
+  const TREE_WRAPPER_FADE = 0.21;
+  const TREE_DROP_DELAY = 0.7;
 
   // Zoom transition state
   const [zoomTransition, setZoomTransition] = useState<{
@@ -37,29 +42,24 @@ const FamilyHub = () => {
   } | null>(null);
   const [zoomPhase, setZoomPhase] = useState<'zoom-in' | 'zoom-out' | 'reveal-card' | 'complete' | null>(null);
   const [hiddenPersonId, setHiddenPersonId] = useState<string | null>(null);
-  
-  // Sync with route on initial load
-  useEffect(() => {
-    if (routePersonId && routePersonId !== currentPersonId) {
-      setCurrentPersonId(routePersonId);
-    }
-  }, [routePersonId, currentPersonId]);
-  
-  // Handle browser back/forward buttons
-  useEffect(() => {
-    const handlePopState = () => {
-      const path = window.location.pathname;
-      const match = path.match(/\/hub\/(.+)/);
-      if (match) {
-        setCurrentPersonId(match[1]);
-      } else if (path === '/hub') {
-        setCurrentPersonId(undefined);
-      }
-    };
+  const [showChildren, setShowChildren] = useState(false);
 
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  // Control when children should start animating
+  // Reset on route change, then trigger during tree animation
+  useEffect(() => {
+    // Reset children visibility when route changes
+    setShowChildren(false);
+
+    // Start children when tree drops are about 3/4 of the way started
+    const CHILDREN_START_DELAY = TREE_WRAPPER_DELAY + TREE_WRAPPER_FADE + (TREE_DROP_DELAY * .9);
+
+    // Start children animation while tree is still drawing
+    const timer = setTimeout(() => {
+      setShowChildren(true);
+    }, CHILDREN_START_DELAY * 1000); // Convert to milliseconds
+
+    return () => clearTimeout(timer);
+  }, [routePersonId]);
 
   // Handle zoom transition click
   const handleZoomClick = useCallback((person: Person, rect: DOMRect, showName: boolean, imageSrc: string) => {
@@ -75,10 +75,9 @@ const FamilyHub = () => {
       targetPersonId: person.id,
     });
 
-    // Navigate immediately (content changes underneath animation)
-    window.history.pushState({}, '', `/hub/${person.id}`);
-    setCurrentPersonId(person.id);
-  }, []);
+    // Navigate using React Router (content changes underneath animation)
+    navigate(`/hub/${person.id}`, { replace: false });
+  }, [navigate]);
 
   // Handle zoom animation phase changes
   const handleZoomPhaseChange = useCallback((phase: 'zoom-in' | 'zoom-out' | 'reveal-card' | 'complete') => {
@@ -97,9 +96,9 @@ const FamilyHub = () => {
   // Get root person IDs from environment
   const ROOT_PERSON_1 = import.meta.env.VITE_ROOT_PERSON_ID_1 || 'teta-1';
   const ROOT_PERSON_2 = import.meta.env.VITE_ROOT_PERSON_ID_2 || 'jiddo-1';
-  
-  // Use currentPersonId as the active person
-  const personId = currentPersonId;
+
+  // Use routePersonId as the active person
+  const personId = routePersonId;
   
   // Helper functions to query people array
   const getPersonById = (id: string): Person | undefined => {
@@ -244,25 +243,23 @@ const FamilyHub = () => {
     },
   ];
 
-  // Animation variants - parents fade in first
+  // Animation variants - parents load instantly
   const parentContainerVariants = {
-    hidden: { opacity: 0 },
+    hidden: { opacity: 1 },
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.15,
-        delayChildren: 0.2,
+        duration: 0,
       },
     },
   };
 
   const parentItemVariants = {
-    hidden: { opacity: 0 },
+    hidden: { opacity: 1 },
     visible: {
       opacity: 1,
       transition: {
-        duration: 0.6,
-        ease: [0.4, 0, 0.2, 1] as Easing,
+        duration: 0,
       },
     },
     exit: {
@@ -274,14 +271,15 @@ const FamilyHub = () => {
     },
   };
 
-  // Children drop from tree connectors - staggered left to right
+  // Children fade in and bounce when tree connector reaches them
+  // Note: Timing controlled via showChildren state in useEffect
   const childrenContainerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.12, // Stagger from left to right
-        delayChildren: 1.2, // Start after tree connector finishes drawing
+        staggerChildren: 0.084, // Stagger from left to right (30% faster)
+        delayChildren: 0, // No delay needed - timing controlled by state
       },
     },
   };
@@ -295,14 +293,14 @@ const FamilyHub = () => {
     const bounce1 = -10 - (index % 2) * 2; // -10 or -12
     const bounce2 = 5 + (index % 3); // 5, 6, or 7
     const bounce3 = -2 - (index % 2); // -2 or -3
-    
-    // Vary duration slightly for different drop speeds
-    const duration = 1.3 + (index % 4) * 0.15; // 1.3 to 1.75 seconds
-    
+
+    // Vary duration slightly for different drop speeds (30% faster)
+    const duration = 0.91 + (index % 4) * 0.105; // 0.91 to 1.225 seconds
+
     return {
-      hidden: { 
-        opacity: 0, 
-        scale: 0.3, 
+      hidden: {
+        opacity: 0,
+        scale: 0.3,
         y: startHeight,
       },
       visible: {
@@ -311,8 +309,8 @@ const FamilyHub = () => {
         // Keyframe bounce: drop from high position, overshoot down, bounce up, settle
         y: [startHeight, overshoot, bounce1, bounce2, bounce3, 0],
         transition: {
-          opacity: { duration: 0.2 },
-          scale: { 
+          opacity: { duration: 0.14 },
+          scale: {
             duration: duration * 0.85,
             ease: [0.34, 1.56, 0.64, 1] as Easing, // Bouncy easing for scale
           },
@@ -328,7 +326,7 @@ const FamilyHub = () => {
         scale: 0.8,
         y: 20,
         transition: {
-          duration: 0.3,
+          duration: 0.21, // 30% faster
           ease: [0.4, 0, 0.2, 1] as Easing,
         },
       },
@@ -365,7 +363,7 @@ const FamilyHub = () => {
       <AnimatePresence>
         <motion.div
           key={personId || 'root'}
-          className="p-3 sm:p-4 md:p-6 lg:p-8 pt-20 sm:pt-24 md:pt-20 lg:pt-20 bg-background min-h-screen flex flex-col justify-center relative overflow-hidden"
+          className="p-3 sm:p-4 md:p-6 lg:p-8 pt-20 sm:pt-24 md:pt-20 bg-background min-h-screen flex flex-col justify-center relative overflow-hidden"
           initial={{ opacity: 0 }}
           animate={{
             opacity: zoomPhase === 'zoom-in' ? 0 : 1,
@@ -416,10 +414,10 @@ const FamilyHub = () => {
           initial="hidden"
           animate="visible"
         >
-          <div className="flex flex-row justify-center gap-4 sm:gap-6 md:gap-6 lg:gap-8">
+          <div className="flex flex-row justify-center gap-4 sm:gap-6 md:gap-7 lg:gap-8">
             <motion.div
               key={centerPerson.id}
-              className="w-40 sm:w-44 md:w-44 lg:w-48"
+              className="w-40 sm:w-44 md:w-46 lg:w-48"
               variants={parentItemVariants}
             >
               <PersonCard
@@ -435,7 +433,7 @@ const FamilyHub = () => {
               {spousePerson && (
                 <motion.div
                   key={spousePerson.id}
-                  className="w-40 sm:w-44 md:w-44 lg:w-48"
+                  className="w-40 sm:w-44 md:w-46 lg:w-48"
                   variants={parentItemVariants}
                   initial="hidden"
                   animate="visible"
@@ -453,7 +451,7 @@ const FamilyHub = () => {
             </AnimatePresence>
             {/* Add Spouse Card - only show in edit mode when no spouse exists */}
             {isEditMode && !spousePerson && (
-              <div className="w-40 sm:w-44 md:w-44 lg:w-48">
+              <div className="w-40 sm:w-44 md:w-46 lg:w-48">
                 <AddPersonCard
                   spouseId={centerPerson.id}
                   variant="spouse"
@@ -463,18 +461,18 @@ const FamilyHub = () => {
           </div>
         </motion.div>
 
-        {/* Animated Tree Connector - Draws after parents fade in */}
-        <AnimatePresence>
+        {/* Animated Tree Connector - Starts drawing after parents load */}
+        <AnimatePresence mode="wait">
           {(childrenList.length > 0 || isEditMode) && (
             <motion.div
-              key="tree-connector"
+              key={`tree-connector-${personId || 'root'}`}
               className="relative mb-4 md:mb-6 lg:mb-8"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ 
-                delay: 0.6, // Start after parents have faded in
-                duration: 0.4,
+              transition={{
+                delay: TREE_WRAPPER_DELAY,
+                duration: TREE_WRAPPER_FADE,
                 ease: [0.4, 0, 0.2, 1] as Easing,
               }}
             >
@@ -492,19 +490,16 @@ const FamilyHub = () => {
           {(childrenList.length > 0 || isEditMode) && (
             <motion.div
               key="children-container"
-              className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-4 lg:gap-6"
+              className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-5 lg:gap-6"
               variants={childrenContainerVariants}
               initial="hidden"
-              animate="visible"
+              animate={showChildren ? "visible" : "hidden"}
             >
               {childrenList.map((child, index) => (
                 <motion.div
                   key={child.id}
-                  className="w-40 sm:w-44 md:w-44 lg:w-48"
+                  className="w-40 sm:w-44 md:w-46 lg:w-48"
                   variants={getChildItemVariants(index)}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
                 >
                   <PersonCard
                     person={child}
@@ -518,7 +513,7 @@ const FamilyHub = () => {
               ))}
               {/* Add Person Card - only show in edit mode */}
               {isEditMode && (
-                <div className="w-40 sm:w-44 md:w-44 lg:w-48">
+                <div className="w-40 sm:w-44 md:w-46 lg:w-48">
                   <AddPersonCard
                     parentIds={spousePerson ? [centerPerson.id, spousePerson.id] : [centerPerson.id]}
                   />

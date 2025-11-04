@@ -68,15 +68,17 @@ const PersonCard = ({
       <motion.div
         ref={cardRef}
         data-person-id={person.id}
-        initial={disableInitialAnimation ? false : { opacity: 0, scale: 0.9 }}
-        animate={{ scale: 1 }}
-        transition={{
-          scale: { duration: disableInitialAnimation ? 0 : smoothTransition.duration },
-        }}
-        style={isHidden ? { visibility: 'hidden', pointerEvents: 'none', opacity: 0 } : { opacity: 1 }}
+        {...(!disableInitialAnimation && {
+          initial: { opacity: 0, scale: 0.9 },
+          animate: { opacity: 1, scale: 1 },
+          transition: {
+            opacity: { duration: 0.6 },
+            scale: { duration: smoothTransition.duration },
+          },
+        })}
+        className={`flex flex-col items-center gap-3 ${isHidden ? 'invisible pointer-events-none opacity-0' : ''}`}
         whileHover={isHidden ? {} : { scale: 1.02 }}
         whileTap={isHidden ? {} : { scale: 0.98 }}
-        className="flex flex-col items-center gap-3"
       >
         <Link to={linkTo} onClick={handleClick} className="flex flex-col items-center gap-3 w-full">
           <motion.div
@@ -108,15 +110,20 @@ const PersonCard = ({
     <motion.div
       ref={cardRef}
       data-person-id={person.id}
-      initial={disableInitialAnimation ? false : { opacity: 0, scale: 0.9 }}
-      animate={{ scale: 1 }}
-      transition={{
-        scale: { duration: disableInitialAnimation ? 0 : smoothTransition.duration },
-      }}
-      style={isHidden ? { visibility: 'hidden', pointerEvents: 'none', opacity: 0 } : { opacity: 1 }}
+      {...(disableInitialAnimation
+        ? { initial: false } // Inherit from parent wrapper
+        : {
+            initial: { opacity: 0, scale: 0.9 },
+            animate: { opacity: 1, scale: 1 },
+            transition: {
+              opacity: { duration: 0.6 },
+              scale: { duration: smoothTransition.duration },
+            },
+          }
+      )}
+      className={`block ${isHidden ? 'invisible pointer-events-none opacity-0' : ''}`}
       whileHover={isHidden ? {} : { scale: 1.05 }}
       whileTap={isHidden ? {} : { scale: 0.98 }}
-      className="block"
     >
       <Link to={linkTo} onClick={handleClick} className="block">
         <motion.div

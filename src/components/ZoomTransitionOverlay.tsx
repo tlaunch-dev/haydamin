@@ -102,28 +102,16 @@ export const ZoomTransitionOverlay = ({
   const fontClass = language === 'ar' ? 'font-arabic' : 'font-sans';
 
   return createPortal(
-    <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100vw',
-        height: '100vh',
-        pointerEvents: 'none',
-        zIndex: 10000,
-      }}
-    >
+    <div className="fixed inset-0 w-screen h-screen pointer-events-none z-[10000]">
       <motion.div
+        className="absolute top-1/2 left-1/2"
         style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
           x,
           y,
         }}
       >
         {/* Wrapper to center the content */}
-        <div style={{ transform: 'translate(-50%, -50%)' }}>
+        <div className="-translate-x-1/2 -translate-y-1/2">
           <motion.div
             style={{ scale, opacity }}
             className="flex flex-col items-center gap-3"
@@ -132,7 +120,7 @@ export const ZoomTransitionOverlay = ({
               <img
                 src={imageSrc}
                 alt={getPersonName(person, language)}
-                className="w-40 h-40 sm:w-44 sm:h-44 md:w-44 md:h-44 lg:w-48 lg:h-48 rounded-full object-cover"
+                className="w-40 h-40 sm:w-44 sm:h-44 md:w-46 md:h-46 lg:w-48 lg:h-48 rounded-full object-cover"
               />
             </div>
             {showName && (
