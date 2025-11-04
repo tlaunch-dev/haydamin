@@ -12,6 +12,7 @@ import { CollapsibleButtonMenu, ButtonConfig } from '../components/CollapsibleBu
 import ImageCropDialog from '../components/ImageCropDialog';
 import PhotoGalleryModal from '../components/PhotoGalleryModal';
 import { useLanguage } from '../context/LanguageContext';
+import { useHiddenMode } from '../context/HiddenModeContext';
 import { getPersonName, getRelationship, getLocation, getFavoriteFood, getAbout, t } from '../utils/i18n';
 import { Person } from '../types';
 import { Pencil, ArrowRight, Save, X } from 'lucide-react';
@@ -62,6 +63,7 @@ export function PersonDetail() {
   const navigate = useNavigate();
   const isGameMode = searchParams.get('game') === 'true';
   const { language } = useLanguage();
+  const { showNames } = useHiddenMode();
   const { people, loading, error } = usePeople();
   const [isRevealed, setIsRevealed] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -97,10 +99,20 @@ export function PersonDetail() {
     return person.childrenIds.map(childId => getPersonById(childId)).filter(Boolean) as Person[];
   };
 
-  // Reset reveal state when person changes
+  // Reset reveal state when person changes, and auto-reveal if not in hidden mode
+  // Note: Game mode always shows "Who is this?" prompt regardless of hidden mode
   useEffect(() => {
-    setIsRevealed(false);
-  }, [personId]);
+    if (isGameMode) {
+      // Game mode always starts with reveal hidden to show "Who is this?" prompt
+      setIsRevealed(false);
+    } else if (showNames) {
+      // If not in hidden mode and not in game mode, automatically reveal the profile
+      setIsRevealed(true);
+    } else {
+      // If in hidden mode, show "Who is this?" prompt
+      setIsRevealed(false);
+    }
+  }, [personId, showNames, isGameMode]);
 
   // Track shown person in game mode
   useEffect(() => {

@@ -6,6 +6,7 @@ import BackButton from '../components/BackButton';
 import CedarBackground from '../components/CedarBackground';
 import { CollapsibleButtonMenu, ButtonConfig } from '../components/CollapsibleButtonMenu';
 import { useLanguage } from '../context/LanguageContext';
+import { useHiddenMode } from '../context/HiddenModeContext';
 import { usePeople } from '../hooks/usePeople';
 import { Person } from '../types';
 import { getPersonName, t } from '../utils/i18n';
@@ -15,8 +16,8 @@ const FamilyHub = () => {
   const { personId } = useParams<{ personId: string }>();
   const navigate = useNavigate();
   const { language } = useLanguage();
+  const { showNames, toggleShowNames } = useHiddenMode();
   const { people, loading, error } = usePeople();
-  const [showNames, setShowNames] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
   
   // Get root person IDs from environment
@@ -130,7 +131,7 @@ const FamilyHub = () => {
       id: 'toggle-names',
       icon: showNames ? <Eye className="w-5 h-5 text-accent" /> : <EyeOff className="w-5 h-5 text-accent" />,
       label: showNames ? 'Hide names' : 'Show names',
-      onClick: () => setShowNames(!showNames),
+      onClick: toggleShowNames,
     },
     {
       id: 'language',
