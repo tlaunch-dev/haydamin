@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import PersonCard from '../components/PersonCard';
@@ -6,10 +6,10 @@ import AddPersonCard from '../components/AddPersonCard';
 import BackButton from '../components/BackButton';
 import CedarBackground from '../components/CedarBackground';
 import AnimatedTreeConnector from '../components/AnimatedTreeConnector';
-import { ZoomTransitionOverlay } from '../components/ZoomTransitionOverlay';
 import { CollapsibleButtonMenu, ButtonConfig } from '../components/CollapsibleButtonMenu';
 import { useLanguage } from '../context/LanguageContext';
 import { useHiddenMode } from '../context/HiddenModeContext';
+import { useZoomTransition } from '../context/ZoomTransitionContext';
 import { usePeople } from '../hooks/usePeople';
 import { Person } from '../types';
 import { getPersonName, t } from '../utils/i18n';
@@ -32,23 +32,33 @@ const FamilyHub = () => {
   const TREE_WRAPPER_FADE = 0.21;
   const TREE_DROP_DELAY = 0.7;
 
-  // Zoom transition state
-  const [zoomTransition, setZoomTransition] = useState<{
-    person: Person;
-    startRect: DOMRect;
-    showName: boolean;
-    imageSrc: string;
-    targetPersonId: string;
-  } | null>(null);
-  const [zoomPhase, setZoomPhase] = useState<'zoom-in' | 'zoom-out' | 'reveal-card' | 'complete' | null>(null);
-  const [hiddenPersonId, setHiddenPersonId] = useState<string | null>(null);
+  // Zoom transition state from context
+  const {
+    zoomPhase,
+    hiddenPersonId,
+    startZoomTransition,
+    setHiddenPersonId,
+  } = useZoomTransition();
   const [showChildren, setShowChildren] = useState(false);
+  const animationStartedRef = useRef(false);
 
   // Control when children should start animating
   // Reset on route change, then trigger during tree animation
   useEffect(() => {
-    // Reset children visibility when route changes
+    // Reset animation state for new route
+    animationStartedRef.current = false;
     setShowChildren(false);
+  }, [routePersonId]);
+
+  // Separate effect to start animation when ready
+  useEffect(() => {
+    // Don't start if already started, or if we're in zoom-in phase
+    if (animationStartedRef.current || zoomPhase === 'zoom-in') {
+      return;
+    }
+
+    // Mark as started
+    animationStartedRef.current = true;
 
     // Start children when tree drops are about 3/4 of the way started
     const CHILDREN_START_DELAY = TREE_WRAPPER_DELAY + TREE_WRAPPER_FADE + (TREE_DROP_DELAY * .9);
@@ -59,39 +69,23 @@ const FamilyHub = () => {
     }, CHILDREN_START_DELAY * 1000); // Convert to milliseconds
 
     return () => clearTimeout(timer);
-  }, [routePersonId]);
+  }, [routePersonId, zoomPhase, TREE_WRAPPER_DELAY, TREE_WRAPPER_FADE, TREE_DROP_DELAY]);
 
   // Handle zoom transition click
   const handleZoomClick = useCallback((person: Person, rect: DOMRect, showName: boolean, imageSrc: string) => {
     // Hide the clicked card on current page
     setHiddenPersonId(person.id);
 
-    // Start zoom transition
-    setZoomTransition({
+    // Start zoom transition with navigation callback
+    startZoomTransition({
       person,
       startRect: rect,
       showName,
       imageSrc,
       targetPersonId: person.id,
+      onNavigate: () => navigate(`/hub/${person.id}`, { replace: false }),
     });
-
-    // Navigate using React Router (content changes underneath animation)
-    navigate(`/hub/${person.id}`, { replace: false });
-  }, [navigate]);
-
-  // Handle zoom animation phase changes
-  const handleZoomPhaseChange = useCallback((phase: 'zoom-in' | 'zoom-out' | 'reveal-card' | 'complete') => {
-    setZoomPhase(phase);
-
-    if (phase === 'reveal-card') {
-      // Show the card underneath before overlay fades
-      setHiddenPersonId(null);
-    } else if (phase === 'complete') {
-      // Clean up transition state
-      setZoomTransition(null);
-      setZoomPhase(null);
-    }
-  }, []);
+  }, [navigate, startZoomTransition, setHiddenPersonId]);
 
   // Get root person IDs from environment
   const ROOT_PERSON_1 = import.meta.env.VITE_ROOT_PERSON_ID_1 || 'teta-1';
@@ -116,6 +110,23 @@ const FamilyHub = () => {
     if (!person?.childrenIds) return [];
     return person.childrenIds.map(childId => getPersonById(childId)).filter(Boolean) as Person[];
   };
+
+  // Determine who to display based on route (do this before early returns)
+  const isRootHub = !personId;
+  
+  let centerPerson, spousePerson, childrenList;
+  
+  if (isRootHub) {
+    // Root hub: show both root people at top
+    centerPerson = getPersonById(ROOT_PERSON_1);
+    spousePerson = getPersonById(ROOT_PERSON_2);
+    childrenList = centerPerson ? getChildren(centerPerson.id) : [];
+  } else {
+    // Individual hub: show person, their spouse, and their children
+    centerPerson = getPersonById(personId);
+    spousePerson = centerPerson ? getSpouse(personId) : undefined;
+    childrenList = centerPerson ? getChildren(personId) : [];
+  }
   
   // Show loading state
   if (loading) {
@@ -146,31 +157,8 @@ const FamilyHub = () => {
       </div>
     );
   }
-  
-  // Determine who to display based on route
-  const isRootHub = !personId;
-  
-  let centerPerson, spousePerson, childrenList;
-  
-  if (isRootHub) {
-    // Root hub: show both root people at top
-    centerPerson = getPersonById(ROOT_PERSON_1);
-    spousePerson = getPersonById(ROOT_PERSON_2);
-    childrenList = centerPerson ? getChildren(centerPerson.id) : [];
-  } else {
-    // Individual hub: show person, their spouse, and their children
-    centerPerson = getPersonById(personId);
-    if (!centerPerson) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-background">
-          <h1 className="text-2xl font-sans text-text">{t('person_not_found', language)}</h1>
-        </div>
-      );
-    }
-    spousePerson = getSpouse(personId);
-    childrenList = getChildren(personId);
-  }
-  
+
+  // Show person not found state
   if (!centerPerson) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -348,27 +336,24 @@ const FamilyHub = () => {
 
   return (
     <>
-      {/* Zoom Transition Overlay */}
-      {zoomTransition && (
-        <ZoomTransitionOverlay
-          person={zoomTransition.person}
-          startRect={zoomTransition.startRect}
-          targetPersonId={zoomTransition.targetPersonId}
-          showName={zoomTransition.showName}
-          imageSrc={zoomTransition.imageSrc}
-          onPhaseChange={handleZoomPhaseChange}
-        />
-      )}
+      {/* Cedar Background - always visible, never fades */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <CedarBackground />
+      </div>
 
       <AnimatePresence>
         <motion.div
           key={personId || 'root'}
-          className="p-3 sm:p-4 md:p-6 lg:p-8 pt-20 sm:pt-24 md:pt-20 bg-background min-h-screen flex flex-col justify-center relative overflow-hidden"
+          className="p-3 sm:p-4 md:p-6 lg:p-8 pt-20 sm:pt-24 md:pt-20 min-h-screen flex flex-col justify-center relative overflow-hidden"
           initial={{ opacity: 0 }}
           animate={{
+            // Hidden during zoom-in, reveal during zoom-out
             opacity: zoomPhase === 'zoom-in' ? 0 : 1,
-            transition: {
-              duration: zoomPhase === 'zoom-out' ? 0.8 : 0.4,
+          }}
+          transition={{
+            opacity: {
+              // Fade in smoothly during zoom-out
+              duration: zoomPhase === 'zoom-out' ? 0.4 : 0.5,
               ease: [0.4, 0, 0.2, 1] as Easing,
             }
           }}
@@ -380,7 +365,6 @@ const FamilyHub = () => {
             }
           }}
         >
-          <CedarBackground />
 
       {/* Constrain button positioning on wide screens */}
       <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none">

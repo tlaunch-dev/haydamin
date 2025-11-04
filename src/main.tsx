@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { LanguageProvider } from './context/LanguageContext'
 import { AuthProvider } from './context/AuthContext'
 import { HiddenModeProvider } from './context/HiddenModeContext'
+import { ZoomTransitionProvider } from './context/ZoomTransitionContext'
 import App from './App.tsx'
 import './index.css'
 
@@ -12,9 +13,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <AuthProvider>
       <LanguageProvider>
         <HiddenModeProvider>
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
+          <ZoomTransitionProvider>
+            <BrowserRouter>
+              <App />
+            </BrowserRouter>
+          </ZoomTransitionProvider>
         </HiddenModeProvider>
       </LanguageProvider>
     </AuthProvider>
