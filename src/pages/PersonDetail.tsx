@@ -11,6 +11,7 @@ import CedarBackground from '../components/CedarBackground';
 import { CollapsibleButtonMenu, ButtonConfig } from '../components/CollapsibleButtonMenu';
 import ImageCropDialog from '../components/ImageCropDialog';
 import PhotoGalleryModal from '../components/PhotoGalleryModal';
+import GooglePhotosPickerButton from '../components/GooglePhotosPickerButton';
 import { useLanguage } from '../context/LanguageContext';
 import { getPersonName, getRelationship, getLocation, getFavoriteFood, getAbout, t } from '../utils/i18n';
 import { Person } from '../types';
@@ -61,7 +62,7 @@ export function PersonDetail() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const isGameMode = searchParams.get('game') === 'true';
-  const { language } = useLanguage();
+  const { language, toggleLanguage } = useLanguage();
   const { people, loading, error } = usePeople();
   const [isRevealed, setIsRevealed] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -77,6 +78,7 @@ export function PersonDetail() {
   const [imageToCrop, setImageToCrop] = useState<string>('');
   const [showCropDialog, setShowCropDialog] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showPhotoSourceModal, setShowPhotoSourceModal] = useState(false);
   const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
   const [touchEnd, setTouchEnd] = useState<{ x: number; y: number } | null>(null);
 
@@ -283,6 +285,19 @@ export function PersonDetail() {
     }
   };
 
+  // Handle Google Photos selection for primary photo
+  const handleGooglePhotosPrimarySelected = (files: File[]) => {
+    if (files.length > 0) {
+      const file = files[0]; // Only take the first photo for profile
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImageToCrop(reader.result as string);
+        setShowCropDialog(true);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   // Handle cropped primary photo
   const handleCropComplete = (croppedBlob: Blob) => {
     const croppedFile = new File([croppedBlob], 'cropped-photo.jpg', { type: 'image/jpeg' });
@@ -303,6 +318,11 @@ export function PersonDetail() {
   // Handle additional photos selection
   const handleAdditionalPhotosChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
+    setAdditionalPhotos(prev => [...prev, ...files]);
+  };
+
+  // Handle Google Photos selection for additional photos
+  const handleGooglePhotosAdditionalSelected = (files: File[]) => {
     setAdditionalPhotos(prev => [...prev, ...files]);
   };
 
@@ -420,9 +440,6 @@ export function PersonDetail() {
       setIsUploadingPhotos(false);
     }
   };
-
-  // Handle language toggle
-  const { toggleLanguage } = useLanguage();
 
   // Configure menu buttons based on mode
   const menuButtons: ButtonConfig[] = [];
@@ -612,12 +629,15 @@ export function PersonDetail() {
                       <img
                         src={newPrimaryPhotoPreview || person.primaryPhoto}
                         alt={`${getPersonName(person, language)}`}
-                        className={`w-48 h-48 md:w-64 md:h-64 lg:w-80 lg:h-80 rounded-full object-cover ring-2 ring-accent/30 bg-gray-100 animate-fade-in ${!isEditing ? 'cursor-pointer transition-transform duration-300 ease-out hover:scale-105' : ''}`}
-                        onClick={!isEditing ? () => openModal(0) : undefined}
+                        className={`w-48 h-48 md:w-64 md:h-64 lg:w-80 lg:h-80 rounded-full object-cover ring-2 ring-accent/30 bg-gray-100 animate-fade-in ${isEditing ? 'cursor-pointer' : 'cursor-pointer transition-transform duration-300 ease-out hover:scale-105'}`}
+                        onClick={isEditing ? () => setShowPhotoSourceModal(true) : () => openModal(0)}
                       />
                     </div>
                     {isEditing && (
-                      <label className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full cursor-pointer opacity-0 hover:opacity-100 transition-opacity">
+                      <div
+                        className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 rounded-full cursor-pointer opacity-0 hover:opacity-100 transition-opacity"
+                        onClick={() => setShowPhotoSourceModal(true)}
+                      >
                         <div className="text-center text-white">
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-12 h-12 mx-auto mb-2">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
@@ -625,13 +645,7 @@ export function PersonDetail() {
                           </svg>
                           <span className="text-sm font-semibold">{t('change_photo', language)}</span>
                         </div>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handlePrimaryPhotoChange}
-                          className="hidden"
-                        />
-                      </label>
+                      </div>
                     )}
                     
                     {/* Gallery indicator badge - show when there are additional photos and not editing */}
@@ -819,20 +833,22 @@ export function PersonDetail() {
                     )}
                   </div>
 
-                  {/* Profile Photo - only show on side when NOT editing, hidden on mobile */}
-                  {!isEditing && (
-                    <div className="shrink-0 hidden md:block">
+                  {/* Profile Photo - show on side on desktop, hidden on mobile */}
+                  <div className="shrink-0 hidden md:block">
                     <div className="relative">
                       <div className="p-1 bg-background rounded-full shadow-xl transition-all duration-500 ease-out">
                         <img
                           src={newPrimaryPhotoPreview || person.primaryPhoto}
                           alt={`Main photo of ${getPersonName(person, language)}`}
-                          className="w-48 h-48 md:w-64 md:h-64 lg:w-80 lg:h-80 xl:w-96 xl:h-96 rounded-full object-cover ring-2 ring-accent/30 bg-gray-100 animate-fade-in cursor-pointer transition-transform duration-300 ease-out hover:scale-105"
-                          onClick={() => openModal(0)}
+                          className={`w-48 h-48 md:w-64 md:h-64 lg:w-80 lg:h-80 xl:w-96 xl:h-96 rounded-full object-cover ring-2 ring-accent/30 bg-gray-100 animate-fade-in cursor-pointer ${!isEditing ? 'transition-transform duration-300 ease-out hover:scale-105' : ''}`}
+                          onClick={isEditing ? () => setShowPhotoSourceModal(true) : () => openModal(0)}
                         />
                       </div>
                       {isEditing && (
-                        <label className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full cursor-pointer opacity-0 hover:opacity-100 transition-opacity">
+                        <div
+                          className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 rounded-full cursor-pointer opacity-0 hover:opacity-100 transition-opacity"
+                          onClick={() => setShowPhotoSourceModal(true)}
+                        >
                           <div className="text-center text-white">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-12 h-12 mx-auto mb-2">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
@@ -840,15 +856,9 @@ export function PersonDetail() {
                             </svg>
                             <span className="text-sm font-semibold">{t('change_photo', language)}</span>
                           </div>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handlePrimaryPhotoChange}
-                            className="hidden"
-                          />
-                        </label>
+                        </div>
                       )}
-                      
+
                       {/* Gallery indicator badge - show when there are additional photos */}
                       {!isEditing && person.photos && person.photos.length > 0 && (
                         <div className="absolute bottom-2 right-2 bg-accent text-accent-text rounded-full w-10 h-10 md:w-12 md:h-12 flex items-center justify-center shadow-lg">
@@ -859,30 +869,48 @@ export function PersonDetail() {
                       )}
                     </div>
                   </div>
-                  )}
                 </div>
 
                 {/* Additional Photos Section - Only in edit mode */}
                 {isEditing && (
                   <div className="mt-6 pt-6 border-t border-accent/20">
                     <h4 className={`${fontClass} text-xl font-semibold mb-4 text-text`}>{t('additional_photos', language)}</h4>
-                    
-                    {/* Upload button */}
-                    <label className="inline-block cursor-pointer mb-4">
-                      <div className="bg-accent/10 border-2 border-dashed border-accent rounded-lg px-6 py-3 hover:bg-accent/20 transition-colors flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-accent">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                        </svg>
-                        <span className={`${fontClass} text-accent font-semibold`}>{t('add_photos', language)}</span>
+
+                    {/* Upload buttons */}
+                    <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                      <label className="inline-block cursor-pointer">
+                        <div className="bg-accent/10 border-2 border-dashed border-accent rounded-lg px-6 py-3 hover:bg-accent/20 transition-colors flex items-center gap-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-accent">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                          </svg>
+                          <span className={`${fontClass} text-accent font-semibold`}>{t('add_photos', language)}</span>
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleAdditionalPhotosChange}
+                          className="hidden"
+                        />
+                      </label>
+
+                      {/* Divider text */}
+                      <div className="flex items-center gap-2">
+                        <span className={`${fontClass} text-gray-500 text-sm`}>
+                          {language === 'ar' ? 'أو' : 'or'}
+                        </span>
                       </div>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={handleAdditionalPhotosChange}
-                        className="hidden"
+
+                      <GooglePhotosPickerButton
+                        onPhotosSelected={handleGooglePhotosAdditionalSelected}
+                        multiple={true}
+                        language={language}
+                        buttonText={{
+                          en: 'Add from Google Photos',
+                          ar: 'أضف من صور Google'
+                        }}
                       />
-                    </label>
+                    </div>
 
                     {/* Existing photos - can be deleted */}
                     {person.photos && person.photos.length > 0 && (
@@ -1071,14 +1099,14 @@ export function PersonDetail() {
                 {language === 'ar' ? 'تأكيد الحذف' : 'Confirm Deletion'}
               </h3>
             </div>
-            
+
             <p className={`${fontClass} text-lg text-text mb-6`}>
-              {language === 'ar' 
+              {language === 'ar'
                 ? `هل أنت متأكد أنك تريد حذف ${getPersonName(person, language)}؟ سيتم حذف جميع الصور والبيانات بشكل نهائي.`
                 : `Are you sure you want to delete ${getPersonName(person, language)}? All photos and data will be permanently removed.`
               }
             </p>
-            
+
             <div className="flex gap-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
@@ -1094,6 +1122,66 @@ export function PersonDetail() {
                 className={`${fontClass} flex-1 bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-colors font-semibold`}
               >
                 {language === 'ar' ? 'حذف' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Photo Source Selection Modal */}
+      {showPhotoSourceModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-card rounded-2xl p-6 md:p-8 max-w-md w-full shadow-2xl">
+            <h3 className={`${fontClass} text-2xl font-bold mb-2 text-text`}>
+              {language === 'ar' ? 'اختر مصدر الصورة' : 'Choose Photo Source'}
+            </h3>
+            <p className={`${fontClass} text-sm mb-6 text-text/70`}>
+              {language === 'ar' ? 'من أين تريد تحميل الصورة؟' : 'Where would you like to upload the photo from?'}
+            </p>
+
+            <div className="flex flex-col gap-3">
+              {/* Upload from Device */}
+              <label className="cursor-pointer">
+                <div className="bg-accent/10 border-2 border-accent rounded-lg px-6 py-4 hover:bg-accent/20 transition-colors flex items-center gap-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-accent">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                  </svg>
+                  <div className="flex-1">
+                    <div className={`${fontClass} text-accent font-semibold text-lg`}>
+                      {language === 'ar' ? 'تحميل من الجهاز' : 'Upload from Device'}
+                    </div>
+                    <div className={`${fontClass} text-text/60 text-sm`}>
+                      {language === 'ar' ? 'اختر صورة من ملفاتك' : 'Choose a photo from your files'}
+                    </div>
+                  </div>
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    handlePrimaryPhotoChange(e);
+                    setShowPhotoSourceModal(false);
+                  }}
+                  className="hidden"
+                />
+              </label>
+
+              {/* Select from Google Photos */}
+              <div onClick={() => setShowPhotoSourceModal(false)}>
+                <GooglePhotosPickerButton
+                  onPhotosSelected={handleGooglePhotosPrimarySelected}
+                  multiple={false}
+                  language={language}
+                  className="w-full bg-white border-2 border-gray-300 rounded-lg px-6 py-4 hover:border-blue-500 hover:bg-blue-50 transition-colors text-gray-700 font-medium flex items-center gap-3"
+                />
+              </div>
+
+              {/* Cancel */}
+              <button
+                onClick={() => setShowPhotoSourceModal(false)}
+                className={`${fontClass} px-6 py-3 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors text-text font-semibold mt-2`}
+              >
+                {language === 'ar' ? 'إلغاء' : 'Cancel'}
               </button>
             </div>
           </div>

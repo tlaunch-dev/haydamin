@@ -14,7 +14,7 @@ import { Eye, EyeOff, Pencil, Dices } from 'lucide-react';
 const FamilyHub = () => {
   const { personId } = useParams<{ personId: string }>();
   const navigate = useNavigate();
-  const { language } = useLanguage();
+  const { language, toggleLanguage } = useLanguage();
   const { people, loading, error } = usePeople();
   const [showNames, setShowNames] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -107,9 +107,6 @@ const FamilyHub = () => {
     const randomPerson = people[Math.floor(Math.random() * people.length)];
     navigate(`/person/${randomPerson.id}?game=true`);
   };
-
-  // Handle language toggle
-  const { toggleLanguage } = useLanguage();
 
   // Configure menu buttons
   const menuButtons: ButtonConfig[] = [

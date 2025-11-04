@@ -8,6 +8,7 @@ import BackButton from '../components/BackButton';
 import CedarBackground from '../components/CedarBackground';
 import { CollapsibleButtonMenu, ButtonConfig } from '../components/CollapsibleButtonMenu';
 import ImageCropDialog from '../components/ImageCropDialog';
+import GooglePhotosPickerButton from '../components/GooglePhotosPickerButton';
 import { useLanguage } from '../context/LanguageContext';
 import { t } from '../utils/i18n';
 import { Person } from '../types';
@@ -104,11 +105,11 @@ export function AddPerson() {
     // Convert blob to File
     const croppedFile = new File([croppedBlob], 'cropped-photo.jpg', { type: 'image/jpeg' });
     setPhotoFile(croppedFile);
-    
+
     // Create preview
     const previewURL = URL.createObjectURL(croppedBlob);
     setPhotoPreview(previewURL);
-    
+
     // Close dialog
     setShowCropDialog(false);
     setImageToCrop('');
@@ -118,6 +119,20 @@ export function AddPerson() {
   const handleCropCancel = () => {
     setShowCropDialog(false);
     setImageToCrop('');
+  };
+
+  // Handle Google Photos selection
+  const handleGooglePhotosSelected = (files: File[]) => {
+    if (files.length > 0) {
+      const file = files[0]; // Only take the first photo for profile
+      // Read file and show crop dialog
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImageToCrop(reader.result as string);
+        setShowCropDialog(true);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   // Compress and upload photo
@@ -282,7 +297,7 @@ export function AddPerson() {
             <label className={`${fontClass} font-semibold block mb-4 text-xl`}>
               {t('photo', language)}
             </label>
-            
+
             {photoPreview ? (
               <div className="relative inline-block">
                 <img
@@ -304,24 +319,42 @@ export function AddPerson() {
                 </button>
               </div>
             ) : (
-              <label className="cursor-pointer">
-                <div className="w-48 h-48 md:w-64 md:h-64 rounded-full bg-accent/10 border-4 border-dashed border-accent flex items-center justify-center mx-auto hover:bg-accent/20 transition-colors">
-                  <div className="text-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-16 h-16 mx-auto text-accent mb-2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                    </svg>
-                    <span className={`${fontClass} text-accent font-semibold`}>
-                      {t('upload_photo', language)}
-                    </span>
+              <div className="flex flex-col items-center gap-4">
+                <label className="cursor-pointer">
+                  <div className="w-48 h-48 md:w-64 md:h-64 rounded-full bg-accent/10 border-4 border-dashed border-accent flex items-center justify-center mx-auto hover:bg-accent/20 transition-colors">
+                    <div className="text-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-16 h-16 mx-auto text-accent mb-2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                      </svg>
+                      <span className={`${fontClass} text-accent font-semibold`}>
+                        {t('upload_photo', language)}
+                      </span>
+                    </div>
                   </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoSelect}
+                    className="hidden"
+                  />
+                </label>
+
+                {/* Divider text */}
+                <div className="flex items-center gap-3 w-full max-w-md">
+                  <div className="flex-1 h-px bg-gray-300"></div>
+                  <span className={`${fontClass} text-gray-500 text-sm`}>
+                    {language === 'ar' ? 'أو' : 'or'}
+                  </span>
+                  <div className="flex-1 h-px bg-gray-300"></div>
                 </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePhotoSelect}
-                  className="hidden"
+
+                {/* Google Photos Picker Button */}
+                <GooglePhotosPickerButton
+                  onPhotosSelected={handleGooglePhotosSelected}
+                  multiple={false}
+                  language={language}
                 />
-              </label>
+              </div>
             )}
           </div>
 
