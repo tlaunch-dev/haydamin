@@ -13,37 +13,57 @@ const useResponsiveWidth = (isExpanded: boolean, isFeatured: boolean, index: num
   const [width, setWidth] = useState<string>('100%');
   const [maxWidth, setMaxWidth] = useState<string>('100%');
   const [marginLeft, setMarginLeft] = useState<string>('auto');
+  const [marginLeftPx, setMarginLeftPx] = useState<number | null>(null);
 
   useEffect(() => {
     const updateWidth = () => {
       const viewportWidth = window.innerWidth;
       
-      if (isFeatured) {
+      if (isExpanded) {
+        // Expanded state - almost full width, always centered (applies to both featured and non-featured)
+        let expandedWidth: string;
+        let expandedMaxWidth: string;
+        
+        if (viewportWidth >= 1536) {
+          expandedWidth = '80%';
+          expandedMaxWidth = '56rem'; // max-w-4xl
+        } else if (viewportWidth >= 1280) {
+          expandedWidth = '85%';
+          expandedMaxWidth = '64rem'; // max-w-5xl
+        } else if (viewportWidth >= 1024) {
+          expandedWidth = '90%';
+          expandedMaxWidth = '72rem'; // max-w-6xl
+        } else if (viewportWidth >= 768) {
+          expandedWidth = '95%';
+          expandedMaxWidth = '64rem'; // max-w-5xl
+        } else {
+          expandedWidth = '100%';
+          expandedMaxWidth = '100%';
+        }
+        
+        setWidth(expandedWidth);
+        setMaxWidth(expandedMaxWidth);
+        
+        // Calculate center position for smooth animation
+        // Get container width (assuming max-w-5xl = 64rem = 1024px or use viewport)
+        const containerMaxWidth = viewportWidth >= 1280 ? 1024 : Math.min(viewportWidth * 0.9, 1024);
+        const widthValue = expandedWidth.includes('%') 
+          ? (viewportWidth * parseFloat(expandedWidth) / 100)
+          : parseFloat(expandedWidth.replace('rem', '')) * 16;
+        const actualWidth = Math.min(widthValue, parseFloat(expandedMaxWidth.replace('rem', '')) * 16);
+        const centerMargin = (containerMaxWidth - actualWidth) / 2;
+        setMarginLeftPx(centerMargin);
+        setMarginLeft('0'); // Use pixel value for animation
+      } else if (isFeatured) {
+        // Featured card collapsed state
         setWidth('100%');
         setMaxWidth('42rem'); // max-w-2xl
-        setMarginLeft('auto');
-        return;
-      }
-
-      if (isExpanded) {
-        // Expanded state - almost full width, always centered
-        if (viewportWidth >= 1536) {
-          setWidth('80%');
-          setMaxWidth('56rem'); // max-w-4xl
-        } else if (viewportWidth >= 1280) {
-          setWidth('85%');
-          setMaxWidth('64rem'); // max-w-5xl
-        } else if (viewportWidth >= 1024) {
-          setWidth('90%');
-          setMaxWidth('72rem'); // max-w-6xl
-        } else if (viewportWidth >= 768) {
-          setWidth('95%');
-          setMaxWidth('64rem'); // max-w-5xl
-        } else {
-          setWidth('100%');
-          setMaxWidth('100%');
-        }
-        setMarginLeft('auto');
+        // Featured cards are always centered
+        const containerMaxWidth = viewportWidth >= 1280 ? 1024 : Math.min(viewportWidth * 0.9, 1024);
+        const featuredWidth = 42 * 16; // 42rem in pixels
+        const centerMargin = (containerMaxWidth - featuredWidth) / 2;
+        setMarginLeftPx(centerMargin);
+        setMarginLeft('0');
       } else {
         // Collapsed state - alternating widths
         if (viewportWidth >= 1536) {
@@ -66,9 +86,29 @@ const useResponsiveWidth = (isExpanded: boolean, isFeatured: boolean, index: num
         // Use nonFeaturedIndex if provided (for proper alternating), otherwise fall back to index
         const alternatingIndex = nonFeaturedIndex !== undefined ? nonFeaturedIndex : index;
         if (viewportWidth >= 768 && alternatingIndex % 2 === 1) {
-          setMarginLeft('auto');
+          // Right side - calculate margin to push to right
+          let collapsedWidth: string;
+          if (viewportWidth >= 1536) {
+            collapsedWidth = '33.333333%';
+          } else if (viewportWidth >= 1280) {
+            collapsedWidth = '40%';
+          } else if (viewportWidth >= 1024) {
+            collapsedWidth = '50%';
+          } else {
+            collapsedWidth = '66.666667%';
+          }
+          
+          const containerMaxWidth = viewportWidth >= 1280 ? 1024 : Math.min(viewportWidth * 0.9, 1024);
+          const widthValue = collapsedWidth.includes('%')
+            ? (viewportWidth * parseFloat(collapsedWidth) / 100)
+            : parseFloat(collapsedWidth.replace('rem', '')) * 16;
+          const actualWidth = Math.min(widthValue, parseFloat(maxWidth.replace('rem', '')) * 16);
+          const rightMargin = containerMaxWidth - actualWidth;
+          setMarginLeftPx(rightMargin);
+          setMarginLeft('0'); // Use pixel value
         } else {
           setMarginLeft('0');
+          setMarginLeftPx(0);
         }
       }
     };
@@ -78,7 +118,7 @@ const useResponsiveWidth = (isExpanded: boolean, isFeatured: boolean, index: num
     return () => window.removeEventListener('resize', updateWidth);
   }, [isExpanded, isFeatured, index, nonFeaturedIndex]);
 
-  return { width, maxWidth, marginLeft };
+  return { width, maxWidth, marginLeft, marginLeftPx };
 };
 
 interface MemoryCardProps {
@@ -338,15 +378,15 @@ export function MemoryCard({
   };
 
   // Get responsive width values (includes margin for alternating pattern)
-  const { width, maxWidth, marginLeft } = useResponsiveWidth(isExpanded, isFeatured, index, nonFeaturedIndex);
+  const { width, maxWidth, marginLeft, marginLeftPx } = useResponsiveWidth(isExpanded, isFeatured, index, nonFeaturedIndex);
 
   return (
     <motion.div
       animate={{
         width: width,
         maxWidth: maxWidth,
-        marginLeft: marginLeft,
-        marginRight: marginLeft === 'auto' ? '0' : 'auto',
+        marginLeft: marginLeftPx !== null ? `${marginLeftPx}px` : marginLeft,
+        marginRight: marginLeftPx !== null ? '0' : (marginLeft === 'auto' ? '0' : 'auto'),
       }}
       transition={{
         duration: 0.6,
