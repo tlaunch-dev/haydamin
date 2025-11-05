@@ -11,8 +11,9 @@ export function MemoryTimelineConnector({ memoryCount, featuredIndex = -1 }: Mem
 
   useEffect(() => {
     // Calculate dimensions based on memory count
-    const cardHeight = 600;
-    const gap = 48;
+    // Adjusted to match actual card sizes (smaller now)
+    const cardHeight = 400; // Reduced from 600
+    const gap = 32; // space-y-8 = 2rem = 32px
     const totalHeight = memoryCount * (cardHeight + gap) + 100;
     const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
     const width = Math.min(viewportWidth, 1400);
@@ -22,8 +23,8 @@ export function MemoryTimelineConnector({ memoryCount, featuredIndex = -1 }: Mem
   if (memoryCount === 0) return null;
 
   const centerX = dimensions.width / 2;
-  const cardHeight = 600;
-  const gap = 48;
+  const cardHeight = 400; // Match the actual smaller card height
+  const gap = 32; // Match space-y-8
 
   // Generate central trunk path (vertical line down the center)
   const generateTrunkPath = () => {
@@ -68,7 +69,7 @@ export function MemoryTimelineConnector({ memoryCount, featuredIndex = -1 }: Mem
 
       // Position branch in the gap ABOVE each card
       const cardTop = i * (cardHeight + gap);
-      const branchY = cardTop - gap / 3; // Position in upper part of gap
+      const branchY = cardTop - gap / 2; // Position in middle of gap above card
 
       let branchPath: string;
 

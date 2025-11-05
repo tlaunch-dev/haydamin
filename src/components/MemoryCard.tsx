@@ -243,7 +243,7 @@ export function MemoryCard({ memory, storytellerName, people, isFeatured = false
         ease: [0.34, 1.56, 0.64, 1], // spring-ease-smooth
       }}
       className={`
-        ${isFeatured ? 'w-full max-w-4xl mx-auto' : 'w-full md:w-4/5 lg:w-3/5 xl:w-1/2 max-w-2xl'}
+        ${isFeatured ? 'w-full max-w-3xl mx-auto' : 'w-full md:w-4/5 lg:w-2/3 xl:w-3/5 max-w-xl'}
         ${!isFeatured && index % 2 === 0 ? '' : 'md:ml-auto'}
       `}
     >
@@ -259,7 +259,7 @@ export function MemoryCard({ memory, storytellerName, people, isFeatured = false
         whileTap={!isExpanded ? { scale: 0.98 } : {}}
         onClick={!isExpanded ? handleCardClick : undefined}
         className={`
-          bg-card rounded-3xl p-6 shadow-sm relative
+          bg-card rounded-2xl p-4 md:p-5 shadow-sm relative
           ${!isExpanded ? 'cursor-pointer' : ''}
           transition-shadow duration-300
           ${!isExpanded ? 'hover:shadow-md' : 'shadow-lg'}
@@ -405,13 +405,13 @@ export function MemoryCard({ memory, storytellerName, people, isFeatured = false
 
         {/* Content */}
         <div>
-          <h3 className="text-2xl font-bold text-text mb-1">{title}</h3>
+          <h3 className="text-xl md:text-2xl font-bold text-text mb-1">{title}</h3>
           {caption && (
-            <p className="text-lg font-light text-text/70 mb-3">{caption}</p>
+            <p className="text-base md:text-lg font-light text-text/70 mb-2">{caption}</p>
           )}
 
           {/* Metadata */}
-          <div className="text-lg font-medium text-accent text-right">
+          <div className="text-sm md:text-base font-light text-accent">
             <span>{dateStr}</span>
           </div>
         </div>

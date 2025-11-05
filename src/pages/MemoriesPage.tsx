@@ -92,7 +92,7 @@ export function MemoriesPage() {
               />
 
               {/* Memory cards */}
-              <div className="relative space-y-12" style={{ zIndex: 20 }}>
+              <div className="relative space-y-8" style={{ zIndex: 20 }}>
                 {memories.map((memory, index) => {
                   const storyteller = people.find((p) => p.id === memory.storytellerId);
                   const storytellerName = storyteller
