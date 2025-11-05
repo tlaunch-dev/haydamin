@@ -27,19 +27,13 @@ export function MemoriesPage() {
 
   return (
     <div className="min-h-screen bg-background text-text">
-      {/* Header */}
-      <div className="fixed top-0 left-0 right-0 z-10 bg-background/80 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <BackButton />
-            {/* TODO: Add CollapsibleButtonMenu here later */}
-          </div>
-        </div>
-      </div>
-
       {/* Main Content */}
-      <div className="pt-20 px-4 sm:px-6 lg:px-8 pb-12">
+      <div className="px-4 sm:px-6 lg:px-8 py-6 pb-12">
         <div className="max-w-5xl mx-auto">
+          {/* Header */}
+          <div className="mb-8">
+            <BackButton />
+          </div>
           {/* Page Title */}
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold text-text mb-2">
