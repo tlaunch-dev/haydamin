@@ -3,6 +3,7 @@ import { usePeople } from '../hooks/usePeople';
 import { useLanguage } from '../context/LanguageContext';
 import BackButton from '../components/BackButton';
 import LoadingScreen from '../components/LoadingScreen';
+import { MemoryCard } from '../components/MemoryCard';
 
 export function MemoriesPage() {
   const { memories, loading: memoriesLoading } = useMemories();
@@ -84,68 +85,14 @@ export function MemoriesPage() {
                     : storyteller.name
                   : '';
 
-                const title = language === 'ar' ? memory.titleAr : memory.title;
-                const caption = language === 'ar' ? memory.captionAr : memory.caption;
-
-                // Format date
-                const dateStr = memory.dateRecorded.toLocaleDateString(
-                  language === 'ar' ? 'ar-EG' : 'en-US',
-                  { year: 'numeric', month: 'long', day: 'numeric' }
-                );
-
-                // Format duration (MM:SS)
-                const minutes = Math.floor(memory.durationSeconds / 60);
-                const seconds = memory.durationSeconds % 60;
-                const durationStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-
-                // Determine if this is the featured (first) memory
-                const isFeatured = index === 0;
-
                 return (
-                  <div
+                  <MemoryCard
                     key={memory.id}
-                    className={`
-                      ${isFeatured ? 'w-full' : 'w-full md:w-3/5'}
-                      ${!isFeatured && index % 2 === 0 ? '' : 'md:ml-auto'}
-                    `}
-                  >
-                    {/* Memory Card - Basic for now, will enhance with MemoryCard component */}
-                    <div className="bg-card rounded-3xl p-6 shadow-sm">
-                      {/* Video Thumbnail */}
-                      <div className="relative aspect-video bg-text/10 rounded-2xl mb-4 overflow-hidden">
-                        <img
-                          src={memory.thumbnailUrl}
-                          alt={title}
-                          className="w-full h-full object-cover"
-                        />
-                        {/* Play button overlay */}
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-16 h-16 rounded-full bg-accent flex items-center justify-center shadow-lg">
-                            <svg
-                              className="w-8 h-8 text-accent-text ml-1"
-                              fill="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path d="M8 5v14l11-7z" />
-                            </svg>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Content */}
-                      <div>
-                        <h3 className="text-2xl font-bold text-text mb-1">{title}</h3>
-                        {caption && (
-                          <p className="text-lg font-light text-text/70 mb-3">{caption}</p>
-                        )}
-
-                        {/* Metadata */}
-                        <div className="text-base font-light text-accent">
-                          {storytellerName} · {dateStr} · {durationStr}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                    memory={memory}
+                    storytellerName={storytellerName}
+                    isFeatured={index === 0}
+                    index={index}
+                  />
                 );
               })}
             </div>

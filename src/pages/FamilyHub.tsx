@@ -19,7 +19,7 @@ import { usePersonImagePreload } from '../hooks/useImagePreload';
 import { Person } from '../types';
 import { getPersonName, t } from '../utils/i18n';
 import { getNavigationDirectionFromLocation, getBackNavigationPending, clearBackNavigationPending } from '../utils/navigationState';
-import { Pencil, Dices, Images } from 'lucide-react';
+import { Pencil, Dices, Images, Vault } from 'lucide-react';
 
 // Type alias for easing functions
 type Easing = [number, number, number, number];
@@ -224,6 +224,11 @@ const FamilyHub = () => {
     navigate('/gallery');
   }, [hasAdditionalPhotos, navigate]);
 
+  // Handle memories button click - useCallback to keep stable reference
+  const handleMemories = useCallback(() => {
+    navigate('/memories');
+  }, [navigate]);
+
   // Handle edit mode toggle - useCallback to keep stable reference
   const handleToggleEditMode = useCallback(() => {
     setIsEditMode(prev => !prev);
@@ -247,6 +252,12 @@ const FamilyHub = () => {
       show: hasAdditionalPhotos,
     },
     {
+      id: 'memories',
+      icon: <Vault className="w-5 h-5 text-accent" />,
+      label: language === 'ar' ? 'الذكريات' : 'Memories',
+      onClick: handleMemories,
+    },
+    {
       id: 'edit-mode',
       icon: <Pencil className="w-5 h-5 text-accent" />,
       label: isEditMode ? 'Exit edit mode' : 'Enter edit mode',
@@ -258,7 +269,7 @@ const FamilyHub = () => {
       label: language === 'ar' ? 'English' : 'العربية',
       onClick: toggleLanguage,
     },
-  ], [language, people.length, hasAdditionalPhotos, isEditMode, handleGameMode, handleGalleryMode, handleToggleEditMode, toggleLanguage]);
+  ], [language, people.length, hasAdditionalPhotos, isEditMode, handleGameMode, handleGalleryMode, handleMemories, handleToggleEditMode, toggleLanguage]);
 
   // Show loading state - only show full animation if initial load is not complete
   if (loading) {
