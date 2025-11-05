@@ -32,24 +32,38 @@ export function MemoryTimelineConnector({ memoryCount, featuredIndex = -1 }: Mem
     return `M ${centerX} ${startY} L ${centerX} ${endY}`;
   };
 
+  // Get responsive branch length
+  const getBranchLength = () => {
+    const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
+    if (viewportWidth < 768) {
+      return 100; // Mobile - shorter branches
+    } else if (viewportWidth < 1024) {
+      return 150; // Tablet - medium branches
+    } else {
+      return 200; // Desktop - longer branches
+    }
+  };
+
+  const branchLength = getBranchLength();
+
   // Generate branches extending from trunk to cards
   const generateBranches = () => {
-    const branches: Array<{ path: string; delay: number }> = [];
-
-    // Responsive branch length
-    const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
-    let branchLength: number;
-    if (viewportWidth < 768) {
-      branchLength = 80; // Mobile - shorter branches
-    } else if (viewportWidth < 1024) {
-      branchLength = 120; // Tablet - medium branches
-    } else {
-      branchLength = 180; // Desktop - longer branches
-    }
+    const branches: Array<{
+      path: string;
+      delay: number;
+      isLeft: boolean;
+      y: number;
+    }> = [];
 
     for (let i = 0; i < memoryCount; i++) {
       const isFeatured = i === featuredIndex;
-      const isLeft = i % 2 === 0 && !isFeatured;
+
+      // Featured card: no branch (trunk goes straight through)
+      if (isFeatured) {
+        continue;
+      }
+
+      const isLeft = i % 2 === 0;
 
       // Branch starts at card middle height
       const cardTop = i * (cardHeight + gap);
@@ -57,26 +71,25 @@ export function MemoryTimelineConnector({ memoryCount, featuredIndex = -1 }: Mem
 
       let branchPath: string;
 
-      if (isFeatured) {
-        // Featured card: no branch (trunk goes straight through)
-        continue;
-      } else if (isLeft) {
+      if (isLeft) {
         // Left branch: curves from trunk to left
         const startX = centerX;
         const endX = centerX - branchLength;
-        const controlX = centerX - branchLength * 0.4;
+        const controlX = centerX - branchLength * 0.5;
         branchPath = `M ${startX} ${branchY} Q ${controlX} ${branchY} ${endX} ${branchY}`;
       } else {
         // Right branch: curves from trunk to right
         const startX = centerX;
         const endX = centerX + branchLength;
-        const controlX = centerX + branchLength * 0.4;
+        const controlX = centerX + branchLength * 0.5;
         branchPath = `M ${startX} ${branchY} Q ${controlX} ${branchY} ${endX} ${branchY}`;
       }
 
       branches.push({
         path: branchPath,
-        delay: 0.8 + i * 0.1, // Stagger branch animations after trunk
+        delay: 1.5 + i * 0.15, // Stagger branch animations after trunk (which is 1.5s)
+        isLeft,
+        y: branchY,
       });
     }
 
@@ -120,65 +133,68 @@ export function MemoryTimelineConnector({ memoryCount, featuredIndex = -1 }: Mem
         />
 
         {/* Branches extending to each card */}
-        {branches.map((branch, i) => (
+        {branches.map((branch, idx) => (
           <motion.path
-            key={i}
+            key={`branch-${idx}`}
             d={branch.path}
             stroke="currentColor"
             strokeWidth="4"
             fill="none"
-            className="text-accent/50"
+            className="text-accent/60"
             strokeLinecap="round"
             initial={{ pathLength: 0, opacity: 0 }}
             animate={{ pathLength: 1, opacity: 1 }}
             transition={{
               pathLength: {
                 delay: branch.delay,
-                duration: 0.4,
+                duration: 0.5,
                 ease: [0.4, 0, 0.2, 1],
               },
               opacity: {
                 delay: branch.delay,
-                duration: 0.2,
+                duration: 0.3,
               },
             }}
           />
         ))}
 
-        {/* Nodes at branch endpoints */}
-        {Array.from({ length: memoryCount }).map((_, i) => {
-          const isFeatured = i === featuredIndex;
-          if (isFeatured) return null; // No node for featured cards
+        {/* Trunk nodes at branch connection points */}
+        {branches.map((branch, idx) => (
+          <motion.circle
+            key={`trunk-node-${idx}`}
+            cx={centerX}
+            cy={branch.y}
+            r="6"
+            className="text-accent/70"
+            fill="currentColor"
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{
+              delay: branch.delay,
+              duration: 0.3,
+              ease: [0.34, 1.56, 0.64, 1],
+            }}
+          />
+        ))}
 
-          const isLeft = i % 2 === 0;
-          const cardTop = i * (cardHeight + gap);
-          const nodeY = cardTop + cardHeight / 2;
-
-          const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
-          let branchLength: number;
-          if (viewportWidth < 768) {
-            branchLength = 80;
-          } else if (viewportWidth < 1024) {
-            branchLength = 120;
-          } else {
-            branchLength = 180;
-          }
-
-          const nodeX = isLeft ? centerX - branchLength : centerX + branchLength;
+        {/* Nodes at branch endpoints (the "leaves") */}
+        {branches.map((branch, idx) => {
+          const nodeX = branch.isLeft ? centerX - branchLength : centerX + branchLength;
+          const nodeY = branch.y;
 
           return (
-            <motion.g key={i}>
+            <motion.g key={`leaf-${idx}`}>
               {/* Outer circle */}
               <motion.circle
                 cx={nodeX}
                 cy={nodeY}
-                r="8"
-                className="text-accent/30"
+                r="10"
+                className="text-accent/40"
                 fill="currentColor"
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{
-                  delay: 0.8 + i * 0.1 + 0.3,
+                  delay: branch.delay + 0.4,
                   duration: 0.3,
                   ease: [0.34, 1.56, 0.64, 1],
                 }}
@@ -187,45 +203,18 @@ export function MemoryTimelineConnector({ memoryCount, featuredIndex = -1 }: Mem
               <motion.circle
                 cx={nodeX}
                 cy={nodeY}
-                r="4"
+                r="5"
                 className="text-accent"
                 fill="currentColor"
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{
-                  delay: 0.8 + i * 0.1 + 0.4,
+                  delay: branch.delay + 0.5,
                   duration: 0.2,
                   ease: [0.34, 1.56, 0.64, 1],
                 }}
               />
             </motion.g>
-          );
-        })}
-
-        {/* Trunk nodes at branch connection points */}
-        {Array.from({ length: memoryCount }).map((_, i) => {
-          const isFeatured = i === featuredIndex;
-          if (isFeatured) return null;
-
-          const cardTop = i * (cardHeight + gap);
-          const nodeY = cardTop + cardHeight / 2;
-
-          return (
-            <motion.circle
-              key={`trunk-node-${i}`}
-              cx={centerX}
-              cy={nodeY}
-              r="5"
-              className="text-accent/60"
-              fill="currentColor"
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{
-                delay: 0.8 + i * 0.1,
-                duration: 0.3,
-                ease: [0.34, 1.56, 0.64, 1],
-              }}
-            />
           );
         })}
       </svg>
