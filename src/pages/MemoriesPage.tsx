@@ -1,14 +1,20 @@
+import { useState } from 'react';
 import { useMemories } from '../hooks/useMemories';
 import { usePeople } from '../hooks/usePeople';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import BackButton from '../components/BackButton';
 import LoadingScreen from '../components/LoadingScreen';
 import { MemoryCard } from '../components/MemoryCard';
+import { MemoryUploadModal } from '../components/MemoryUploadModal';
+import { Plus } from 'lucide-react';
 
 export function MemoriesPage() {
   const { memories, loading: memoriesLoading } = useMemories();
   const { people, loading: peopleLoading } = usePeople();
   const { language } = useLanguage();
+  const { user } = useAuth();
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   const loading = memoriesLoading || peopleLoading;
 
@@ -72,7 +78,14 @@ export function MemoriesPage() {
                   : 'Preserve family stories for generations to come'}
               </p>
 
-              {/* TODO: Add "Add Memory" button here when edit mode is implemented */}
+              {user && (
+                <button
+                  onClick={() => setIsUploadModalOpen(true)}
+                  className="px-8 py-4 rounded-xl bg-accent text-accent-text font-medium hover:bg-accent-warm transition-colors shadow-lg"
+                >
+                  {language === 'ar' ? 'إضافة ذكرى' : 'Add Memory'}
+                </button>
+              )}
             </div>
           ) : (
             // Memories List
@@ -99,6 +112,28 @@ export function MemoriesPage() {
           )}
         </div>
       </div>
+
+      {/* Floating Action Button (FAB) - only show if user is authenticated and there are memories */}
+      {user && hasMemories && (
+        <button
+          onClick={() => setIsUploadModalOpen(true)}
+          className="fixed bottom-8 right-8 w-16 h-16 md:w-20 md:h-20 rounded-full bg-accent text-accent-text shadow-2xl hover:bg-accent-warm transition-all hover:scale-105 flex items-center justify-center z-40"
+          aria-label={language === 'ar' ? 'إضافة ذكرى' : 'Add Memory'}
+        >
+          <Plus className="w-8 h-8 md:w-10 md:h-10" />
+        </button>
+      )}
+
+      {/* Upload Modal */}
+      <MemoryUploadModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        people={people}
+        onSuccess={() => {
+          // Modal will close automatically, memories will update via real-time listener
+          console.log('Memory uploaded successfully');
+        }}
+      />
     </div>
   );
 }
