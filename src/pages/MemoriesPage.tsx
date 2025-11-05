@@ -7,6 +7,7 @@ import BackButton from '../components/BackButton';
 import LoadingScreen from '../components/LoadingScreen';
 import { MemoryCard } from '../components/MemoryCard';
 import { MemoryUploadModal } from '../components/MemoryUploadModal';
+import { MemoryTimelineConnector } from '../components/MemoryTimelineConnector';
 import { Plus } from 'lucide-react';
 
 export function MemoriesPage() {
@@ -82,27 +83,36 @@ export function MemoriesPage() {
               )}
             </div>
           ) : (
-            // Memories List
-            <div className="space-y-12">
-              {memories.map((memory, index) => {
-                const storyteller = people.find((p) => p.id === memory.storytellerId);
-                const storytellerName = storyteller
-                  ? language === 'ar'
-                    ? storyteller.nameAr
-                    : storyteller.name
-                  : '';
+            // Memories List with Timeline Connector
+            <div className="relative">
+              {/* Timeline connector in background */}
+              <MemoryTimelineConnector
+                memoryCount={memories.length}
+                featuredIndex={memories.findIndex((m) => m.featured)}
+              />
 
-                return (
-                  <MemoryCard
-                    key={memory.id}
-                    memory={memory}
-                    storytellerName={storytellerName}
-                    people={people}
-                    isFeatured={index === 0}
-                    index={index}
-                  />
-                );
-              })}
+              {/* Memory cards */}
+              <div className="relative space-y-12" style={{ zIndex: 1 }}>
+                {memories.map((memory, index) => {
+                  const storyteller = people.find((p) => p.id === memory.storytellerId);
+                  const storytellerName = storyteller
+                    ? language === 'ar'
+                      ? storyteller.nameAr
+                      : storyteller.name
+                    : '';
+
+                  return (
+                    <MemoryCard
+                      key={memory.id}
+                      memory={memory}
+                      storytellerName={storytellerName}
+                      people={people}
+                      isFeatured={memory.featured || false}
+                      index={index}
+                    />
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
