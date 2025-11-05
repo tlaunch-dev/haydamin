@@ -9,6 +9,7 @@ export interface ButtonConfig {
   show?: boolean;
   ariaLabel?: string;
   hideOnMobile?: boolean;
+  disabled?: boolean;
 }
 
 interface CollapsibleButtonMenuProps {
@@ -75,8 +76,13 @@ export function CollapsibleButtonMenu({ buttons, className = '' }: CollapsibleBu
         {visibleButtons.map((button) => (
           <button
             key={button.id}
-            onClick={() => handleButtonClick(button.onClick)}
-            className={`w-14 h-14 md:w-16 md:h-16 rounded-full bg-card/80 backdrop-blur-md shadow-lg border border-border/50 flex items-center justify-center hover:bg-card transition-all transform hover:scale-105 ${button.hideOnMobile ? 'hidden md:flex' : ''}`}
+            onClick={() => !button.disabled && handleButtonClick(button.onClick)}
+            disabled={button.disabled}
+            className={`w-14 h-14 md:w-16 md:h-16 rounded-full bg-card/80 backdrop-blur-md shadow-lg border border-border/50 flex items-center justify-center transition-all transform ${
+              button.disabled 
+                ? 'opacity-50 cursor-not-allowed' 
+                : 'hover:bg-card hover:scale-105'
+            } ${button.hideOnMobile ? 'hidden md:flex' : ''}`}
             aria-label={button.ariaLabel || button.label}
             title={button.label}
           >

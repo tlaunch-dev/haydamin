@@ -462,8 +462,8 @@ export function PersonDetail() {
       onClick: isRevealed ? handleNextPerson : () => {},
       show: isRevealed,
     });
-  } else if (isRevealed) {
-    // Normal mode: Show Edit button
+  } else if (isRevealed && !isEditing) {
+    // Normal mode: Show Edit button (only when not editing)
     menuButtons.push({
       id: 'edit',
       icon: <Pencil className="w-5 h-5 text-accent" />,
@@ -511,6 +511,36 @@ export function PersonDetail() {
             </button>
           )}
         </div>
+
+        {/* Save/Cancel Buttons - Top Right (Desktop only, when editing) */}
+        {isEditing && !isGameMode && (
+          <div className="fixed top-6 right-40 md:right-44 z-50 hidden md:flex gap-3">
+            <button
+              onClick={handleCancel}
+              disabled={isUploadingPhotos}
+              className={`${fontClass} bg-card text-text font-bold px-6 py-3 rounded-lg shadow-md transition-all duration-300 ease-out hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-accent/20 flex items-center justify-center gap-2`}
+              aria-label={language === 'ar' ? 'إلغاء' : 'Cancel'}
+            >
+              <X className="w-5 h-5" />
+              <span>{language === 'ar' ? 'إلغاء' : 'Cancel'}</span>
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isUploadingPhotos}
+              className={`${fontClass} bg-accent text-accent-text font-bold px-6 py-3 rounded-lg shadow-md transition-all duration-300 ease-out hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
+              aria-label={language === 'ar' ? 'حفظ' : 'Save'}
+            >
+              {isUploadingPhotos ? (
+                <span className="animate-spin">⏳</span>
+              ) : (
+                <>
+                  <Save className="w-5 h-5" />
+                  <span>{language === 'ar' ? 'حفظ' : 'Save'}</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
 
         {/* Corner Menu */}
         <CollapsibleButtonMenu buttons={menuButtons} />
@@ -964,7 +994,7 @@ export function PersonDetail() {
 
         {/* Bottom action bar for mobile edit mode */}
         {isEditing && !isGameMode && (
-          <div className="fixed bottom-0 left-0 right-0 z-50 flex md:hidden">
+          <div className="fixed bottom-0 left-0 right-0 z-50 flex md:hidden shadow-lg">
             <button
               onClick={handleCancel}
               disabled={isUploadingPhotos}
