@@ -10,10 +10,98 @@ import { MemoryUploadModal } from './MemoryUploadModal';
 
 // Hook to get responsive width values
 const useResponsiveWidth = (isExpanded: boolean, isFeatured: boolean, index: number, nonFeaturedIndex?: number) => {
-  const [width, setWidth] = useState<string>('100%');
-  const [maxWidth, setMaxWidth] = useState<string>('100%');
-  const [marginLeft, setMarginLeft] = useState<string>('auto');
-  const [marginLeftPx, setMarginLeftPx] = useState<number | null>(null);
+  // Calculate initial values immediately to prevent flashing
+  const getInitialValues = () => {
+    if (typeof window === 'undefined') {
+      return { width: '100%', maxWidth: '100%', marginLeft: 'auto', marginLeftPx: null };
+    }
+    
+    const viewportWidth = window.innerWidth;
+    
+    if (isExpanded) {
+      // Expanded state
+      let expandedWidth: string;
+      let expandedMaxWidth: string;
+      
+      if (viewportWidth >= 1536) {
+        expandedWidth = '80%';
+        expandedMaxWidth = '56rem';
+      } else if (viewportWidth >= 1280) {
+        expandedWidth = '85%';
+        expandedMaxWidth = '64rem';
+      } else if (viewportWidth >= 1024) {
+        expandedWidth = '90%';
+        expandedMaxWidth = '72rem';
+      } else if (viewportWidth >= 768) {
+        expandedWidth = '95%';
+        expandedMaxWidth = '64rem';
+      } else {
+        expandedWidth = '100%';
+        expandedMaxWidth = '100%';
+      }
+      
+      const containerMaxWidth = viewportWidth >= 1280 ? 1024 : Math.min(viewportWidth * 0.9, 1024);
+      const widthValue = expandedWidth.includes('%') 
+        ? (viewportWidth * parseFloat(expandedWidth) / 100)
+        : parseFloat(expandedWidth.replace('rem', '')) * 16;
+      const actualWidth = Math.min(widthValue, parseFloat(expandedMaxWidth.replace('rem', '')) * 16);
+      const centerMargin = (containerMaxWidth - actualWidth) / 2;
+      
+      return { width: expandedWidth, maxWidth: expandedMaxWidth, marginLeft: '0', marginLeftPx: centerMargin };
+    } else if (isFeatured) {
+      // Featured collapsed
+      const containerMaxWidth = viewportWidth >= 1280 ? 1024 : Math.min(viewportWidth * 0.9, 1024);
+      const featuredWidth = 42 * 16;
+      const centerMargin = (containerMaxWidth - featuredWidth) / 2;
+      return { width: '100%', maxWidth: '42rem', marginLeft: '0', marginLeftPx: centerMargin };
+    } else {
+      // Non-featured collapsed
+      let collapsedWidth: string;
+      let collapsedMaxWidth: string;
+      
+      if (viewportWidth >= 1536) {
+        collapsedWidth = '33.333333%';
+        collapsedMaxWidth = '28rem';
+      } else if (viewportWidth >= 1280) {
+        collapsedWidth = '40%';
+        collapsedMaxWidth = '32rem';
+      } else if (viewportWidth >= 1024) {
+        collapsedWidth = '50%';
+        collapsedMaxWidth = '36rem';
+      } else if (viewportWidth >= 768) {
+        collapsedWidth = '66.666667%';
+        collapsedMaxWidth = '32rem';
+      } else {
+        collapsedWidth = '100%';
+        collapsedMaxWidth = '100%';
+      }
+      
+      const alternatingIndex = nonFeaturedIndex !== undefined ? nonFeaturedIndex : index;
+      let marginLeftPx: number | null = null;
+      
+      if (viewportWidth >= 768 && alternatingIndex % 2 === 1) {
+        const containerMaxWidth = viewportWidth >= 1280 ? 1024 : Math.min(viewportWidth * 0.9, 1024);
+        const widthValue = collapsedWidth.includes('%')
+          ? (viewportWidth * parseFloat(collapsedWidth) / 100)
+          : parseFloat(collapsedWidth.replace('rem', '')) * 16;
+        const actualWidth = Math.min(widthValue, parseFloat(collapsedMaxWidth.replace('rem', '')) * 16);
+        marginLeftPx = containerMaxWidth - actualWidth;
+      }
+      
+      return { 
+        width: collapsedWidth, 
+        maxWidth: collapsedMaxWidth, 
+        marginLeft: marginLeftPx !== null ? '0' : '0',
+        marginLeftPx: marginLeftPx !== null ? marginLeftPx : 0
+      };
+    }
+  };
+
+  const initialValues = getInitialValues();
+  const [width, setWidth] = useState<string>(initialValues.width);
+  const [maxWidth, setMaxWidth] = useState<string>(initialValues.maxWidth);
+  const [marginLeft, setMarginLeft] = useState<string>(initialValues.marginLeft);
+  const [marginLeftPx, setMarginLeftPx] = useState<number | null>(initialValues.marginLeftPx);
 
   useEffect(() => {
     const updateWidth = () => {
@@ -382,6 +470,7 @@ export function MemoryCard({
 
   return (
     <motion.div
+      initial={false}
       animate={{
         width: width,
         maxWidth: maxWidth,
