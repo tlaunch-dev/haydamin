@@ -27,10 +27,10 @@ export function MemoriesPage() {
   const hasMemories = memories.length > 0;
 
   return (
-    <div className="min-h-screen bg-background text-text">
+    <div className="min-h-screen bg-background text-text overflow-x-hidden">
       {/* Main Content */}
       <div className="px-4 sm:px-6 lg:px-8 py-6 pb-12">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8">
             <BackButton />

@@ -243,7 +243,7 @@ export function MemoryCard({ memory, storytellerName, people, isFeatured = false
         ease: [0.34, 1.56, 0.64, 1], // spring-ease-smooth
       }}
       className={`
-        ${isFeatured ? 'w-full' : 'w-full md:w-3/5'}
+        ${isFeatured ? 'w-full max-w-4xl mx-auto' : 'w-full md:w-4/5 lg:w-3/5 xl:w-1/2 max-w-2xl'}
         ${!isFeatured && index % 2 === 0 ? '' : 'md:ml-auto'}
       `}
     >

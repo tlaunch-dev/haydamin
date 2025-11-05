@@ -15,7 +15,10 @@ export function MemoryTimelineConnector({ memoryCount, featuredIndex = -1 }: Mem
     const cardHeight = 600;
     const gap = 48;
     const totalHeight = memoryCount * (cardHeight + gap) + 200; // Extra padding
-    setDimensions({ width: 1200, height: totalHeight });
+    // Responsive width based on viewport
+    const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
+    const width = Math.min(viewportWidth, 1400);
+    setDimensions({ width, height: totalHeight });
   }, [memoryCount]);
 
   if (memoryCount === 0) return null;
@@ -27,6 +30,17 @@ export function MemoryTimelineConnector({ memoryCount, featuredIndex = -1 }: Mem
     const cardHeight = 600;
     const gap = 48;
 
+    // Responsive offset based on screen width
+    const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
+    let horizontalOffset: number;
+    if (viewportWidth < 768) {
+      horizontalOffset = 150; // Mobile - smaller offset
+    } else if (viewportWidth < 1024) {
+      horizontalOffset = 250; // Tablet/iPad - medium offset
+    } else {
+      horizontalOffset = 350; // Desktop - larger offset
+    }
+
     // Starting point - top of first card
     let currentX = centerX;
     let currentY = -50;
@@ -36,41 +50,35 @@ export function MemoryTimelineConnector({ memoryCount, featuredIndex = -1 }: Mem
       const isFeatured = i === featuredIndex;
       const isLeft = i % 2 === 0 && !isFeatured;
 
-      // Calculate positions
+      // Calculate positions - connect through gaps between cards
       const cardTop = i * (cardHeight + gap);
-      const cardMiddle = cardTop + cardHeight / 2;
       const cardBottom = cardTop + cardHeight;
+
+      // Target Y is the gap before this card (or start for first card)
+      const targetY = i === 0 ? cardTop - 25 : cardTop - gap / 2;
 
       // Target X based on card position
       let targetX: number;
       if (isFeatured) {
         targetX = centerX;
       } else if (isLeft) {
-        targetX = centerX - 400; // Offset to left of left cards
+        targetX = centerX - horizontalOffset; // Offset to left of left cards
       } else {
-        targetX = centerX + 400; // Offset to right of right cards
+        targetX = centerX + horizontalOffset; // Offset to right of right cards
       }
 
-      // Flow to the side of this card (at middle height)
-      const midY = cardMiddle;
+      // Create organic bezier curve to the gap
       const controlPoint1X = currentX;
-      const controlPoint1Y = currentY + (midY - currentY) * 0.4;
+      const controlPoint1Y = currentY + (targetY - currentY) * 0.4;
       const controlPoint2X = targetX;
-      const controlPoint2Y = currentY + (midY - currentY) * 0.6;
+      const controlPoint2Y = currentY + (targetY - currentY) * 0.6;
 
       paths.push(
-        `C ${controlPoint1X} ${controlPoint1Y}, ${controlPoint2X} ${controlPoint2Y}, ${targetX} ${midY}`
+        `C ${controlPoint1X} ${controlPoint1Y}, ${controlPoint2X} ${controlPoint2Y}, ${targetX} ${targetY}`
       );
 
       currentX = targetX;
-      currentY = midY;
-
-      // If not the last card, flow down to the gap before next card
-      if (i < memoryCount - 1) {
-        const gapY = cardBottom + gap / 2;
-        paths.push(`L ${currentX} ${gapY}`);
-        currentY = gapY;
-      }
+      currentY = targetY;
     }
 
     return paths.join(' ');
@@ -121,17 +129,29 @@ export function MemoryTimelineConnector({ memoryCount, featuredIndex = -1 }: Mem
           const cardHeight = 600;
           const gap = 48;
 
+          // Responsive offset (same as vine path)
+          const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
+          let horizontalOffset: number;
+          if (viewportWidth < 768) {
+            horizontalOffset = 150;
+          } else if (viewportWidth < 1024) {
+            horizontalOffset = 250;
+          } else {
+            horizontalOffset = 350;
+          }
+
           const centerX = dimensions.width / 2;
           let nodeX: number;
           const cardTop = i * (cardHeight + gap);
-          const nodeY = cardTop + cardHeight / 2;
+          // Position nodes in the gap between cards, not at card center
+          const nodeY = i === 0 ? cardTop - 25 : cardTop - gap / 2;
 
           if (isFeatured) {
             nodeX = centerX;
           } else if (isLeft) {
-            nodeX = centerX - 400;
+            nodeX = centerX - horizontalOffset;
           } else {
-            nodeX = centerX + 400;
+            nodeX = centerX + horizontalOffset;
           }
 
           return (
