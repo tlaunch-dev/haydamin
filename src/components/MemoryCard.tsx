@@ -411,7 +411,7 @@ export function MemoryCard({ memory, storytellerName, people, isFeatured = false
           )}
 
           {/* Metadata */}
-          <div className="text-base font-light text-accent text-right">
+          <div className="text-lg font-medium text-accent text-right">
             <span>{dateStr}</span>
           </div>
         </div>
