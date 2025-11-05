@@ -37,7 +37,7 @@ export function MemoriesPage() {
           {/* Page Title */}
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold text-text mb-2">
-              {language === 'ar' ? 'ذكريات العائلة' : 'Family Memories'}
+              {language === 'ar' ? 'ذكريات العائلة' : 'Memories'}
             </h1>
             <div className="w-32 h-1 bg-accent mx-auto rounded-full"></div>
           </div>

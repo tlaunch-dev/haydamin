@@ -12,6 +12,15 @@ service firebase.storage {
       allow write: if request.auth != null;
     }
     
+    // Memories in /memories/{memoryId}/{fileName}
+    match /memories/{memoryId}/{fileName} {
+      // Anyone can read memories (for viewing mode)
+      allow read: if true;
+
+      // Require authentication for write operations
+      allow write: if request.auth != null;
+    }
+    
     // Deny all other access by default
     match /{allPaths=**} {
       allow read, write: if false;
