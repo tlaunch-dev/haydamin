@@ -16,6 +16,7 @@ export function MemoriesPage() {
   const { language } = useLanguage();
   const { user } = useAuth();
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
 
   const loading = memoriesLoading || peopleLoading;
 
@@ -28,20 +29,24 @@ export function MemoriesPage() {
 
   return (
     <div className="min-h-screen bg-background text-text overflow-x-hidden">
+      {/* Back Button - Fixed at top left */}
+      <div className="fixed top-6 left-6 z-50">
+        <BackButton />
+      </div>
+
       {/* Main Content */}
-      <div className="px-4 sm:px-6 lg:px-8 py-6 pb-12">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
-            <BackButton />
-          </div>
-          {/* Page Title */}
-          <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold text-text mb-2">
+      <div className="p-3 sm:p-4 md:p-6 lg:p-8 pt-20 sm:pt-24 md:pt-20 min-h-screen relative overflow-hidden">
+        {/* Header */}
+        <div className="mb-3 md:mb-4 lg:mb-5 max-w-7xl mx-auto w-full relative z-10">
+          <div className="text-center">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-text">
               {language === 'ar' ? 'ذكريات العائلة' : 'Memories'}
             </h1>
-            <div className="w-32 h-1 bg-accent mx-auto rounded-full"></div>
           </div>
+        </div>
+
+        {/* Content wrapper - matches FamilyHub pattern */}
+        <div className="max-w-7xl mx-auto w-full relative z-10">
 
           {/* Content Area */}
           {!hasMemories ? (
@@ -92,7 +97,7 @@ export function MemoriesPage() {
               />
 
               {/* Memory cards */}
-              <div className="relative space-y-8" style={{ zIndex: 20 }}>
+              <div className="relative space-y-3 md:space-y-4 lg:space-y-5" style={{ zIndex: 20 }}>
                 {memories.map((memory, index) => {
                   const storyteller = people.find((p) => p.id === memory.storytellerId);
                   const storytellerName = storyteller
@@ -100,6 +105,10 @@ export function MemoriesPage() {
                       ? storyteller.nameAr
                       : storyteller.name
                     : '';
+
+                  // Calculate non-featured index for proper alternating pattern
+                  // Featured cards are centered, so we only alternate non-featured cards
+                  const nonFeaturedIndex = memories.slice(0, index).filter(m => !m.featured).length;
 
                   return (
                     <MemoryCard
@@ -109,6 +118,10 @@ export function MemoriesPage() {
                       people={people}
                       isFeatured={memory.featured || false}
                       index={index}
+                      nonFeaturedIndex={nonFeaturedIndex}
+                      isExpanded={expandedCardId === memory.id}
+                      onExpand={() => setExpandedCardId(memory.id)}
+                      onCollapse={() => setExpandedCardId(null)}
                     />
                   );
                 })}

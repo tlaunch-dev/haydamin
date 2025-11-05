@@ -8,18 +8,106 @@ import { updateMemory, deleteMemory, getAllMemories } from '../services/firestor
 import { deleteVideo, deleteThumbnail } from '../services/storage';
 import { MemoryUploadModal } from './MemoryUploadModal';
 
+// Hook to get responsive width values
+const useResponsiveWidth = (isExpanded: boolean, isFeatured: boolean, index: number, nonFeaturedIndex?: number) => {
+  const [width, setWidth] = useState<string>('100%');
+  const [maxWidth, setMaxWidth] = useState<string>('100%');
+  const [marginLeft, setMarginLeft] = useState<string>('auto');
+
+  useEffect(() => {
+    const updateWidth = () => {
+      const viewportWidth = window.innerWidth;
+      
+      if (isFeatured) {
+        setWidth('100%');
+        setMaxWidth('42rem'); // max-w-2xl
+        setMarginLeft('auto');
+        return;
+      }
+
+      if (isExpanded) {
+        // Expanded state - almost full width, always centered
+        if (viewportWidth >= 1536) {
+          setWidth('80%');
+          setMaxWidth('56rem'); // max-w-4xl
+        } else if (viewportWidth >= 1280) {
+          setWidth('85%');
+          setMaxWidth('64rem'); // max-w-5xl
+        } else if (viewportWidth >= 1024) {
+          setWidth('90%');
+          setMaxWidth('72rem'); // max-w-6xl
+        } else if (viewportWidth >= 768) {
+          setWidth('95%');
+          setMaxWidth('64rem'); // max-w-5xl
+        } else {
+          setWidth('100%');
+          setMaxWidth('100%');
+        }
+        setMarginLeft('auto');
+      } else {
+        // Collapsed state - alternating widths
+        if (viewportWidth >= 1536) {
+          setWidth('33.333333%'); // w-1/3
+          setMaxWidth('28rem'); // max-w-md
+        } else if (viewportWidth >= 1280) {
+          setWidth('40%'); // w-2/5
+          setMaxWidth('32rem'); // max-w-lg
+        } else if (viewportWidth >= 1024) {
+          setWidth('50%'); // w-1/2
+          setMaxWidth('36rem'); // max-w-xl
+        } else if (viewportWidth >= 768) {
+          setWidth('66.666667%'); // w-2/3
+          setMaxWidth('32rem'); // max-w-lg
+        } else {
+          setWidth('100%');
+          setMaxWidth('100%');
+        }
+        // Set margin for alternating pattern (only on tablet+)
+        // Use nonFeaturedIndex if provided (for proper alternating), otherwise fall back to index
+        const alternatingIndex = nonFeaturedIndex !== undefined ? nonFeaturedIndex : index;
+        if (viewportWidth >= 768 && alternatingIndex % 2 === 1) {
+          setMarginLeft('auto');
+        } else {
+          setMarginLeft('0');
+        }
+      }
+    };
+
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, [isExpanded, isFeatured, index, nonFeaturedIndex]);
+
+  return { width, maxWidth, marginLeft };
+};
+
 interface MemoryCardProps {
   memory: Memory;
   storytellerName: string;
   people: Person[]; // Need this for edit modal
   isFeatured?: boolean;
   index: number;
+  nonFeaturedIndex?: number; // Index among non-featured cards only (for alternating pattern)
+  isExpanded?: boolean;
+  onExpand?: () => void;
+  onCollapse?: () => void;
 }
 
-export function MemoryCard({ memory, storytellerName, people, isFeatured = false, index }: MemoryCardProps) {
+export function MemoryCard({ 
+  memory, 
+  storytellerName, 
+  people, 
+  isFeatured = false, 
+  index,
+  nonFeaturedIndex,
+  isExpanded: externalIsExpanded,
+  onExpand,
+  onCollapse,
+}: MemoryCardProps) {
   const { language } = useLanguage();
   const { user } = useAuth();
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [internalIsExpanded, setInternalIsExpanded] = useState(false);
+  const isExpanded = externalIsExpanded !== undefined ? externalIsExpanded : internalIsExpanded;
   const [isPlaying, setIsPlaying] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -111,7 +199,12 @@ export function MemoryCard({ memory, storytellerName, people, isFeatured = false
   // Handle card click - expand and play
   const handleCardClick = () => {
     if (!isExpanded) {
-      setIsExpanded(true);
+      // Notify parent to expand this card (will collapse others)
+      if (onExpand) {
+        onExpand();
+      } else {
+        setInternalIsExpanded(true);
+      }
       // Wait for animation to complete before playing
       setTimeout(() => {
         if (videoRef.current) {
@@ -147,8 +240,29 @@ export function MemoryCard({ memory, storytellerName, people, isFeatured = false
       videoRef.current.currentTime = 0;
     }
     setIsPlaying(false);
-    setIsExpanded(false);
+    // Notify parent to collapse this card
+    if (onCollapse) {
+      onCollapse();
+    } else {
+      setInternalIsExpanded(false);
+    }
   };
+
+  // Watch for external collapse (when another card expands)
+  useEffect(() => {
+    if (externalIsExpanded !== undefined) {
+      // Using external control
+      if (!externalIsExpanded && isExpanded) {
+        // Card was externally collapsed - pause and reset video
+        if (videoRef.current) {
+          videoRef.current.pause();
+          videoRef.current.currentTime = 0;
+        }
+        setIsPlaying(false);
+        setInternalIsExpanded(false);
+      }
+    }
+  }, [externalIsExpanded, isExpanded]);
 
   // Handle edit
   const handleEdit = (e: React.MouseEvent) => {
@@ -223,43 +337,46 @@ export function MemoryCard({ memory, storytellerName, people, isFeatured = false
     }
   };
 
-  // Animation variants
-  const cardVariants = {
-    collapsed: {
-      height: 'auto',
-    },
-    expanded: {
-      height: 'auto',
-    },
-  };
+  // Get responsive width values (includes margin for alternating pattern)
+  const { width, maxWidth, marginLeft } = useResponsiveWidth(isExpanded, isFeatured, index, nonFeaturedIndex);
 
   return (
     <motion.div
-      variants={cardVariants}
-      initial="collapsed"
-      animate={isExpanded ? 'expanded' : 'collapsed'}
-      transition={{
-        duration: 0.5,
-        ease: [0.34, 1.56, 0.64, 1], // spring-ease-smooth
+      animate={{
+        width: width,
+        maxWidth: maxWidth,
+        marginLeft: marginLeft,
+        marginRight: marginLeft === 'auto' ? '0' : 'auto',
       }}
-      className={`
-        ${isFeatured ? 'w-full max-w-3xl mx-auto' : 'w-full md:w-4/5 lg:w-2/3 xl:w-3/5 max-w-xl'}
-        ${!isFeatured && index % 2 === 0 ? '' : 'md:ml-auto'}
-      `}
+      transition={{
+        duration: 0.6,
+        ease: [0.4, 0, 0.2, 1], // smooth easing
+      }}
     >
       <motion.div
+        layout
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{
-          duration: 0.5,
-          delay: index * 0.1,
-          ease: [0.34, 1.56, 0.64, 1], // spring-ease-smooth
+          layout: {
+            duration: 0.6,
+            ease: [0.4, 0, 0.2, 1],
+          },
+          opacity: {
+            duration: 0.5,
+            delay: index * 0.1,
+          },
+          scale: {
+            duration: 0.5,
+            delay: index * 0.1,
+            ease: [0.34, 1.56, 0.64, 1],
+          },
         }}
         whileHover={!isExpanded ? { scale: 1.02 } : {}}
         whileTap={!isExpanded ? { scale: 0.98 } : {}}
         onClick={!isExpanded ? handleCardClick : undefined}
         className={`
-          bg-card rounded-2xl p-4 md:p-5 shadow-sm relative
+          bg-card rounded-xl md:rounded-2xl p-3 md:p-4 lg:p-5 shadow-sm relative
           ${!isExpanded ? 'cursor-pointer' : ''}
           transition-shadow duration-300
           ${!isExpanded ? 'hover:shadow-md' : 'shadow-lg'}
@@ -268,7 +385,7 @@ export function MemoryCard({ memory, storytellerName, people, isFeatured = false
       >
         {/* Action menu (only shown when collapsed and user is authenticated) */}
         {!isExpanded && user && (
-          <div ref={menuRef} className="absolute top-4 right-4 z-10">
+          <div ref={menuRef} className="absolute top-3 right-3 md:top-4 md:right-4 z-10">
             {/* Three-dot menu button */}
             <button
               onClick={(e) => {
@@ -353,7 +470,7 @@ export function MemoryCard({ memory, storytellerName, people, isFeatured = false
         )}
 
         {/* Video/Thumbnail Area */}
-        <div className="relative aspect-video bg-text/10 rounded-2xl mb-4 overflow-hidden">
+        <div className={`relative bg-text/10 rounded-xl md:rounded-2xl mb-2 md:mb-3 lg:mb-4 overflow-hidden ${!isExpanded ? 'aspect-[16/10] md:aspect-video' : 'aspect-video'}`}>
           {!isExpanded ? (
             // Collapsed: Show thumbnail with play button
             <>
@@ -366,10 +483,10 @@ export function MemoryCard({ memory, storytellerName, people, isFeatured = false
               <div className="absolute inset-0 flex items-center justify-center">
                 <motion.div
                   whileHover={{ scale: 1.1 }}
-                  className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-accent flex items-center justify-center shadow-lg"
+                  className="w-12 h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 rounded-full bg-accent flex items-center justify-center shadow-lg"
                 >
                   <svg
-                    className="w-8 h-8 md:w-10 md:h-10 text-accent-text ml-1"
+                    className="w-6 h-6 md:w-8 md:h-8 lg:w-10 lg:h-10 text-accent-text ml-1"
                     fill="currentColor"
                     viewBox="0 0 24 24"
                   >
@@ -405,13 +522,13 @@ export function MemoryCard({ memory, storytellerName, people, isFeatured = false
 
         {/* Content */}
         <div>
-          <h3 className="text-xl md:text-2xl font-bold text-text mb-1">{title}</h3>
+          <h3 className="text-lg md:text-xl lg:text-2xl font-bold text-text mb-0.5 md:mb-1">{title}</h3>
           {caption && (
-            <p className="text-base md:text-lg font-light text-text/70 mb-2">{caption}</p>
+            <p className="text-sm md:text-base lg:text-lg font-light text-text/70 mb-1">{caption}</p>
           )}
 
           {/* Metadata */}
-          <div className="text-sm md:text-base font-light text-accent">
+          <div className="text-xs md:text-sm lg:text-base font-light text-accent text-right">
             <span>{dateStr}</span>
           </div>
         </div>

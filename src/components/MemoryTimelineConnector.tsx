@@ -6,25 +6,48 @@ interface MemoryTimelineConnectorProps {
   featuredIndex?: number; // Which memory is featured (full width)
 }
 
+// Helper functions for responsive sizing
+const getCardHeight = (viewportWidth: number): number => {
+  if (viewportWidth >= 1536) return 280; // 2xl - very compact
+  if (viewportWidth >= 1280) return 320; // xl - compact
+  if (viewportWidth >= 1024) return 380; // lg - iPad landscape
+  if (viewportWidth >= 768) return 360; // md - iPad portrait
+  return 300; // Mobile default
+};
+
+const getGap = (viewportWidth: number): number => {
+  if (viewportWidth >= 1024) return 20; // lg:space-y-5 = 1.25rem = 20px
+  if (viewportWidth >= 768) return 16; // md:space-y-4 = 1rem = 16px
+  return 12; // space-y-3 = 0.75rem = 12px (mobile)
+};
+
 export function MemoryTimelineConnector({ memoryCount, featuredIndex = -1 }: MemoryTimelineConnectorProps) {
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
-    // Calculate dimensions based on memory count
-    // Adjusted to match actual card sizes (smaller now)
-    const cardHeight = 400; // Reduced from 600
-    const gap = 32; // space-y-8 = 2rem = 32px
-    const totalHeight = memoryCount * (cardHeight + gap) + 100;
-    const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
-    const width = Math.min(viewportWidth, 1400);
-    setDimensions({ width, height: totalHeight });
+    const calculateDimensions = () => {
+      const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
+      const cardHeight = getCardHeight(viewportWidth);
+      const gap = getGap(viewportWidth);
+      const totalHeight = memoryCount * (cardHeight + gap) + 100;
+      const width = Math.min(viewportWidth, 1400);
+      setDimensions({ width, height: totalHeight });
+    };
+    
+    // Initial calculation
+    calculateDimensions();
+    
+    // Recalculate on resize
+    window.addEventListener('resize', calculateDimensions);
+    return () => window.removeEventListener('resize', calculateDimensions);
   }, [memoryCount]);
 
   if (memoryCount === 0) return null;
 
   const centerX = dimensions.width / 2;
-  const cardHeight = 400; // Match the actual smaller card height
-  const gap = 32; // Match space-y-8
+  const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
+  const cardHeight = getCardHeight(viewportWidth);
+  const gap = getGap(viewportWidth);
 
   // Generate central trunk path (vertical line down the center)
   const generateTrunkPath = () => {
