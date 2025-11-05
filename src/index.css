@@ -255,3 +255,20 @@ body {
     padding-right: env(safe-area-inset-right);
   }
 }
+
+/* Profile image styling - uniform grayscale with color reveal on hover */
+.profile-image {
+  /* This makes all images black and white */
+  filter: grayscale(20%);
+  
+  /* This adds a slight tint to match your UI */
+  opacity: 0.9;
+  
+  /* Smoothly transition back to color on hover */
+  transition: filter 0.3s ease, opacity 0.3s ease;
+}
+
+.profile-image:hover {
+  filter: grayscale(0%); /* Reveals color on hover */
+  opacity: 1;
+}

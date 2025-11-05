@@ -5,21 +5,24 @@ import { LanguageProvider } from './context/LanguageContext'
 import { AuthProvider } from './context/AuthContext'
 import { HiddenModeProvider } from './context/HiddenModeContext'
 import { ZoomTransitionProvider } from './context/ZoomTransitionContext'
+import ErrorBoundary from './components/ErrorBoundary'
 import App from './App.tsx'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <AuthProvider>
-      <LanguageProvider>
-        <HiddenModeProvider>
-          <ZoomTransitionProvider>
-            <BrowserRouter>
-              <App />
-            </BrowserRouter>
-          </ZoomTransitionProvider>
-        </HiddenModeProvider>
-      </LanguageProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <LanguageProvider>
+          <HiddenModeProvider>
+            <ZoomTransitionProvider>
+              <BrowserRouter>
+                <App />
+              </BrowserRouter>
+            </ZoomTransitionProvider>
+          </HiddenModeProvider>
+        </LanguageProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   </React.StrictMode>,
 )
