@@ -85,14 +85,14 @@ export function MemoriesPage() {
           ) : (
             // Memories List with Timeline Connector
             <div className="relative">
-              {/* Timeline connector in background */}
+              {/* Timeline connector visible beside cards */}
               <MemoryTimelineConnector
                 memoryCount={memories.length}
                 featuredIndex={memories.findIndex((m) => m.featured)}
               />
 
               {/* Memory cards */}
-              <div className="relative space-y-12" style={{ zIndex: 1 }}>
+              <div className="relative space-y-12" style={{ zIndex: 20 }}>
                 {memories.map((memory, index) => {
                   const storyteller = people.find((p) => p.id === memory.storytellerId);
                   const storytellerName = storyteller

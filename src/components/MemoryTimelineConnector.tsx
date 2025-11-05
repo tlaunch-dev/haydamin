@@ -6,7 +6,7 @@ interface MemoryTimelineConnectorProps {
   featuredIndex?: number; // Which memory is featured (full width)
 }
 
-export function MemoryTimelineConnector({ memoryCount, featuredIndex = 0 }: MemoryTimelineConnectorProps) {
+export function MemoryTimelineConnector({ memoryCount, featuredIndex = -1 }: MemoryTimelineConnectorProps) {
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
@@ -14,56 +14,63 @@ export function MemoryTimelineConnector({ memoryCount, featuredIndex = 0 }: Memo
     // Each memory card is ~600px tall with 48px gap (space-y-12)
     const cardHeight = 600;
     const gap = 48;
-    const totalHeight = memoryCount * (cardHeight + gap);
+    const totalHeight = memoryCount * (cardHeight + gap) + 200; // Extra padding
     setDimensions({ width: 1200, height: totalHeight });
   }, [memoryCount]);
 
   if (memoryCount === 0) return null;
 
-  // Generate organic path that flows between cards
+  // Generate organic path that flows in the gaps between cards
   const generateVinePath = () => {
     const paths: string[] = [];
     const centerX = dimensions.width / 2;
     const cardHeight = 600;
     const gap = 48;
-    const sectionHeight = cardHeight + gap;
 
-    // Starting point at the top center
+    // Starting point - top of first card
     let currentX = centerX;
-    let currentY = 50;
+    let currentY = -50;
     paths.push(`M ${currentX} ${currentY}`);
 
     for (let i = 0; i < memoryCount; i++) {
       const isFeatured = i === featuredIndex;
       const isLeft = i % 2 === 0 && !isFeatured;
 
-      // Target position for this card
-      const targetY = currentY + sectionHeight;
-      let targetX: number;
+      // Calculate positions
+      const cardTop = i * (cardHeight + gap);
+      const cardMiddle = cardTop + cardHeight / 2;
+      const cardBottom = cardTop + cardHeight;
 
+      // Target X based on card position
+      let targetX: number;
       if (isFeatured) {
-        // Featured card: stay centered
         targetX = centerX;
       } else if (isLeft) {
-        // Left side card
-        targetX = centerX - 300;
+        targetX = centerX - 400; // Offset to left of left cards
       } else {
-        // Right side card
-        targetX = centerX + 300;
+        targetX = centerX + 400; // Offset to right of right cards
       }
 
-      // Create organic bezier curve to connect
+      // Flow to the side of this card (at middle height)
+      const midY = cardMiddle;
       const controlPoint1X = currentX;
-      const controlPoint1Y = currentY + sectionHeight * 0.3;
+      const controlPoint1Y = currentY + (midY - currentY) * 0.4;
       const controlPoint2X = targetX;
-      const controlPoint2Y = currentY + sectionHeight * 0.7;
+      const controlPoint2Y = currentY + (midY - currentY) * 0.6;
 
       paths.push(
-        `C ${controlPoint1X} ${controlPoint1Y}, ${controlPoint2X} ${controlPoint2Y}, ${targetX} ${targetY}`
+        `C ${controlPoint1X} ${controlPoint1Y}, ${controlPoint2X} ${controlPoint2Y}, ${targetX} ${midY}`
       );
 
       currentX = targetX;
-      currentY = targetY;
+      currentY = midY;
+
+      // If not the last card, flow down to the gap before next card
+      if (i < memoryCount - 1) {
+        const gapY = cardBottom + gap / 2;
+        paths.push(`L ${currentX} ${gapY}`);
+        currentY = gapY;
+      }
     }
 
     return paths.join(' ');
@@ -77,7 +84,7 @@ export function MemoryTimelineConnector({ memoryCount, featuredIndex = 0 }: Memo
   const NODE_STAGGER = 0.15;
 
   return (
-    <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 0 }}>
+    <div className="absolute inset-0 pointer-events-none overflow-visible" style={{ zIndex: 10 }}>
       <svg
         width={dimensions.width}
         height={dimensions.height}
@@ -89,9 +96,9 @@ export function MemoryTimelineConnector({ memoryCount, featuredIndex = 0 }: Memo
         <motion.path
           d={vinePath}
           stroke="currentColor"
-          strokeWidth="3"
+          strokeWidth="4"
           fill="none"
-          className="text-accent/30"
+          className="text-accent/50"
           strokeLinecap="round"
           strokeLinejoin="round"
           initial={{ pathLength: 0, opacity: 0 }}
@@ -113,18 +120,18 @@ export function MemoryTimelineConnector({ memoryCount, featuredIndex = 0 }: Memo
           const isLeft = i % 2 === 0 && !isFeatured;
           const cardHeight = 600;
           const gap = 48;
-          const sectionHeight = cardHeight + gap;
 
           const centerX = dimensions.width / 2;
           let nodeX: number;
-          const nodeY = 50 + (i + 1) * sectionHeight;
+          const cardTop = i * (cardHeight + gap);
+          const nodeY = cardTop + cardHeight / 2;
 
           if (isFeatured) {
             nodeX = centerX;
           } else if (isLeft) {
-            nodeX = centerX - 300;
+            nodeX = centerX - 400;
           } else {
-            nodeX = centerX + 300;
+            nodeX = centerX + 400;
           }
 
           return (
@@ -133,8 +140,8 @@ export function MemoryTimelineConnector({ memoryCount, featuredIndex = 0 }: Memo
               <motion.circle
                 cx={nodeX}
                 cy={nodeY}
-                r="8"
-                className="text-accent/20"
+                r="10"
+                className="text-accent/30"
                 fill="currentColor"
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
@@ -148,7 +155,7 @@ export function MemoryTimelineConnector({ memoryCount, featuredIndex = 0 }: Memo
               <motion.circle
                 cx={nodeX}
                 cy={nodeY}
-                r="4"
+                r="5"
                 className="text-accent"
                 fill="currentColor"
                 initial={{ scale: 0, opacity: 0 }}
