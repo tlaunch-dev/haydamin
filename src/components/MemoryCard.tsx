@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Star, Trash2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Star, Trash2, MoreVertical } from 'lucide-react';
 import { Memory } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
@@ -20,7 +20,9 @@ export function MemoryCard({ memory, storytellerName, isFeatured = false, index 
   const [isExpanded, setIsExpanded] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const title = language === 'ar' ? memory.titleAr : memory.title;
   const caption = language === 'ar' ? memory.captionAr : memory.caption;
@@ -62,6 +64,22 @@ export function MemoryCard({ memory, storytellerName, isFeatured = false, index 
       video.removeEventListener('play', handlePlay);
     };
   }, [isExpanded]);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [isMenuOpen]);
 
   // Handle card click - expand and play
   const handleCardClick = () => {
@@ -110,6 +128,8 @@ export function MemoryCard({ memory, storytellerName, isFeatured = false, index 
     e.stopPropagation();
     if (!user) return;
 
+    setIsMenuOpen(false);
+
     try {
       const newFeaturedState = !memory.featured;
 
@@ -136,6 +156,8 @@ export function MemoryCard({ memory, storytellerName, isFeatured = false, index 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!user) return;
+
+    setIsMenuOpen(false);
 
     const confirmed = window.confirm(
       language === 'ar'
@@ -210,49 +232,65 @@ export function MemoryCard({ memory, storytellerName, isFeatured = false, index 
           ${isDeleting ? 'opacity-50 pointer-events-none' : ''}
         `}
       >
-        {/* Action buttons (only shown when collapsed and user is authenticated) */}
+        {/* Action menu (only shown when collapsed and user is authenticated) */}
         {!isExpanded && user && (
-          <div className="absolute top-4 right-4 z-10 flex gap-2">
-            {/* Featured toggle */}
+          <div ref={menuRef} className="absolute top-4 right-4 z-10">
+            {/* Three-dot menu button */}
             <button
-              onClick={handleToggleFeatured}
-              className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-                memory.featured
-                  ? 'bg-accent text-accent-text'
-                  : 'bg-background/80 text-text/60 hover:text-accent hover:bg-background'
-              }`}
-              aria-label={
-                memory.featured
-                  ? language === 'ar'
-                    ? 'إلغاء التمييز'
-                    : 'Unfeature'
-                  : language === 'ar'
-                  ? 'تمييز'
-                  : 'Feature'
-              }
-              title={
-                memory.featured
-                  ? language === 'ar'
-                    ? 'إلغاء التمييز'
-                    : 'Unfeature'
-                  : language === 'ar'
-                  ? 'تمييز'
-                  : 'Feature'
-              }
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsMenuOpen(!isMenuOpen);
+              }}
+              className="w-8 h-8 rounded-full bg-background/80 text-text/60 hover:text-accent hover:bg-background flex items-center justify-center transition-colors"
+              aria-label={language === 'ar' ? 'القائمة' : 'Menu'}
             >
-              <Star className="w-4 h-4" fill={memory.featured ? 'currentColor' : 'none'} />
+              <MoreVertical className="w-4 h-4" />
             </button>
 
-            {/* Delete button */}
-            <button
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="w-8 h-8 rounded-full bg-background/80 text-text/60 hover:text-red-600 hover:bg-background flex items-center justify-center transition-colors disabled:opacity-50"
-              aria-label={language === 'ar' ? 'حذف' : 'Delete'}
-              title={language === 'ar' ? 'حذف' : 'Delete'}
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+            {/* Dropdown menu */}
+            <AnimatePresence>
+              {isMenuOpen && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute right-0 mt-2 w-48 bg-card rounded-xl shadow-lg overflow-hidden border border-text/10"
+                >
+                  {/* Feature/Unfeature */}
+                  <button
+                    onClick={handleToggleFeatured}
+                    className="w-full px-4 py-3 flex items-center gap-3 hover:bg-background/50 transition-colors text-left"
+                  >
+                    <Star
+                      className="w-4 h-4 text-accent"
+                      fill={memory.featured ? 'currentColor' : 'none'}
+                    />
+                    <span className="text-text text-sm">
+                      {memory.featured
+                        ? language === 'ar'
+                          ? 'إلغاء التمييز'
+                          : 'Unfeature'
+                        : language === 'ar'
+                        ? 'تمييز'
+                        : 'Feature'}
+                    </span>
+                  </button>
+
+                  {/* Delete */}
+                  <button
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                    className="w-full px-4 py-3 flex items-center gap-3 hover:bg-background/50 transition-colors text-left disabled:opacity-50"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-600" />
+                    <span className="text-red-600 text-sm">
+                      {language === 'ar' ? 'حذف' : 'Delete'}
+                    </span>
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         )}
 
