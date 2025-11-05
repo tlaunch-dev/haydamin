@@ -1,37 +1,64 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Star, Trash2, MoreVertical } from 'lucide-react';
-import { Memory } from '../types';
+import { Star, Trash2, MoreVertical, Pencil } from 'lucide-react';
+import { Memory, Person } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { updateMemory, deleteMemory, getAllMemories } from '../services/firestore';
 import { deleteVideo, deleteThumbnail } from '../services/storage';
+import { MemoryUploadModal } from './MemoryUploadModal';
 
 interface MemoryCardProps {
   memory: Memory;
   storytellerName: string;
+  people: Person[]; // Need this for edit modal
   isFeatured?: boolean;
   index: number;
 }
 
-export function MemoryCard({ memory, storytellerName, isFeatured = false, index }: MemoryCardProps) {
+export function MemoryCard({ memory, storytellerName, people, isFeatured = false, index }: MemoryCardProps) {
   const { language } = useLanguage();
   const { user } = useAuth();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const title = language === 'ar' ? memory.titleAr : memory.title;
   const caption = language === 'ar' ? memory.captionAr : memory.caption;
 
-  // Format date
-  const dateStr = memory.dateRecorded.toLocaleDateString(
-    language === 'ar' ? 'ar-EG' : 'en-US',
-    { year: 'numeric', month: 'long', day: 'numeric' }
-  );
+  // Format date as "X years ago"
+  const getTimeAgo = (date: Date): string => {
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffYears = Math.floor(diffDays / 365);
+    const diffMonths = Math.floor(diffDays / 30);
+
+    if (diffYears > 0) {
+      if (language === 'ar') {
+        return diffYears === 1 ? 'منذ سنة' : `منذ ${diffYears} سنوات`;
+      }
+      return diffYears === 1 ? '1 year ago' : `${diffYears} years ago`;
+    } else if (diffMonths > 0) {
+      if (language === 'ar') {
+        return diffMonths === 1 ? 'منذ شهر' : `منذ ${diffMonths} أشهر`;
+      }
+      return diffMonths === 1 ? '1 month ago' : `${diffMonths} months ago`;
+    } else if (diffDays > 0) {
+      if (language === 'ar') {
+        return diffDays === 1 ? 'منذ يوم' : `منذ ${diffDays} أيام`;
+      }
+      return diffDays === 1 ? '1 day ago' : `${diffDays} days ago`;
+    } else {
+      return language === 'ar' ? 'اليوم' : 'Today';
+    }
+  };
+
+  const dateStr = getTimeAgo(memory.dateRecorded);
 
   // Format duration (MM:SS)
   const minutes = Math.floor(memory.durationSeconds / 60);
@@ -121,6 +148,13 @@ export function MemoryCard({ memory, storytellerName, isFeatured = false, index 
     }
     setIsPlaying(false);
     setIsExpanded(false);
+  };
+
+  // Handle edit
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsMenuOpen(false);
+    setIsEditModalOpen(true);
   };
 
   // Handle toggle featured
@@ -257,6 +291,17 @@ export function MemoryCard({ memory, storytellerName, isFeatured = false, index 
                   transition={{ duration: 0.15 }}
                   className="absolute right-0 mt-2 w-48 bg-card rounded-xl shadow-lg overflow-hidden border border-text/10"
                 >
+                  {/* Edit */}
+                  <button
+                    onClick={handleEdit}
+                    className="w-full px-4 py-3 flex items-center gap-3 hover:bg-background/50 transition-colors text-left"
+                  >
+                    <Pencil className="w-4 h-4 text-accent" />
+                    <span className="text-text text-sm">
+                      {language === 'ar' ? 'تعديل' : 'Edit'}
+                    </span>
+                  </button>
+
                   {/* Feature/Unfeature */}
                   <button
                     onClick={handleToggleFeatured}
@@ -366,15 +411,19 @@ export function MemoryCard({ memory, storytellerName, isFeatured = false, index 
           )}
 
           {/* Metadata */}
-          <div className="text-base font-light text-accent flex items-center gap-2">
-            <span>{storytellerName}</span>
-            <span>·</span>
+          <div className="text-base font-light text-accent">
             <span>{dateStr}</span>
-            <span>·</span>
-            <span>{durationStr}</span>
           </div>
         </div>
       </motion.div>
+
+      {/* Edit Modal */}
+      <MemoryUploadModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        people={people}
+        memory={memory}
+      />
     </motion.div>
   );
 }

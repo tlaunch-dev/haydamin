@@ -97,6 +97,7 @@ export function MemoriesPage() {
                     key={memory.id}
                     memory={memory}
                     storytellerName={storytellerName}
+                    people={people}
                     isFeatured={index === 0}
                     index={index}
                   />
