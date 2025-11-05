@@ -77,3 +77,28 @@ export const RELATIONSHIP_LABELS: Record<RelationshipType, RelationshipLabel> = 
   brother: { ar: 'أخوك', en: 'your brother' },
   sister: { ar: 'أختك', en: 'your sister' },
 };
+
+// Memory feature - family video stories
+export interface Memory {
+  id: string;
+  title: string;              // English title
+  titleAr: string;            // Arabic title
+  caption?: string;           // English longer description (optional)
+  captionAr?: string;         // Arabic longer description (optional)
+
+  // Video source
+  videoUrl: string;           // Firebase Storage URL for video file
+  thumbnailUrl: string;       // Firebase Storage URL for thumbnail image
+
+  // Metadata
+  storytellerId: string;      // Person ID who's telling the story
+  dateRecorded: Date;         // When was this video recorded
+  durationSeconds: number;    // Video length in seconds
+
+  // Optional metadata for future features
+  featuredPeopleIds?: string[]; // Who's mentioned/shown in the video
+  tags?: string[];            // For future filtering/search
+
+  createdAt: Date;
+  updatedAt: Date;
+}

@@ -13,6 +13,7 @@ const FamilyHub = lazy(() => import('./pages/FamilyHub'));
 const PersonDetail = lazy(() => import('./pages/PersonDetail').then(module => ({ default: module.PersonDetail })));
 const AddPerson = lazy(() => import('./pages/AddPerson').then(module => ({ default: module.AddPerson })));
 const GalleryMode = lazy(() => import('./pages/GalleryMode').then(module => ({ default: module.GalleryMode })));
+const MemoriesPage = lazy(() => import('./pages/MemoriesPage'));
 const Login = lazy(() => import('./pages/Login'));
 
 function AppRoutes() {
@@ -86,6 +87,14 @@ function AppRoutes() {
                 element={
                   <ProtectedRoute>
                     <GalleryMode />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/memories"
+                element={
+                  <ProtectedRoute>
+                    <MemoriesPage />
                   </ProtectedRoute>
                 }
               />
