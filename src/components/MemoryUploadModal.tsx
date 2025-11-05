@@ -29,9 +29,7 @@ export function MemoryUploadModal({ isOpen, onClose, people, onSuccess }: Memory
 
   // Form fields
   const [title, setTitle] = useState('');
-  const [titleAr, setTitleAr] = useState('');
   const [caption, setCaption] = useState('');
-  const [captionAr, setCaptionAr] = useState('');
   const [storytellerId, setStorytellerId] = useState('');
   const [dateRecorded, setDateRecorded] = useState('');
 
@@ -56,9 +54,7 @@ export function MemoryUploadModal({ isOpen, onClose, people, onSuccess }: Memory
     setThumbnailBlob(null);
     setThumbnailUrl('');
     setTitle('');
-    setTitleAr('');
     setCaption('');
-    setCaptionAr('');
     setStorytellerId('');
     setDateRecorded('');
     setIsUploading(false);
@@ -118,8 +114,8 @@ export function MemoryUploadModal({ isOpen, onClose, people, onSuccess }: Memory
       return;
     }
 
-    if (!title.trim() || !titleAr.trim()) {
-      setError(language === 'ar' ? 'يرجى إدخال العنوان بالعربية والإنجليزية' : 'Please enter title in both languages');
+    if (!title.trim()) {
+      setError(language === 'ar' ? 'يرجى إدخال العنوان' : 'Please enter title');
       return;
     }
 
@@ -160,9 +156,9 @@ export function MemoryUploadModal({ isOpen, onClose, people, onSuccess }: Memory
       const recordedDate = new Date(dateRecorded);
       await addMemory({
         title: title.trim(),
-        titleAr: titleAr.trim(),
+        titleAr: title.trim(), // Use English as fallback for Arabic
         caption: caption.trim() || undefined,
-        captionAr: captionAr.trim() || undefined,
+        captionAr: caption.trim() || undefined, // Use English as fallback for Arabic
         videoUrl,
         thumbnailUrl: thumbnailDownloadUrl,
         storytellerId,
@@ -349,10 +345,10 @@ export function MemoryUploadModal({ isOpen, onClose, people, onSuccess }: Memory
                 )}
               </div>
 
-              {/* Title (English) */}
+              {/* Title */}
               <div>
                 <label htmlFor="title" className="block text-sm font-medium text-text mb-2">
-                  {language === 'ar' ? 'العنوان (إنجليزي)' : 'Title (English)'} *
+                  {language === 'ar' ? 'العنوان' : 'Title'} *
                 </label>
                 <input
                   id="title"
@@ -366,28 +362,10 @@ export function MemoryUploadModal({ isOpen, onClose, people, onSuccess }: Memory
                 />
               </div>
 
-              {/* Title (Arabic) */}
-              <div>
-                <label htmlFor="titleAr" className="block text-sm font-medium text-text mb-2">
-                  {language === 'ar' ? 'العنوان (عربي)' : 'Title (Arabic)'} *
-                </label>
-                <input
-                  id="titleAr"
-                  type="text"
-                  value={titleAr}
-                  onChange={(e) => setTitleAr(e.target.value)}
-                  disabled={isUploading}
-                  placeholder="جدك يحكي عن الهجرة"
-                  className="w-full px-4 py-3 rounded-xl bg-card border border-card text-text placeholder-text/50 focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50"
-                  dir="rtl"
-                  required
-                />
-              </div>
-
-              {/* Caption (English) */}
+              {/* Caption */}
               <div>
                 <label htmlFor="caption" className="block text-sm font-medium text-text mb-2">
-                  {language === 'ar' ? 'الوصف (إنجليزي)' : 'Caption (English)'}
+                  {language === 'ar' ? 'الوصف' : 'Caption'}
                 </label>
                 <textarea
                   id="caption"
@@ -397,23 +375,6 @@ export function MemoryUploadModal({ isOpen, onClose, people, onSuccess }: Memory
                   placeholder="Optional longer description..."
                   rows={3}
                   className="w-full px-4 py-3 rounded-xl bg-card border border-card text-text placeholder-text/50 focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50 resize-none"
-                />
-              </div>
-
-              {/* Caption (Arabic) */}
-              <div>
-                <label htmlFor="captionAr" className="block text-sm font-medium text-text mb-2">
-                  {language === 'ar' ? 'الوصف (عربي)' : 'Caption (Arabic)'}
-                </label>
-                <textarea
-                  id="captionAr"
-                  value={captionAr}
-                  onChange={(e) => setCaptionAr(e.target.value)}
-                  disabled={isUploading}
-                  placeholder="وصف اختياري أطول..."
-                  rows={3}
-                  className="w-full px-4 py-3 rounded-xl bg-card border border-card text-text placeholder-text/50 focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50 resize-none"
-                  dir="rtl"
                 />
               </div>
 
