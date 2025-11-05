@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Star, Trash2 } from 'lucide-react';
 import { Memory } from '../types';
@@ -36,6 +36,33 @@ export function MemoryCard({ memory, storytellerName, isFeatured = false, index 
   const seconds = memory.durationSeconds % 60;
   const durationStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
 
+  // Pause all other videos when this one starts playing
+  const pauseOtherVideos = () => {
+    const allVideos = document.querySelectorAll('video');
+    allVideos.forEach((video) => {
+      if (video !== videoRef.current && !video.paused) {
+        video.pause();
+      }
+    });
+  };
+
+  // Listen for native video control play events
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handlePlay = () => {
+      pauseOtherVideos();
+      setIsPlaying(true);
+    };
+
+    video.addEventListener('play', handlePlay);
+
+    return () => {
+      video.removeEventListener('play', handlePlay);
+    };
+  }, [isExpanded]);
+
   // Handle card click - expand and play
   const handleCardClick = () => {
     if (!isExpanded) {
@@ -43,6 +70,7 @@ export function MemoryCard({ memory, storytellerName, isFeatured = false, index 
       // Wait for animation to complete before playing
       setTimeout(() => {
         if (videoRef.current) {
+          pauseOtherVideos();
           videoRef.current.play().catch((error) => {
             console.error('Error playing video:', error);
           });
@@ -57,6 +85,7 @@ export function MemoryCard({ memory, storytellerName, isFeatured = false, index 
     e.stopPropagation();
     if (videoRef.current) {
       if (videoRef.current.paused) {
+        pauseOtherVideos();
         videoRef.current.play();
         setIsPlaying(true);
       } else {
