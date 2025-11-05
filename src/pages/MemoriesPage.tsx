@@ -84,7 +84,7 @@ export function MemoriesPage() {
             </div>
           ) : (
             // Memories List with Timeline Connector
-            <div className="relative">
+            <div className="relative max-w-5xl mx-auto">
               {/* Timeline connector visible beside cards */}
               <MemoryTimelineConnector
                 memoryCount={memories.length}

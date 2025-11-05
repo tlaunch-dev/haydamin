@@ -32,21 +32,22 @@ export function MemoryTimelineConnector({ memoryCount, featuredIndex = -1 }: Mem
     return `M ${centerX} ${startY} L ${centerX} ${endY}`;
   };
 
-  // Get responsive branch length
+  // Get responsive branch length - shorter so nodes stay visible
   const getBranchLength = () => {
     const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
     if (viewportWidth < 768) {
-      return 100; // Mobile - shorter branches
+      return 60; // Mobile - very short branches
     } else if (viewportWidth < 1024) {
-      return 150; // Tablet - medium branches
+      return 80; // Tablet - short branches
     } else {
-      return 200; // Desktop - longer branches
+      return 100; // Desktop - medium branches (not too long)
     }
   };
 
   const branchLength = getBranchLength();
 
-  // Generate branches extending from trunk to cards
+  // Generate branches extending from trunk toward cards
+  // Branches stop before reaching cards so nodes are visible in gaps
   const generateBranches = () => {
     const branches: Array<{
       path: string;
@@ -65,9 +66,9 @@ export function MemoryTimelineConnector({ memoryCount, featuredIndex = -1 }: Mem
 
       const isLeft = i % 2 === 0;
 
-      // Branch starts at card middle height
+      // Position branch in the gap ABOVE each card
       const cardTop = i * (cardHeight + gap);
-      const branchY = cardTop + cardHeight / 2;
+      const branchY = cardTop - gap / 3; // Position in upper part of gap
 
       let branchPath: string;
 
@@ -75,13 +76,13 @@ export function MemoryTimelineConnector({ memoryCount, featuredIndex = -1 }: Mem
         // Left branch: curves from trunk to left
         const startX = centerX;
         const endX = centerX - branchLength;
-        const controlX = centerX - branchLength * 0.5;
+        const controlX = centerX - branchLength * 0.6;
         branchPath = `M ${startX} ${branchY} Q ${controlX} ${branchY} ${endX} ${branchY}`;
       } else {
         // Right branch: curves from trunk to right
         const startX = centerX;
         const endX = centerX + branchLength;
-        const controlX = centerX + branchLength * 0.5;
+        const controlX = centerX + branchLength * 0.6;
         branchPath = `M ${startX} ${branchY} Q ${controlX} ${branchY} ${endX} ${branchY}`;
       }
 
