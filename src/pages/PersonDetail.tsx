@@ -14,6 +14,7 @@ import PhotoGalleryModal from '../components/PhotoGalleryModal';
 import { useLanguage } from '../context/LanguageContext';
 import { useHiddenMode } from '../context/HiddenModeContext';
 import { useAuth } from '../context/AuthContext';
+import { useDevice } from '../context/DeviceContext';
 import { getPersonName, getRelationship, getLocation, getFavoriteFood, getAbout, t } from '../utils/i18n';
 import { Person } from '../types';
 import { Pencil, ArrowRight, Save, X } from 'lucide-react';
@@ -68,6 +69,7 @@ export function PersonDetail() {
   const { language } = useLanguage();
   const { showNames } = useHiddenMode();
   const { initialLoadComplete } = useAuth();
+  const { isTouchDevice } = useDevice();
   
   // Data hooks
   const { people, loading, error } = usePeople();
@@ -545,10 +547,10 @@ export function PersonDetail() {
         {/* Corner Menu */}
         <CollapsibleButtonMenu buttons={menuButtons} />
 
-        {/* Swipe indicator - mobile/tablet only, show when revealed in game mode */}
-        {isGameMode && isRevealed && (
-          <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-40 flex md:hidden items-center gap-2 bg-accent/90 backdrop-blur-md shadow-lg rounded-full px-4 py-2 animate-pulse">
-            <span className={`${fontClass} text-sm text-accent-text font-semibold`}>
+        {/* Swipe indicator - touch devices only, show when revealed in game mode */}
+        {isGameMode && isRevealed && isTouchDevice && (
+          <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40 flex items-center gap-3 bg-accent/90 backdrop-blur-md shadow-lg rounded-full px-6 py-3 animate-pulse">
+            <span className={`${fontClass} text-base md:text-lg text-accent-text font-semibold`}>
               {language === 'ar' ? 'اسحب' : 'Swipe'}
             </span>
             <svg
@@ -557,7 +559,7 @@ export function PersonDetail() {
               viewBox="0 0 24 24"
               strokeWidth={2.5}
               stroke="currentColor"
-              className={`w-5 h-5 text-accent-text ${language === 'ar' ? 'rotate-180' : ''}`}
+              className={`w-6 h-6 md:w-7 md:h-7 text-accent-text ${language === 'ar' ? 'rotate-180' : ''}`}
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
             </svg>
