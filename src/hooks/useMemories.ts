@@ -6,7 +6,7 @@ import { Memory } from '../types';
 
 /**
  * Hook to get all memories with real-time updates
- * Sorted by dateRecorded descending (newest first)
+ * Sorted by featured first, then dateRecorded descending (newest first)
  * @returns Object with memories array, loading state, and error
  */
 export const useMemories = () => {
@@ -27,7 +27,17 @@ export const useMemories = () => {
         const memoriesData = snapshot.docs.map((doc) =>
           docToMemory(doc.id, doc.data())
         );
-        setMemories(memoriesData);
+
+        // Sort: featured first, then by dateRecorded
+        const sorted = memoriesData.sort((a, b) => {
+          // Featured memories come first
+          if (a.featured && !b.featured) return -1;
+          if (!a.featured && b.featured) return 1;
+          // If both featured or both not featured, sort by date
+          return b.dateRecorded.getTime() - a.dateRecorded.getTime();
+        });
+
+        setMemories(sorted);
         setLoading(false);
       },
       (err) => {

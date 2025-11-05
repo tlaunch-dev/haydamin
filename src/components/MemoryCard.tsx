@@ -1,7 +1,11 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { Star, Trash2 } from 'lucide-react';
 import { Memory } from '../types';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
+import { updateMemory, deleteMemory, getAllMemories } from '../services/firestore';
+import { deleteVideo, deleteThumbnail } from '../services/storage';
 
 interface MemoryCardProps {
   memory: Memory;
@@ -12,8 +16,10 @@ interface MemoryCardProps {
 
 export function MemoryCard({ memory, storytellerName, isFeatured = false, index }: MemoryCardProps) {
   const { language } = useLanguage();
+  const { user } = useAuth();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const title = language === 'ar' ? memory.titleAr : memory.title;
@@ -70,6 +76,68 @@ export function MemoryCard({ memory, storytellerName, isFeatured = false, index 
     setIsExpanded(false);
   };
 
+  // Handle toggle featured
+  const handleToggleFeatured = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user) return;
+
+    try {
+      const newFeaturedState = !memory.featured;
+
+      // If setting as featured, unfeatured all others
+      if (newFeaturedState) {
+        const allMemories = await getAllMemories();
+        const updatePromises = allMemories
+          .filter((m) => m.id !== memory.id && m.featured)
+          .map((m) => updateMemory(m.id, { featured: false, updatedAt: new Date() }));
+        await Promise.all(updatePromises);
+      }
+
+      // Update this memory
+      await updateMemory(memory.id, {
+        featured: newFeaturedState,
+        updatedAt: new Date(),
+      });
+    } catch (error) {
+      console.error('Error toggling featured:', error);
+    }
+  };
+
+  // Handle delete memory
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user) return;
+
+    const confirmed = window.confirm(
+      language === 'ar'
+        ? 'هل أنت متأكد أنك تريد حذف هذه الذكرى؟'
+        : 'Are you sure you want to delete this memory?'
+    );
+
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+
+    try {
+      // Delete video and thumbnail from storage
+      await Promise.all([
+        deleteVideo(memory.videoUrl),
+        deleteThumbnail(memory.thumbnailUrl),
+      ]);
+
+      // Delete memory document from Firestore
+      await deleteMemory(memory.id);
+    } catch (error) {
+      console.error('Error deleting memory:', error);
+      alert(
+        language === 'ar'
+          ? 'فشل حذف الذكرى. يرجى المحاولة مرة أخرى'
+          : 'Failed to delete memory. Please try again'
+      );
+      setIsDeleting(false);
+    }
+  };
+
   // Animation variants
   const cardVariants = {
     collapsed: {
@@ -110,8 +178,55 @@ export function MemoryCard({ memory, storytellerName, isFeatured = false, index 
           ${!isExpanded ? 'cursor-pointer' : ''}
           transition-shadow duration-300
           ${!isExpanded ? 'hover:shadow-md' : 'shadow-lg'}
+          ${isDeleting ? 'opacity-50 pointer-events-none' : ''}
         `}
       >
+        {/* Action buttons (only shown when collapsed and user is authenticated) */}
+        {!isExpanded && user && (
+          <div className="absolute top-4 right-4 z-10 flex gap-2">
+            {/* Featured toggle */}
+            <button
+              onClick={handleToggleFeatured}
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                memory.featured
+                  ? 'bg-accent text-accent-text'
+                  : 'bg-background/80 text-text/60 hover:text-accent hover:bg-background'
+              }`}
+              aria-label={
+                memory.featured
+                  ? language === 'ar'
+                    ? 'إلغاء التمييز'
+                    : 'Unfeature'
+                  : language === 'ar'
+                  ? 'تمييز'
+                  : 'Feature'
+              }
+              title={
+                memory.featured
+                  ? language === 'ar'
+                    ? 'إلغاء التمييز'
+                    : 'Unfeature'
+                  : language === 'ar'
+                  ? 'تمييز'
+                  : 'Feature'
+              }
+            >
+              <Star className="w-4 h-4" fill={memory.featured ? 'currentColor' : 'none'} />
+            </button>
+
+            {/* Delete button */}
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="w-8 h-8 rounded-full bg-background/80 text-text/60 hover:text-red-600 hover:bg-background flex items-center justify-center transition-colors disabled:opacity-50"
+              aria-label={language === 'ar' ? 'حذف' : 'Delete'}
+              title={language === 'ar' ? 'حذف' : 'Delete'}
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         {/* Close button (only shown when expanded) */}
         {isExpanded && (
           <button

@@ -94,6 +94,7 @@ export interface Memory {
   storytellerId: string;      // Person ID who's telling the story
   dateRecorded: Date;         // When was this video recorded
   durationSeconds: number;    // Video length in seconds
+  featured?: boolean;         // Mark as featured (shows full width at top)
 
   // Optional metadata for future features
   featuredPeopleIds?: string[]; // Who's mentioned/shown in the video
