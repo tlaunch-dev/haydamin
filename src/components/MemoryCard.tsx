@@ -269,6 +269,7 @@ export function MemoryCard({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
 
   const title = language === 'ar' ? memory.titleAr : memory.title;
   const caption = language === 'ar' ? memory.captionAr : memory.caption;
@@ -331,7 +332,7 @@ export function MemoryCard({
 
   // Close menu when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setIsMenuOpen(false);
       }
@@ -339,11 +340,14 @@ export function MemoryCard({
 
     if (isMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside as any);
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('touchstart', handleClickOutside as any);
       };
     }
   }, [isMenuOpen]);
+
 
   // Handle card click - expand and play
   const handleCardClick = () => {
@@ -550,19 +554,11 @@ export function MemoryCard({
             ref={menuRef} 
             className="absolute top-3 right-3 md:top-4 md:right-4 z-20"
             onClick={(e) => e.stopPropagation()}
-            onTouchStart={(e) => e.stopPropagation()}
-            onTouchEnd={(e) => e.stopPropagation()}
           >
             {/* Three-dot menu button */}
             <button
+              ref={menuButtonRef}
               onClick={(e) => {
-                e.stopPropagation();
-                setIsMenuOpen(!isMenuOpen);
-              }}
-              onTouchStart={(e) => {
-                e.stopPropagation();
-              }}
-              onTouchEnd={(e) => {
                 e.stopPropagation();
                 setIsMenuOpen(!isMenuOpen);
               }}
