@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useNavigation } from '../context/NavigationContext';
+import { setBackNavigationPending } from '../utils/navigationState';
 import { t } from '../utils/i18n';
 
 const BackButton = () => {
@@ -11,14 +12,9 @@ const BackButton = () => {
   const handleBack = () => {
     // Set navigation direction in context
     setNavigationDirection('back');
-    // Store in browser history state for back navigation
-    // This ensures it's available when the previous page mounts
-    if (typeof window !== 'undefined' && window.history) {
-      window.history.replaceState(
-        { ...window.history.state, navigationDirection: 'back' },
-        ''
-      );
-    }
+    // Set module-level flag for back navigation
+    // This persists across route changes and is available immediately when component mounts
+    setBackNavigationPending();
     navigate(-1);
   };
 

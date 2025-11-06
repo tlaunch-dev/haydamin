@@ -20,7 +20,7 @@ import { useAuth } from '../context/AuthContext';
 import { useDevice } from '../context/DeviceContext';
 import { useSwipeBack } from '../hooks/useSwipeBack';
 import { getPersonName, getRelationship, getLocation, getFavoriteFood, getAbout, t } from '../utils/i18n';
-import { getNavigationDirectionFromLocation, getNavigationDirectionFromHistory } from '../utils/navigationState';
+import { getNavigationDirectionFromLocation, getAndClearBackNavigationPending } from '../utils/navigationState';
 import { Person } from '../types';
 import { Pencil, ArrowRight, Save, X } from 'lucide-react';
 
@@ -75,11 +75,12 @@ export function PersonDetail() {
   const { language, toggleLanguage } = useLanguage();
   const { showNames } = useHiddenMode();
   // Navigation direction: check location state first (for forward nav with state),
-  // then browser history state (for back nav), then context (for reactivity)
+  // then module-level back navigation flag (for back nav), then context (for reactivity)
   const { navigationDirection: contextDirection } = useNavigation();
   const locationStateDirection = getNavigationDirectionFromLocation(location.state);
-  const historyStateDirection = getNavigationDirectionFromHistory();
-  const navigationDirection = locationStateDirection || historyStateDirection || contextDirection;
+  // Check for pending back navigation on mount (synchronous, available immediately)
+  const isBackNavigation = getAndClearBackNavigationPending();
+  const navigationDirection = locationStateDirection || (isBackNavigation ? 'back' : null) || contextDirection;
   const { initialLoadComplete } = useAuth();
   const { isTouchDevice } = useDevice();
 

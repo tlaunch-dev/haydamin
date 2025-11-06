@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useNavigation } from '../context/NavigationContext';
+import { setBackNavigationPending } from '../utils/navigationState';
 
 interface SwipeBackOptions {
   enabled?: boolean;
@@ -96,17 +97,15 @@ export const useSwipeBack = (options: SwipeBackOptions = {}) => {
 
       // If swipe progress is sufficient, trigger back navigation
       if (finalProgress >= 0.5) {
+        console.log('[useSwipeBack] Triggering back navigation, current pathname:', location.pathname);
         // Set navigation direction in context
         setNavigationDirection('back');
-        // Store in browser history state for back navigation
-        // This ensures it's available when the previous page mounts
-        if (typeof window !== 'undefined' && window.history) {
-          window.history.replaceState(
-            { ...window.history.state, navigationDirection: 'back' },
-            ''
-          );
-        }
+        // Set module-level flag for back navigation
+        // This persists across route changes and is available immediately when component mounts
+        setBackNavigationPending();
+        console.log('[useSwipeBack] Flag set, about to navigate(-1)');
         navigate(-1);
+        console.log('[useSwipeBack] navigate(-1) called');
       }
 
       // Reset state
