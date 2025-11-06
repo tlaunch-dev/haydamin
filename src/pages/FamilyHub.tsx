@@ -18,7 +18,7 @@ import { useSwipeBack } from '../hooks/useSwipeBack';
 import { usePersonImagePreload } from '../hooks/useImagePreload';
 import { Person } from '../types';
 import { getPersonName, t } from '../utils/i18n';
-import { getNavigationDirectionFromLocation, getAndClearBackNavigationPending } from '../utils/navigationState';
+import { getNavigationDirectionFromLocation, getBackNavigationPending, clearBackNavigationPending } from '../utils/navigationState';
 import { Pencil, Dices, Images } from 'lucide-react';
 
 // Type alias for easing functions
@@ -55,20 +55,20 @@ const FamilyHub = () => {
 
   // Navigation direction: check location state first (for forward nav with state),
   // then module-level back navigation flag (for back nav), then context (for reactivity)
+  // Store in state to survive multiple renders
   const { navigationDirection: contextDirection } = useNavigation();
   const locationStateDirection = getNavigationDirectionFromLocation(location.state);
-  // Check for pending back navigation on mount (synchronous, available immediately)
-  const isBackNavigation = getAndClearBackNavigationPending();
-  const navigationDirection = locationStateDirection || (isBackNavigation ? 'back' : null) || contextDirection;
-  
-  console.log('[FamilyHub] Navigation direction check:', {
-    routePersonId,
-    locationStateDirection,
-    isBackNavigation,
-    contextDirection,
-    finalDirection: navigationDirection,
-    locationPathname: location.pathname
+  const [navigationDirection] = useState<'forward' | 'back' | null>(() => {
+    // Only check the flag on initial mount
+    const isBackNav = getBackNavigationPending();
+    return locationStateDirection || (isBackNav ? 'back' : null) || contextDirection;
   });
+
+  // Clear the back navigation flag when route changes
+  useEffect(() => {
+    clearBackNavigationPending();
+  }, [routePersonId]);
+
   const {
     zoomPhase,
     hiddenPersonId,

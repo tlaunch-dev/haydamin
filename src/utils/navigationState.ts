@@ -18,19 +18,23 @@ let backNavigationPending: boolean = false;
  * Called before navigate(-1) to mark that the next navigation is a back navigation
  */
 export const setBackNavigationPending = (): void => {
-  console.log('[navigationState] Setting back navigation pending');
   backNavigationPending = true;
 };
 
 /**
- * Get and clear the pending back navigation flag
- * Returns true if a back navigation was pending, false otherwise
+ * Get the pending back navigation flag (read-only)
+ * Returns true if a back navigation is pending, false otherwise
  */
-export const getAndClearBackNavigationPending = (): boolean => {
-  const wasPending = backNavigationPending;
-  console.log('[navigationState] Reading back navigation pending:', wasPending, 'at', new Error().stack?.split('\n')[2]?.trim());
+export const getBackNavigationPending = (): boolean => {
+  return backNavigationPending;
+};
+
+/**
+ * Clear the pending back navigation flag
+ * Should be called after the navigation has been processed
+ */
+export const clearBackNavigationPending = (): void => {
   backNavigationPending = false;
-  return wasPending;
 };
 
 /**

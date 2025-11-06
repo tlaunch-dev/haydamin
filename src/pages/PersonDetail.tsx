@@ -20,7 +20,7 @@ import { useAuth } from '../context/AuthContext';
 import { useDevice } from '../context/DeviceContext';
 import { useSwipeBack } from '../hooks/useSwipeBack';
 import { getPersonName, getRelationship, getLocation, getFavoriteFood, getAbout, t } from '../utils/i18n';
-import { getNavigationDirectionFromLocation, getAndClearBackNavigationPending } from '../utils/navigationState';
+import { getNavigationDirectionFromLocation, getBackNavigationPending, clearBackNavigationPending } from '../utils/navigationState';
 import { Person } from '../types';
 import { Pencil, ArrowRight, Save, X } from 'lucide-react';
 
@@ -74,24 +74,24 @@ export function PersonDetail() {
   // Context hooks
   const { language, toggleLanguage } = useLanguage();
   const { showNames } = useHiddenMode();
-  // Navigation direction: check location state first (for forward nav with state),
-  // then module-level back navigation flag (for back nav), then context (for reactivity)
   const { navigationDirection: contextDirection } = useNavigation();
-  const locationStateDirection = getNavigationDirectionFromLocation(location.state);
-  // Check for pending back navigation on mount (synchronous, available immediately)
-  const isBackNavigation = getAndClearBackNavigationPending();
-  const navigationDirection = locationStateDirection || (isBackNavigation ? 'back' : null) || contextDirection;
-  
-  console.log('[PersonDetail] Navigation direction check:', {
-    personId,
-    locationStateDirection,
-    isBackNavigation,
-    contextDirection,
-    finalDirection: navigationDirection,
-    locationPathname: location.pathname
-  });
   const { initialLoadComplete } = useAuth();
   const { isTouchDevice } = useDevice();
+
+  // Navigation direction: check location state first (for forward nav with state),
+  // then module-level back navigation flag (for back nav), then context (for reactivity)
+  // Store in state to survive multiple renders
+  const locationStateDirection = getNavigationDirectionFromLocation(location.state);
+  const [navigationDirection] = useState<'forward' | 'back' | null>(() => {
+    // Only check the flag on initial mount
+    const isBackNav = getBackNavigationPending();
+    return locationStateDirection || (isBackNav ? 'back' : null) || contextDirection;
+  });
+
+  // Clear the back navigation flag when route changes
+  useEffect(() => {
+    clearBackNavigationPending();
+  }, [personId]);
 
   // Data hooks
   const { people, loading, error } = usePeople();

@@ -97,15 +97,12 @@ export const useSwipeBack = (options: SwipeBackOptions = {}) => {
 
       // If swipe progress is sufficient, trigger back navigation
       if (finalProgress >= 0.5) {
-        console.log('[useSwipeBack] Triggering back navigation, current pathname:', location.pathname);
         // Set navigation direction in context
         setNavigationDirection('back');
         // Set module-level flag for back navigation
         // This persists across route changes and is available immediately when component mounts
         setBackNavigationPending();
-        console.log('[useSwipeBack] Flag set, about to navigate(-1)');
         navigate(-1);
-        console.log('[useSwipeBack] navigate(-1) called');
       }
 
       // Reset state
