@@ -445,9 +445,6 @@ const FamilyHub = () => {
           <BackButton />
         </div>
       )}
-      
-      {/* Corner Menu */}
-      <CollapsibleButtonMenu buttons={menuButtons} />
 
       {/* Header */}
       <div className="mb-4 md:mb-6 lg:mb-8 max-w-7xl mx-auto w-full relative z-10">
@@ -579,6 +576,9 @@ const FamilyHub = () => {
       </div>
       </motion.div>
     </AnimatePresence>
+    
+    {/* Corner Menu - outside animated container to stay fixed */}
+    <CollapsibleButtonMenu buttons={menuButtons} />
     </>
   );
 };
