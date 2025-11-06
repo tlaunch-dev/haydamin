@@ -18,7 +18,7 @@ import { useSwipeBack } from '../hooks/useSwipeBack';
 import { usePersonImagePreload } from '../hooks/useImagePreload';
 import { Person } from '../types';
 import { getPersonName, t } from '../utils/i18n';
-import { Eye, EyeOff, Pencil, Dices, Images } from 'lucide-react';
+import { Pencil, Dices, Images } from 'lucide-react';
 
 // Type alias for easing functions
 type Easing = [number, number, number, number];
@@ -26,8 +26,8 @@ type Easing = [number, number, number, number];
 const FamilyHub = () => {
   const { personId: routePersonId } = useParams<{ personId: string }>();
   const navigate = useNavigate();
-  const { language } = useLanguage();
-  const { showNames, toggleShowNames } = useHiddenMode();
+  const { language, toggleLanguage } = useLanguage();
+  const { showNames } = useHiddenMode();
   const { initialLoadComplete } = useAuth();
   const { people, loading, error } = usePeople();
   const [isEditMode, setIsEditMode] = useState(false);
@@ -190,6 +190,56 @@ const FamilyHub = () => {
     [people]
   );
 
+  // Handle game mode button click - useCallback to keep stable reference
+  const handleGameMode = useCallback(() => {
+    if (people.length === 0) return;
+    localStorage.removeItem('haydamin_game_mode_shown_ids');
+    const randomPerson = people[Math.floor(Math.random() * people.length)];
+    navigate(`/person/${randomPerson.id}?game=true`);
+  }, [people, navigate]);
+
+  // Handle gallery mode button click - useCallback to keep stable reference
+  const handleGalleryMode = useCallback(() => {
+    if (!hasAdditionalPhotos) return;
+    navigate('/gallery');
+  }, [hasAdditionalPhotos, navigate]);
+
+  // Handle edit mode toggle - useCallback to keep stable reference
+  const handleToggleEditMode = useCallback(() => {
+    setIsEditMode(prev => !prev);
+  }, []);
+
+  // Configure menu buttons - memoized to prevent re-renders during navigation
+  // MUST be before early returns to follow Rules of Hooks
+  const menuButtons: ButtonConfig[] = useMemo(() => [
+    {
+      id: 'game-mode',
+      icon: <Dices className="w-5 h-5 text-accent" />,
+      label: language === 'ar' ? 'وضع اللعبة' : 'Game Mode',
+      onClick: handleGameMode,
+      show: people.length > 0,
+    },
+    {
+      id: 'gallery-mode',
+      icon: <Images className="w-5 h-5 text-accent" />,
+      label: t('gallery_mode', language),
+      onClick: handleGalleryMode,
+      show: hasAdditionalPhotos,
+    },
+    {
+      id: 'edit-mode',
+      icon: <Pencil className="w-5 h-5 text-accent" />,
+      label: isEditMode ? 'Exit edit mode' : 'Enter edit mode',
+      onClick: handleToggleEditMode,
+    },
+    {
+      id: 'language',
+      icon: <span className="text-accent font-bold text-lg">{language === 'ar' ? 'EN' : 'ع'}</span>,
+      label: language === 'ar' ? 'English' : 'العربية',
+      onClick: toggleLanguage,
+    },
+  ], [language, people.length, hasAdditionalPhotos, isEditMode, handleGameMode, handleGalleryMode, handleToggleEditMode, toggleLanguage]);
+
   // Show loading state - only show full animation if initial load is not complete
   if (loading) {
     // If we've already done the initial load, show empty background while loading data
@@ -231,59 +281,6 @@ const FamilyHub = () => {
       : `${getPersonName(centerPerson, language)}${t('family_of', language)}`;
 
   const fontClass = language === 'ar' ? 'font-arabic' : 'font-sans';
-
-  // Handle game mode button click
-  const handleGameMode = () => {
-    if (people.length === 0) return;
-    localStorage.removeItem('haydamin_game_mode_shown_ids');
-    const randomPerson = people[Math.floor(Math.random() * people.length)];
-    navigate(`/person/${randomPerson.id}?game=true`);
-  };
-
-  // Handle gallery mode button click
-  const handleGalleryMode = () => {
-    if (!hasAdditionalPhotos) return;
-    navigate('/gallery');
-  };
-
-  // Handle language toggle
-  const { toggleLanguage } = useLanguage();
-
-  // Configure menu buttons
-  const menuButtons: ButtonConfig[] = [
-    {
-      id: 'game-mode',
-      icon: <Dices className="w-5 h-5 text-accent" />,
-      label: language === 'ar' ? 'وضع اللعبة' : 'Game Mode',
-      onClick: handleGameMode,
-      show: people.length > 0,
-    },
-    {
-      id: 'gallery-mode',
-      icon: <Images className="w-5 h-5 text-accent" />,
-      label: t('gallery_mode', language),
-      onClick: handleGalleryMode,
-      show: hasAdditionalPhotos,
-    },
-    {
-      id: 'edit-mode',
-      icon: <Pencil className="w-5 h-5 text-accent" />,
-      label: isEditMode ? 'Exit edit mode' : 'Enter edit mode',
-      onClick: () => setIsEditMode(!isEditMode),
-    },
-    {
-      id: 'toggle-names',
-      icon: showNames ? <Eye className="w-5 h-5 text-accent" /> : <EyeOff className="w-5 h-5 text-accent" />,
-      label: showNames ? 'Hide names' : 'Show names',
-      onClick: toggleShowNames,
-    },
-    {
-      id: 'language',
-      icon: <span className="text-accent font-bold text-lg">{language === 'ar' ? 'EN' : 'ع'}</span>,
-      label: language === 'ar' ? 'English' : 'العربية',
-      onClick: toggleLanguage,
-    },
-  ];
 
   // Animation variants - parents load instantly
   const parentContainerVariants = {
