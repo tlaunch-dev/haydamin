@@ -211,7 +211,6 @@ const useResponsiveWidth = (isExpanded: boolean, isFeatured: boolean, index: num
 
 interface MemoryCardProps {
   memory: Memory;
-  storytellerName: string;
   people: Person[]; // Need this for edit modal
   isFeatured?: boolean;
   index: number;
@@ -223,7 +222,6 @@ interface MemoryCardProps {
 
 export function MemoryCard({ 
   memory, 
-  storytellerName, 
   people, 
   isFeatured = false, 
   index,
@@ -236,7 +234,6 @@ export function MemoryCard({
   const { user } = useAuth();
   const [internalIsExpanded, setInternalIsExpanded] = useState(false);
   const isExpanded = externalIsExpanded !== undefined ? externalIsExpanded : internalIsExpanded;
-  const [isPlaying, setIsPlaying] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -276,11 +273,6 @@ export function MemoryCard({
 
   const dateStr = getTimeAgo(memory.dateRecorded);
 
-  // Format duration (MM:SS)
-  const minutes = Math.floor(memory.durationSeconds / 60);
-  const seconds = memory.durationSeconds % 60;
-  const durationStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-
   // Pause all other videos when this one starts playing
   const pauseOtherVideos = () => {
     const allVideos = document.querySelectorAll('video');
@@ -298,7 +290,6 @@ export function MemoryCard({
 
     const handlePlay = () => {
       pauseOtherVideos();
-      setIsPlaying(true);
     };
 
     video.addEventListener('play', handlePlay);
@@ -340,7 +331,6 @@ export function MemoryCard({
           videoRef.current.play().catch((error) => {
             console.error('Error playing video:', error);
           });
-          setIsPlaying(true);
         }
       }, 500);
     }
@@ -353,10 +343,8 @@ export function MemoryCard({
       if (videoRef.current.paused) {
         pauseOtherVideos();
         videoRef.current.play();
-        setIsPlaying(true);
       } else {
         videoRef.current.pause();
-        setIsPlaying(false);
       }
     }
   };
@@ -367,7 +355,6 @@ export function MemoryCard({
       videoRef.current.pause();
       videoRef.current.currentTime = 0;
     }
-    setIsPlaying(false);
     // Notify parent to collapse this card
     if (onCollapse) {
       onCollapse();
@@ -386,7 +373,6 @@ export function MemoryCard({
           videoRef.current.pause();
           videoRef.current.currentTime = 0;
         }
-        setIsPlaying(false);
         setInternalIsExpanded(false);
       }
     }
@@ -640,8 +626,6 @@ export function MemoryCard({
                 controlsList="nodownload"
                 className="w-full h-full rounded-2xl"
                 onClick={handleVideoClick}
-                onPlay={() => setIsPlaying(true)}
-                onPause={() => setIsPlaying(false)}
               >
                 Your browser does not support the video tag.
               </video>

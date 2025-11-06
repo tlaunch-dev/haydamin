@@ -26,7 +26,6 @@ export function MemoryUploadModal({ isOpen, onClose, people, memory, onSuccess }
   const isEditMode = !!memory;
 
   const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [videoPreviewUrl, setVideoPreviewUrl] = useState<string>('');
   const [thumbnailBlob, setThumbnailBlob] = useState<Blob | null>(null);
   const [thumbnailUrl, setThumbnailUrl] = useState<string>('');
 
@@ -66,7 +65,6 @@ export function MemoryUploadModal({ isOpen, onClose, people, memory, onSuccess }
 
   const resetForm = () => {
     setVideoFile(null);
-    setVideoPreviewUrl('');
     setThumbnailBlob(null);
     setThumbnailUrl('');
     setTitle('');
@@ -101,10 +99,6 @@ export function MemoryUploadModal({ isOpen, onClose, people, memory, onSuccess }
 
     setError('');
     setVideoFile(file);
-
-    // Create preview URL
-    const previewUrl = URL.createObjectURL(file);
-    setVideoPreviewUrl(previewUrl);
 
     // Set default date from file metadata
     const fileDate = new Date(file.lastModified);
@@ -370,7 +364,6 @@ export function MemoryUploadModal({ isOpen, onClose, people, memory, onSuccess }
                             type="button"
                             onClick={() => {
                               setVideoFile(null);
-                              setVideoPreviewUrl('');
                               setThumbnailBlob(null);
                               setThumbnailUrl('');
                             }}

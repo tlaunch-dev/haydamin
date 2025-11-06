@@ -99,13 +99,6 @@ export function MemoriesPage() {
               {/* Memory cards */}
               <div className="relative space-y-3 md:space-y-4 lg:space-y-5" style={{ zIndex: 20 }}>
                 {memories.map((memory, index) => {
-                  const storyteller = people.find((p) => p.id === memory.storytellerId);
-                  const storytellerName = storyteller
-                    ? language === 'ar'
-                      ? storyteller.nameAr
-                      : storyteller.name
-                    : '';
-
                   // Calculate non-featured index for proper alternating pattern
                   // Featured cards are centered, so we only alternate non-featured cards
                   const nonFeaturedIndex = memories.slice(0, index).filter(m => !m.featured).length;
@@ -114,7 +107,6 @@ export function MemoriesPage() {
                     <MemoryCard
                       key={memory.id}
                       memory={memory}
-                      storytellerName={storytellerName}
                       people={people}
                       isFeatured={memory.featured || false}
                       index={index}
