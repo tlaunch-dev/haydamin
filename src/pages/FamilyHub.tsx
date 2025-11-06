@@ -18,6 +18,7 @@ import { useSwipeBack } from '../hooks/useSwipeBack';
 import { usePersonImagePreload } from '../hooks/useImagePreload';
 import { Person } from '../types';
 import { getPersonName, t } from '../utils/i18n';
+import { getAndClearPendingNavigationDirection } from '../utils/navigationState';
 import { Pencil, Dices, Images } from 'lucide-react';
 
 // Type alias for easing functions
@@ -52,7 +53,17 @@ const FamilyHub = () => {
   }, []);
 
   // Navigation and zoom transition state from context
-  const { navigationDirection } = useNavigation();
+  // Check module-level state first (set before navigation, available immediately on mount)
+  // Then sync with context state for reactivity (needed for exit animations)
+  const { navigationDirection: contextDirection } = useNavigation();
+  const [pendingDirection] = useState(() => {
+    // Check module-level state on initial mount - this happens synchronously
+    // The value is cleared after reading, so it's a one-time check per route change
+    return getAndClearPendingNavigationDirection();
+  });
+  // Use pending direction if available, otherwise use context direction
+  // This ensures exit animations work correctly (context updates when direction is set)
+  const navigationDirection = pendingDirection || contextDirection;
   const {
     zoomPhase,
     hiddenPersonId,

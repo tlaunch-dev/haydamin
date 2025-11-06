@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
 import { useNavigation } from '../context/NavigationContext';
+import { setPendingNavigationDirection } from '../utils/navigationState';
 import { getPersonName } from '../utils/i18n';
 
 interface PersonCardProps {
@@ -61,7 +62,9 @@ const PersonCard = ({
   // Handle click - trigger zoom transition for hub routes
   const handleClick = (e: React.MouseEvent) => {
     // Set navigation direction to forward for all navigations
+    // Set in both context and module-level state for proper animation
     setNavigationDirection('forward');
+    setPendingNavigationDirection('forward');
 
     const isHubRoute = linkTo.startsWith('/hub/');
 
