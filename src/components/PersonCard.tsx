@@ -3,6 +3,7 @@ import { Person } from '../types';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
+import { useNavigation } from '../context/NavigationContext';
 import { getPersonName } from '../utils/i18n';
 
 interface PersonCardProps {
@@ -13,6 +14,7 @@ interface PersonCardProps {
   disableInitialAnimation?: boolean;
   onZoomClick?: (person: Person, rect: DOMRect, showName: boolean, imageSrc: string) => void;
   isHidden?: boolean; // Hide card during zoom transition
+  disableNavigation?: boolean; // Disable navigation but keep visual feedback
 }
 
 // Smooth transition config - optimized for fluid motion
@@ -30,8 +32,10 @@ const PersonCard = ({
   disableInitialAnimation = false,
   onZoomClick,
   isHidden = false,
+  disableNavigation = false,
 }: PersonCardProps) => {
   const { language } = useLanguage();
+  const { setNavigationDirection } = useNavigation();
   const cardRef = useRef<HTMLDivElement>(null);
   const hasChildren = person.childrenIds && person.childrenIds.length > 0;
   const hasSpouse = !!person.spouseId;
@@ -44,6 +48,9 @@ const PersonCard = ({
 
   // Handle click - trigger zoom transition for hub routes
   const handleClick = (e: React.MouseEvent) => {
+    // Set navigation direction to forward for all navigations
+    setNavigationDirection('forward');
+
     const isHubRoute = linkTo.startsWith('/hub/');
 
     if (isHubRoute && !isRootLevel && onZoomClick && cardRef.current) {
@@ -64,6 +71,30 @@ const PersonCard = ({
   if (showName) {
     const nameSize = variant === 'hub' ? 'text-xl md:text-2xl' : 'text-lg md:text-xl';
 
+    const content = (
+      <>
+        <motion.div
+          className="p-1 bg-background rounded-full shadow-xl"
+          transition={smoothTransition}
+        >
+          <img
+            src={person.primaryPhoto}
+            alt={`Photo of ${getPersonName(person, language)}`}
+            loading="lazy"
+            className="profile-image aspect-square object-cover w-full rounded-full ring-2 ring-accent/30 bg-gray-100"
+          />
+        </motion.div>
+        <motion.h2
+          className={`${fontClass} font-light text-accent ${nameSize} text-center leading-tight`}
+          initial={{ opacity: 0, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ ...smoothTransition, delay: 0.1 }}
+        >
+          {getPersonName(person, language)}
+        </motion.h2>
+      </>
+    );
+
     return (
       <motion.div
         ref={cardRef}
@@ -78,34 +109,36 @@ const PersonCard = ({
         })}
         className={`flex flex-col items-center gap-3 ${isHidden ? 'invisible pointer-events-none opacity-0' : ''}`}
         whileHover={isHidden ? {} : { scale: 1.02 }}
-        whileTap={isHidden ? {} : { scale: 0.98 }}
+        whileTap={isHidden ? {} : (disableNavigation ? { scale: 1.1 } : { scale: 0.98 })}
       >
-        <Link to={linkTo} onClick={handleClick} className="flex flex-col items-center gap-3 w-full">
-          <motion.div
-            className="p-1 bg-background rounded-full shadow-xl"
-            transition={smoothTransition}
-          >
-            <img
-              src={person.primaryPhoto}
-              alt={`Photo of ${getPersonName(person, language)}`}
-              loading="lazy"
-              className="profile-image aspect-square object-cover w-full rounded-full ring-2 ring-accent/30 bg-gray-100"
-            />
-          </motion.div>
-          <motion.h2
-            className={`${fontClass} font-light text-accent ${nameSize} text-center leading-tight`}
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ ...smoothTransition, delay: 0.1 }}
-          >
-            {getPersonName(person, language)}
-          </motion.h2>
-        </Link>
+        {disableNavigation ? (
+          <div className="flex flex-col items-center gap-3 w-full">
+            {content}
+          </div>
+        ) : (
+          <Link to={linkTo} onClick={handleClick} className="flex flex-col items-center gap-3 w-full">
+            {content}
+          </Link>
+        )}
       </motion.div>
     );
   }
 
   // Hidden names: circular only
+  const imageContent = (
+    <motion.div
+      className="p-1 bg-background rounded-full shadow-xl"
+      transition={smoothTransition}
+    >
+      <img
+        src={person.primaryPhoto}
+        alt={`Photo of ${getPersonName(person, language)}`}
+        loading="lazy"
+        className="aspect-square object-cover w-full rounded-full ring-2 ring-accent/30 bg-gray-100"
+      />
+    </motion.div>
+  );
+
   return (
     <motion.div
       ref={cardRef}
@@ -123,21 +156,17 @@ const PersonCard = ({
       )}
       className={`block ${isHidden ? 'invisible pointer-events-none opacity-0' : ''}`}
       whileHover={isHidden ? {} : { scale: 1.05 }}
-      whileTap={isHidden ? {} : { scale: 0.98 }}
+      whileTap={isHidden ? {} : (disableNavigation ? { scale: 1.1 } : { scale: 0.98 })}
     >
-      <Link to={linkTo} onClick={handleClick} className="block">
-        <motion.div
-          className="p-1 bg-background rounded-full shadow-xl"
-          transition={smoothTransition}
-        >
-          <img
-            src={person.primaryPhoto}
-            alt={`Photo of ${getPersonName(person, language)}`}
-            loading="lazy"
-            className="aspect-square object-cover w-full rounded-full ring-2 ring-accent/30 bg-gray-100"
-          />
-        </motion.div>
-      </Link>
+      {disableNavigation ? (
+        <div className="block">
+          {imageContent}
+        </div>
+      ) : (
+        <Link to={linkTo} onClick={handleClick} className="block">
+          {imageContent}
+        </Link>
+      )}
     </motion.div>
   );
 };

@@ -6,12 +6,15 @@ import AddPersonCard from '../components/AddPersonCard';
 import BackButton from '../components/BackButton';
 import AnimatedTreeConnector from '../components/AnimatedTreeConnector';
 import LoadingScreen from '../components/LoadingScreen';
+import SwipeBackIndicator from '../components/SwipeBackIndicator';
 import { CollapsibleButtonMenu, ButtonConfig } from '../components/CollapsibleButtonMenu';
 import { useLanguage } from '../context/LanguageContext';
 import { useHiddenMode } from '../context/HiddenModeContext';
+import { useNavigation } from '../context/NavigationContext';
 import { useZoomTransition } from '../context/ZoomTransitionContext';
 import { useAuth } from '../context/AuthContext';
 import { usePeople } from '../hooks/usePeople';
+import { useSwipeBack } from '../hooks/useSwipeBack';
 import { Person } from '../types';
 import { getPersonName, t } from '../utils/i18n';
 import { Eye, EyeOff, Pencil, Dices, Images } from 'lucide-react';
@@ -27,6 +30,7 @@ const FamilyHub = () => {
   const { initialLoadComplete } = useAuth();
   const { people, loading, error } = usePeople();
   const [isEditMode, setIsEditMode] = useState(false);
+  const [treeWidth, setTreeWidth] = useState(800);
 
   // Tree animation timing constants (match AnimatedTreeConnector.tsx)
   // 30% faster than original timing
@@ -34,7 +38,20 @@ const FamilyHub = () => {
   const TREE_WRAPPER_FADE = 0.21;
   const TREE_DROP_DELAY = 0.7;
 
-  // Zoom transition state from context
+  // Calculate responsive tree width
+  useEffect(() => {
+    const updateTreeWidth = () => {
+      const width = Math.min(800, window.innerWidth - 60);
+      setTreeWidth(width);
+    };
+
+    updateTreeWidth();
+    window.addEventListener('resize', updateTreeWidth);
+    return () => window.removeEventListener('resize', updateTreeWidth);
+  }, []);
+
+  // Navigation and zoom transition state from context
+  const { navigationDirection } = useNavigation();
   const {
     zoomPhase,
     hiddenPersonId,
@@ -43,6 +60,11 @@ const FamilyHub = () => {
   } = useZoomTransition();
   const [showChildren, setShowChildren] = useState(false);
   const animationStartedRef = useRef(false);
+
+  // Swipe-back gesture - only enable on non-root pages
+  const { swipeProgress, isSwipping } = useSwipeBack({
+    enabled: !!routePersonId,
+  });
 
   // Control when children should start animating
   // Reset on route change, then trigger during tree animation
@@ -54,6 +76,13 @@ const FamilyHub = () => {
 
   // Separate effect to start animation when ready
   useEffect(() => {
+    // On back navigation, show children immediately without animation
+    if (navigationDirection === 'back') {
+      setShowChildren(true);
+      animationStartedRef.current = true;
+      return;
+    }
+
     // Don't start if already started, or if we're in zoom-in phase
     if (animationStartedRef.current || zoomPhase === 'zoom-in') {
       return;
@@ -71,7 +100,14 @@ const FamilyHub = () => {
     }, CHILDREN_START_DELAY * 1000); // Convert to milliseconds
 
     return () => clearTimeout(timer);
-  }, [routePersonId, zoomPhase, TREE_WRAPPER_DELAY, TREE_WRAPPER_FADE, TREE_DROP_DELAY]);
+  }, [routePersonId, zoomPhase, navigationDirection, TREE_WRAPPER_DELAY, TREE_WRAPPER_FADE, TREE_DROP_DELAY]);
+
+  // Scroll to top on back navigation
+  useEffect(() => {
+    if (navigationDirection === 'back') {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }, [routePersonId, navigationDirection]);
 
   // Handle zoom transition click
   const handleZoomClick = useCallback((person: Person, rect: DOMRect, showName: boolean, imageSrc: string) => {
@@ -342,28 +378,41 @@ const FamilyHub = () => {
 
   return (
     <>
-      <AnimatePresence>
+      {/* Swipe-back gesture indicator */}
+      <SwipeBackIndicator isSwipping={isSwipping} progress={swipeProgress} />
+
+      <AnimatePresence mode="wait">
         <motion.div
           key={personId || 'root'}
           className="p-3 sm:p-4 md:p-6 lg:p-8 pt-20 sm:pt-24 md:pt-20 min-h-screen flex flex-col relative overflow-hidden"
-          initial={{ opacity: 0 }}
+          initial={{
+            opacity: navigationDirection === 'back' ? 1 : 0,
+            x: navigationDirection === 'back' ? '-100%' : 0
+          }}
           animate={{
-            // Hidden during zoom-in, reveal during zoom-out
-            opacity: zoomPhase === 'zoom-in' ? 0 : 1,
+            // For back nav: immediately visible and slide in
+            // For forward nav: Hidden during zoom-in, reveal during zoom-out
+            opacity: navigationDirection === 'back' ? 1 : (zoomPhase === 'zoom-in' ? 0 : 1),
+            x: 0
           }}
           transition={{
             opacity: {
-              // Fade in during entire zoom-out duration (0.8s)
-              duration: zoomPhase === 'zoom-out' ? 0.8 : 0.5,
+              // No opacity transition on back nav
+              duration: navigationDirection === 'back' ? 0 : (zoomPhase === 'zoom-out' ? 0.8 : 0.5),
               ease: [0.4, 0, 0.2, 1] as Easing,
               // Delay to sync with when zoom-out position animation actually starts (after 400ms wait)
-              delay: zoomPhase === 'zoom-out' ? 0.4 : 0,
+              delay: navigationDirection === 'back' ? 0 : (zoomPhase === 'zoom-out' ? 0.4 : 0),
+            },
+            x: {
+              duration: navigationDirection === 'back' ? 0.3 : 0,
+              ease: [0.4, 0, 0.2, 1] as Easing,
             }
           }}
           exit={{
-            opacity: 0,
+            opacity: navigationDirection === 'back' ? 1 : 0,
+            x: navigationDirection === 'back' ? '100%' : 0,
             transition: {
-              duration: 0.6,
+              duration: navigationDirection === 'back' ? 0.3 : 0.6,
               ease: [0.4, 0, 0.2, 1] as Easing,
             }
           }}
@@ -371,7 +420,7 @@ const FamilyHub = () => {
 
       {/* Back Button */}
       {!isRootHub && (
-        <div className="fixed top-6 left-6 z-50">
+        <div className="fixed safe-top safe-left z-50">
           <BackButton />
         </div>
       )}
@@ -390,15 +439,17 @@ const FamilyHub = () => {
         {/* Center Person(s) Row - Fade in first */}
         <motion.div
           className="mb-4 md:mb-6 lg:mb-8"
-          variants={parentContainerVariants}
-          initial="hidden"
-          animate="visible"
+          variants={navigationDirection === 'back' ? undefined : parentContainerVariants}
+          initial={navigationDirection === 'back' ? false : "hidden"}
+          animate={navigationDirection === 'back' ? false : "visible"}
         >
           <div className="flex flex-row justify-center gap-4 sm:gap-6 md:gap-7 lg:gap-8">
             <motion.div
               key={centerPerson.id}
               className="w-40 sm:w-44 md:w-46 lg:w-48"
-              variants={parentItemVariants}
+              variants={navigationDirection === 'back' ? undefined : parentItemVariants}
+              initial={navigationDirection === 'back' ? false : undefined}
+              animate={navigationDirection === 'back' ? false : undefined}
             >
               <PersonCard
                 person={centerPerson}
@@ -414,9 +465,9 @@ const FamilyHub = () => {
                 <motion.div
                   key={spousePerson.id}
                   className="w-40 sm:w-44 md:w-46 lg:w-48"
-                  variants={spouseVariants}
-                  initial="hidden"
-                  animate="visible"
+                  variants={navigationDirection === 'back' ? undefined : spouseVariants}
+                  initial={navigationDirection === 'back' ? false : "hidden"}
+                  animate={navigationDirection === 'back' ? false : "visible"}
                   exit="exit"
                 >
                   <PersonCard
@@ -459,7 +510,7 @@ const FamilyHub = () => {
               <AnimatedTreeConnector
                 parentCount={spousePerson ? 2 : 1}
                 childCount={childrenList.length}
-                containerWidth={800}
+                containerWidth={treeWidth}
               />
             </motion.div>
           )}
@@ -471,15 +522,17 @@ const FamilyHub = () => {
             <motion.div
               key="children-container"
               className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-5 lg:gap-6"
-              variants={childrenContainerVariants}
-              initial="hidden"
-              animate={showChildren ? "visible" : "hidden"}
+              variants={navigationDirection === 'back' ? undefined : childrenContainerVariants}
+              initial={navigationDirection === 'back' ? false : "hidden"}
+              animate={navigationDirection === 'back' ? false : (showChildren ? "visible" : "hidden")}
             >
               {childrenList.map((child, index) => (
                 <motion.div
                   key={child.id}
                   className="w-40 sm:w-44 md:w-46 lg:w-48"
-                  variants={getChildItemVariants(index)}
+                  variants={navigationDirection === 'back' ? undefined : getChildItemVariants(index)}
+                  initial={navigationDirection === 'back' ? false : undefined}
+                  animate={navigationDirection === 'back' ? false : undefined}
                 >
                   <PersonCard
                     person={child}

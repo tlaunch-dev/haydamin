@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { LanguageProvider } from './context/LanguageContext'
 import { AuthProvider } from './context/AuthContext'
 import { HiddenModeProvider } from './context/HiddenModeContext'
+import { NavigationProvider } from './context/NavigationContext'
 import { ZoomTransitionProvider } from './context/ZoomTransitionContext'
 import { DeviceProvider } from './context/DeviceContext'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -16,13 +17,15 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <AuthProvider>
         <LanguageProvider>
           <HiddenModeProvider>
-            <ZoomTransitionProvider>
-              <DeviceProvider>
-                <BrowserRouter>
-                  <App />
-                </BrowserRouter>
-              </DeviceProvider>
-            </ZoomTransitionProvider>
+            <NavigationProvider>
+              <ZoomTransitionProvider>
+                <DeviceProvider>
+                  <BrowserRouter>
+                    <App />
+                  </BrowserRouter>
+                </DeviceProvider>
+              </ZoomTransitionProvider>
+            </NavigationProvider>
           </HiddenModeProvider>
         </LanguageProvider>
       </AuthProvider>

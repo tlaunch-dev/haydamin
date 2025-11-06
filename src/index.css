@@ -272,3 +272,20 @@ body {
   filter: grayscale(0%); /* Reveals color on hover */
   opacity: 1;
 }
+
+/* Safe area utilities for fixed positioned elements */
+.safe-top {
+  top: calc(env(safe-area-inset-top, 0px) + 1.5rem);
+}
+
+.safe-left {
+  left: calc(env(safe-area-inset-left, 0px) + 1.5rem);
+}
+
+.safe-right {
+  right: calc(env(safe-area-inset-right, 0px) + 0px);
+}
+
+.safe-bottom {
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 1.5rem);
+}

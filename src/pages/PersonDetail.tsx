@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import imageCompression from 'browser-image-compression';
 import { usePeople } from '../hooks/usePeople';
 import { updatePerson, deletePerson } from '../services/firestore';
@@ -8,13 +9,15 @@ import { translateToArabic } from '../services/translate';
 import BackButton from '../components/BackButton';
 import PersonCard from '../components/PersonCard';
 import LoadingScreen from '../components/LoadingScreen';
+import SwipeBackIndicator from '../components/SwipeBackIndicator';
 import { CollapsibleButtonMenu, ButtonConfig } from '../components/CollapsibleButtonMenu';
 import ImageCropDialog from '../components/ImageCropDialog';
 import PhotoGalleryModal from '../components/PhotoGalleryModal';
 import { useLanguage } from '../context/LanguageContext';
 import { useHiddenMode } from '../context/HiddenModeContext';
+import { useNavigation } from '../context/NavigationContext';
 import { useAuth } from '../context/AuthContext';
-import { useDevice } from '../context/DeviceContext';
+import { useSwipeBack } from '../hooks/useSwipeBack';
 import { getPersonName, getRelationship, getLocation, getFavoriteFood, getAbout, t } from '../utils/i18n';
 import { Person } from '../types';
 import { Pencil, ArrowRight, Save, X } from 'lucide-react';
@@ -68,11 +71,14 @@ export function PersonDetail() {
   // Context hooks
   const { language } = useLanguage();
   const { showNames } = useHiddenMode();
+  const { navigationDirection } = useNavigation();
   const { initialLoadComplete } = useAuth();
-  const { isTouchDevice } = useDevice();
-  
+
   // Data hooks
   const { people, loading, error } = usePeople();
+
+  // Swipe-back gesture
+  const { swipeProgress, isSwipping } = useSwipeBack({ enabled: true });
   
   // Derived values
   const isGameMode = searchParams.get('game') === 'true';
@@ -234,7 +240,14 @@ export function PersonDetail() {
       Object.values(timeouts).forEach(timeout => clearTimeout(timeout));
     };
   }, []);
-  
+
+  // Scroll to top on back navigation
+  useEffect(() => {
+    if (navigationDirection === 'back') {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }, [personId, navigationDirection]);
+
   // Show loading state - only show full animation if initial load is not complete
   if (loading) {
     if (initialLoadComplete) {
@@ -484,14 +497,41 @@ export function PersonDetail() {
 
   return (
     <>
-      <div
-        className={`p-3 sm:p-4 md:p-6 lg:p-12 pt-20 sm:pt-24 md:pt-24 lg:pt-12 min-h-screen relative overflow-hidden ${isEditing && !isGameMode ? 'pb-24 md:pb-6' : ''}`}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-      >
+      {/* Swipe-back gesture indicator */}
+      <SwipeBackIndicator isSwipping={isSwipping} progress={swipeProgress} />
+
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={personId}
+          className={`p-3 sm:p-4 md:p-6 lg:p-12 pt-20 sm:pt-24 md:pt-24 lg:pt-12 min-h-screen relative overflow-hidden ${isEditing && !isGameMode ? 'pb-24 md:pb-6' : ''}`}
+          initial={{
+            opacity: navigationDirection === 'back' ? 1 : 0,
+            x: navigationDirection === 'back' ? '-100%' : 0
+          }}
+          animate={{
+            opacity: 1,
+            x: 0
+          }}
+          exit={{
+            opacity: navigationDirection === 'back' ? 1 : 0,
+            x: navigationDirection === 'back' ? '100%' : 0
+          }}
+          transition={{
+            opacity: {
+              duration: navigationDirection === 'back' ? 0 : 0.5,
+              ease: [0.4, 0, 0.2, 1]
+            },
+            x: {
+              duration: navigationDirection === 'back' ? 0.3 : 0,
+              ease: [0.4, 0, 0.2, 1]
+            }
+          }}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        >
         {/* Back/Exit Button - Top Left */}
-        <div className="fixed top-6 left-6 z-50">
+        <div className="fixed safe-top safe-left z-50">
           {!isGameMode && <BackButton />}
           {isGameMode && (
             <button
@@ -547,10 +587,10 @@ export function PersonDetail() {
         {/* Corner Menu */}
         <CollapsibleButtonMenu buttons={menuButtons} />
 
-        {/* Swipe indicator - touch devices only, show when revealed in game mode */}
-        {isGameMode && isRevealed && isTouchDevice && (
-          <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40 flex items-center gap-3 bg-accent/90 backdrop-blur-md shadow-lg rounded-full px-6 py-3 animate-pulse">
-            <span className={`${fontClass} text-base md:text-lg text-accent-text font-semibold`}>
+        {/* Swipe indicator - mobile/tablet only, show when revealed in game mode */}
+        {isGameMode && isRevealed && (
+          <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-40 flex lg:hidden items-center gap-2 bg-accent/90 backdrop-blur-md shadow-lg rounded-full px-4 py-2 animate-pulse">
+            <span className={`${fontClass} text-sm text-accent-text font-semibold`}>
               {language === 'ar' ? 'اسحب' : 'Swipe'}
             </span>
             <svg
@@ -594,11 +634,11 @@ export function PersonDetail() {
           {!isRevealed ? (
             /* Initial State: Centered Photo */
             <div className="flex flex-col items-center gap-8 mt-12 animate-fade-in">
-              <div className="p-1 bg-background rounded-full shadow-xl transition-all duration-500 ease-out">
+              <div className="p-1 bg-background rounded-full shadow-xl transition-all duration-500 ease-out cursor-pointer hover:scale-105" onClick={handleReveal}>
                 <img
                   src={person.primaryPhoto}
                   alt={`Photo`}
-                  className="w-80 h-80 md:w-96 md:h-96 lg:w-[450px] lg:h-[450px] rounded-full object-cover ring-2 ring-accent/30 transition-all duration-500 ease-out bg-gray-100 animate-fade-in"
+                  className="w-80 h-80 md:w-96 md:h-96 lg:w-[450px] lg:h-[450px] rounded-full object-cover ring-2 ring-accent/30 transition-all duration-500 ease-out bg-gray-100 animate-fade-in pointer-events-none"
                 />
               </div>
             </div>
@@ -986,7 +1026,7 @@ export function PersonDetail() {
               <div className="flex flex-wrap justify-center gap-4 md:gap-6 lg:gap-8">
                 {familyMembers.map((member) => (
                   <div key={member.id} className="w-40 sm:w-44 md:w-44 lg:w-48">
-                    <PersonCard person={member} variant="thumbnail" showName={true} />
+                    <PersonCard person={member} variant="thumbnail" showName={true} disableNavigation={isGameMode} />
                   </div>
                 ))}
               </div>
@@ -1023,7 +1063,8 @@ export function PersonDetail() {
             </button>
           </div>
         )}
-      </div>
+      </motion.div>
+      </AnimatePresence>
 
       {/* Photo Gallery Modal */}
       {isModalOpen && (

@@ -1,14 +1,21 @@
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { useNavigation } from '../context/NavigationContext';
 import { t } from '../utils/i18n';
 
 const BackButton = () => {
   const navigate = useNavigate();
   const { language } = useLanguage();
+  const { setNavigationDirection } = useNavigation();
+
+  const handleBack = () => {
+    setNavigationDirection('back');
+    navigate(-1);
+  };
 
   return (
     <button
-      onClick={() => navigate(-1)}
+      onClick={handleBack}
       className="bg-card text-accent text-2xl rounded-full w-14 h-14 md:w-16 md:h-16 flex items-center justify-center shadow-md transition-all duration-300 ease-out hover:shadow-lg hover:scale-105"
       aria-label={t('back', language)}
     >
