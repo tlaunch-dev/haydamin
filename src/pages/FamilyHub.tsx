@@ -134,7 +134,14 @@ const FamilyHub = () => {
 
     return { centerPerson: center, spousePerson: spouse, childrenList: children };
   }, [isRootHub, personId, getPersonById, getSpouse, getChildren, ROOT_PERSON_1, ROOT_PERSON_2]);
-  
+
+  // Check if gallery mode should be available (memoized)
+  // Must be before early returns to follow Rules of Hooks
+  const hasAdditionalPhotos = useMemo(() =>
+    people.some(person => person.photos && person.photos.length > 0),
+    [people]
+  );
+
   // Show loading state - only show full animation if initial load is not complete
   if (loading) {
     // If we've already done the initial load, show empty background while loading data
@@ -184,12 +191,6 @@ const FamilyHub = () => {
     const randomPerson = people[Math.floor(Math.random() * people.length)];
     navigate(`/person/${randomPerson.id}?game=true`);
   };
-
-  // Check if gallery mode should be available (memoized)
-  const hasAdditionalPhotos = useMemo(() =>
-    people.some(person => person.photos && person.photos.length > 0),
-    [people]
-  );
 
   // Handle gallery mode button click
   const handleGalleryMode = () => {

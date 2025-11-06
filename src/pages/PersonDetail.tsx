@@ -232,7 +232,26 @@ export function PersonDetail() {
       Object.values(timeouts).forEach(timeout => clearTimeout(timeout));
     };
   }, []);
-  
+
+  // Memoize person and family data calculations
+  // Must be before early returns to follow Rules of Hooks
+  const person = useMemo(() =>
+    personId ? getPersonById(personId) : null,
+    [personId, getPersonById]
+  );
+
+  const familyData = useMemo(() => {
+    if (!person) return { spouse: undefined, children: [], familyMembers: [] };
+
+    const spouse = getSpouse(person.id);
+    const children = getChildren(person.id);
+    const familyMembers = [spouse, ...children].filter(Boolean) as Person[];
+
+    return { spouse, children, familyMembers };
+  }, [person, getSpouse, getChildren]);
+
+  const { spouse, children, familyMembers } = familyData;
+
   // Show loading state - only show full animation if initial load is not complete
   if (loading) {
     if (initialLoadComplete) {
@@ -250,24 +269,6 @@ export function PersonDetail() {
       </div>
     );
   }
-  
-  // Memoize person and family data calculations
-  const person = useMemo(() =>
-    personId ? getPersonById(personId) : null,
-    [personId, getPersonById]
-  );
-
-  const familyData = useMemo(() => {
-    if (!person) return { spouse: undefined, children: [], familyMembers: [] };
-
-    const spouse = getSpouse(person.id);
-    const children = getChildren(person.id);
-    const familyMembers = [spouse, ...children].filter(Boolean) as Person[];
-
-    return { spouse, children, familyMembers };
-  }, [person, getSpouse, getChildren]);
-
-  const { spouse, children, familyMembers } = familyData;
 
   if (!person) {
     return (
