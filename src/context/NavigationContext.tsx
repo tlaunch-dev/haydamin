@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
 
 type NavigationDirection = 'forward' | 'back' | null;
 
@@ -21,14 +21,17 @@ export const NavigationProvider = ({ children }: { children: ReactNode }) => {
     setNavigationDirectionState(null);
   }, []);
 
+  const value = useMemo(
+    () => ({
+      navigationDirection,
+      setNavigationDirection,
+      resetNavigationDirection,
+    }),
+    [navigationDirection, setNavigationDirection, resetNavigationDirection]
+  );
+
   return (
-    <NavigationContext.Provider
-      value={{
-        navigationDirection,
-        setNavigationDirection,
-        resetNavigationDirection,
-      }}
-    >
+    <NavigationContext.Provider value={value}>
       {children}
     </NavigationContext.Provider>
   );
