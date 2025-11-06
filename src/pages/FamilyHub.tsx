@@ -60,6 +60,15 @@ const FamilyHub = () => {
   // Check for pending back navigation on mount (synchronous, available immediately)
   const isBackNavigation = getAndClearBackNavigationPending();
   const navigationDirection = locationStateDirection || (isBackNavigation ? 'back' : null) || contextDirection;
+  
+  console.log('[FamilyHub] Navigation direction check:', {
+    routePersonId,
+    locationStateDirection,
+    isBackNavigation,
+    contextDirection,
+    finalDirection: navigationDirection,
+    locationPathname: location.pathname
+  });
   const {
     zoomPhase,
     hiddenPersonId,

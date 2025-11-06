@@ -7,6 +7,7 @@ import { ZoomTransitionOverlay } from './components/ZoomTransitionOverlay';
 import CedarBackground from './components/CedarBackground';
 import LoadingScreen from './components/LoadingScreen';
 import ProtectedRoute from './components/ProtectedRoute';
+import { MobileConsole } from './components/MobileConsole';
 
 // Lazy load page components for code splitting
 const FamilyHub = lazy(() => import('./pages/FamilyHub'));
@@ -93,6 +94,9 @@ function AppRoutes() {
           </Suspense>
         </AnimatePresence>
       </LayoutGroup>
+
+      {/* Mobile Console - for debugging on device */}
+      <MobileConsole />
     </div>
   );
 }

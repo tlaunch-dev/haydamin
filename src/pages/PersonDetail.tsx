@@ -81,6 +81,15 @@ export function PersonDetail() {
   // Check for pending back navigation on mount (synchronous, available immediately)
   const isBackNavigation = getAndClearBackNavigationPending();
   const navigationDirection = locationStateDirection || (isBackNavigation ? 'back' : null) || contextDirection;
+  
+  console.log('[PersonDetail] Navigation direction check:', {
+    personId,
+    locationStateDirection,
+    isBackNavigation,
+    contextDirection,
+    finalDirection: navigationDirection,
+    locationPathname: location.pathname
+  });
   const { initialLoadComplete } = useAuth();
   const { isTouchDevice } = useDevice();
 
