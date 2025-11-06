@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { Person } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -8,7 +9,7 @@ interface FamilyLinkCardProps {
   showRelationship?: boolean;
 }
 
-const FamilyLinkCard = ({ person, showRelationship = false }: FamilyLinkCardProps) => {
+const FamilyLinkCard = memo(({ person, showRelationship = false }: FamilyLinkCardProps) => {
   const { language } = useLanguage();
   const fontClass = language === 'ar' ? 'font-arabic' : 'font-sans';
 
@@ -29,6 +30,8 @@ const FamilyLinkCard = ({ person, showRelationship = false }: FamilyLinkCardProp
       </div>
     </Link>
   );
-};
+});
+
+FamilyLinkCard.displayName = 'FamilyLinkCard';
 
 export default FamilyLinkCard;

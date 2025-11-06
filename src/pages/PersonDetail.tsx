@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import imageCompression from 'browser-image-compression';
@@ -99,22 +99,22 @@ export function PersonDetail() {
   const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
   const [touchEnd, setTouchEnd] = useState<{ x: number; y: number } | null>(null);
 
-  // Helper functions
-  const getPersonById = (id: string): Person | undefined => {
+  // Helper functions (memoized)
+  const getPersonById = useCallback((id: string): Person | undefined => {
     return people.find(p => p.id === id);
-  };
-  
-  const getSpouse = (id: string): Person | undefined => {
+  }, [people]);
+
+  const getSpouse = useCallback((id: string): Person | undefined => {
     const person = getPersonById(id);
     if (!person?.spouseId) return undefined;
     return getPersonById(person.spouseId);
-  };
-  
-  const getChildren = (id: string): Person[] => {
+  }, [getPersonById]);
+
+  const getChildren = useCallback((id: string): Person[] => {
     const person = getPersonById(id);
     if (!person?.childrenIds) return [];
     return person.childrenIds.map(childId => getPersonById(childId)).filter(Boolean) as Person[];
-  };
+  }, [getPersonById]);
 
   // Reset reveal state when person changes, and auto-reveal if not in hidden mode
   // Note: Game mode always shows "Who is this?" prompt regardless of hidden mode
@@ -241,6 +241,25 @@ export function PersonDetail() {
     };
   }, []);
 
+  // Memoize person and family data calculations
+  // Must be before early returns to follow Rules of Hooks
+  const person = useMemo(() =>
+    personId ? getPersonById(personId) : null,
+    [personId, getPersonById]
+  );
+
+  const familyData = useMemo(() => {
+    if (!person) return { spouse: undefined, children: [], familyMembers: [] };
+
+    const spouse = getSpouse(person.id);
+    const children = getChildren(person.id);
+    const familyMembers = [spouse, ...children].filter(Boolean) as Person[];
+
+    return { spouse, children, familyMembers };
+  }, [person, getSpouse, getChildren]);
+
+  const { familyMembers } = familyData;
+
   // Scroll to top on back navigation
   useEffect(() => {
     if (navigationDirection === 'back') {
@@ -265,9 +284,7 @@ export function PersonDetail() {
       </div>
     );
   }
-  
-  const person = personId ? getPersonById(personId) : null;
-  
+
   if (!person) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -277,10 +294,6 @@ export function PersonDetail() {
   }
 
   const fontClass = language === 'ar' ? 'font-arabic' : 'font-sans';
-
-  const spouse = getSpouse(person.id);
-  const children = getChildren(person.id);
-  const familyMembers = [spouse, ...children].filter(Boolean) as Person[];
 
   const openModal = (startIndex: number = 0) => {
     setGalleryStartIndex(startIndex);
