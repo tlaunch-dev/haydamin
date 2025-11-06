@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import imageCompression from 'browser-image-compression';
 import { usePeople } from '../hooks/usePeople';
@@ -17,8 +17,10 @@ import { useLanguage } from '../context/LanguageContext';
 import { useHiddenMode } from '../context/HiddenModeContext';
 import { useNavigation } from '../context/NavigationContext';
 import { useAuth } from '../context/AuthContext';
+import { useDevice } from '../context/DeviceContext';
 import { useSwipeBack } from '../hooks/useSwipeBack';
 import { getPersonName, getRelationship, getLocation, getFavoriteFood, getAbout, t } from '../utils/i18n';
+import { getNavigationDirectionFromLocation, getBackNavigationPending, clearBackNavigationPending } from '../utils/navigationState';
 import { Person } from '../types';
 import { Pencil, ArrowRight, Save, X } from 'lucide-react';
 
@@ -67,12 +69,29 @@ export function PersonDetail() {
   const { personId } = useParams<{ personId: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
   
   // Context hooks
-  const { language } = useLanguage();
+  const { language, toggleLanguage } = useLanguage();
   const { showNames } = useHiddenMode();
-  const { navigationDirection } = useNavigation();
+  const { navigationDirection: contextDirection } = useNavigation();
   const { initialLoadComplete } = useAuth();
+  const { isTouchDevice } = useDevice();
+
+  // Navigation direction: check location state first (for forward nav with state),
+  // then module-level back navigation flag (for back nav), then context (for reactivity)
+  // Store in state to survive multiple renders
+  const locationStateDirection = getNavigationDirectionFromLocation(location.state);
+  const [navigationDirection] = useState<'forward' | 'back' | null>(() => {
+    // Only check the flag on initial mount
+    const isBackNav = getBackNavigationPending();
+    return locationStateDirection || (isBackNav ? 'back' : null) || contextDirection;
+  });
+
+  // Clear the back navigation flag when route changes
+  useEffect(() => {
+    clearBackNavigationPending();
+  }, [personId]);
 
   // Data hooks
   const { people, loading, error } = usePeople();
@@ -267,6 +286,54 @@ export function PersonDetail() {
     }
   }, [personId, navigationDirection]);
 
+  // Handle edit - useCallback to keep stable reference
+  // MUST be before early returns to follow Rules of Hooks
+  const handleEdit = useCallback(() => {
+    if (!person) return;
+    setEditedPerson(person);
+    setIsEditing(true);
+  }, [person]);
+
+  // Configure menu buttons - memoized to prevent re-renders during navigation
+  // MUST be before early returns to follow Rules of Hooks
+  const menuButtons: ButtonConfig[] = useMemo(() => {
+    const buttons: ButtonConfig[] = [];
+
+    if (isGameMode) {
+      // Game mode: Show Next button
+      buttons.push({
+        id: 'next',
+        icon: (
+          <ArrowRight
+            className="w-5 h-5 text-accent"
+            style={{ transform: language === 'ar' ? 'scaleX(-1)' : 'none' }}
+          />
+        ),
+        label: language === 'ar' ? 'التالي' : 'Next',
+        onClick: isRevealed ? handleNextPerson : () => {},
+        show: isRevealed,
+      });
+    } else if (isRevealed && !isEditing) {
+      // Normal mode: Show Edit button (only when not editing)
+      buttons.push({
+        id: 'edit',
+        icon: <Pencil className="w-5 h-5 text-accent" />,
+        label: 'Edit',
+        onClick: handleEdit,
+      });
+    }
+
+    // Always add language toggle at the end
+    buttons.push({
+      id: 'language',
+      icon: <span className="text-accent font-bold text-lg">{language === 'ar' ? 'EN' : 'ع'}</span>,
+      label: language === 'ar' ? 'English' : 'العربية',
+      onClick: toggleLanguage,
+    });
+
+    return buttons;
+  }, [language, isGameMode, isRevealed, isEditing, handleNextPerson, handleEdit, toggleLanguage]);
+
   // Show loading state - only show full animation if initial load is not complete
   if (loading) {
     if (initialLoadComplete) {
@@ -303,11 +370,6 @@ export function PersonDetail() {
 
   const handleReveal = () => {
     setIsRevealed(true);
-  };
-
-  const handleEdit = () => {
-    setEditedPerson(person);
-    setIsEditing(true);
   };
 
   const handleCancel = () => {
@@ -470,43 +532,6 @@ export function PersonDetail() {
     }
   };
 
-  // Handle language toggle
-  const { toggleLanguage } = useLanguage();
-
-  // Configure menu buttons based on mode
-  const menuButtons: ButtonConfig[] = [];
-
-  if (isGameMode) {
-    // Game mode: Show Next button
-    menuButtons.push({
-      id: 'next',
-      icon: (
-        <ArrowRight
-          className="w-5 h-5 text-accent"
-          style={{ transform: language === 'ar' ? 'scaleX(-1)' : 'none' }}
-        />
-      ),
-      label: language === 'ar' ? 'التالي' : 'Next',
-      onClick: isRevealed ? handleNextPerson : () => {},
-      show: isRevealed,
-    });
-  } else if (isRevealed && !isEditing) {
-    // Normal mode: Show Edit button (only when not editing)
-    menuButtons.push({
-      id: 'edit',
-      icon: <Pencil className="w-5 h-5 text-accent" />,
-      label: 'Edit',
-      onClick: handleEdit,
-    });
-  }
-
-  // Always add language toggle at the end
-  menuButtons.push({
-    id: 'language',
-    icon: <span className="text-accent font-bold text-lg">{language === 'ar' ? 'EN' : 'ع'}</span>,
-    label: language === 'ar' ? 'English' : 'العربية',
-    onClick: toggleLanguage,
-  });
 
   return (
     <>
@@ -597,13 +622,10 @@ export function PersonDetail() {
           </div>
         )}
 
-        {/* Corner Menu */}
-        <CollapsibleButtonMenu buttons={menuButtons} />
-
-        {/* Swipe indicator - mobile/tablet only, show when revealed in game mode */}
-        {isGameMode && isRevealed && (
-          <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-40 flex lg:hidden items-center gap-2 bg-accent/90 backdrop-blur-md shadow-lg rounded-full px-4 py-2 animate-pulse">
-            <span className={`${fontClass} text-sm text-accent-text font-semibold`}>
+        {/* Swipe indicator - touch devices only (mobile/tablet), show when revealed in game mode */}
+        {isGameMode && isRevealed && isTouchDevice && (
+          <div className="fixed bottom-8 md:bottom-12 left-1/2 transform -translate-x-1/2 z-40 flex items-center gap-2 md:gap-3 lg:gap-4 bg-accent/90 backdrop-blur-md shadow-lg rounded-full px-4 py-2 md:px-6 md:py-3 lg:px-8 lg:py-4 animate-pulse">
+            <span className={`${fontClass} text-sm md:text-base lg:text-lg text-accent-text font-semibold`}>
               {language === 'ar' ? 'اسحب' : 'Swipe'}
             </span>
             <svg
@@ -612,7 +634,7 @@ export function PersonDetail() {
               viewBox="0 0 24 24"
               strokeWidth={2.5}
               stroke="currentColor"
-              className={`w-6 h-6 md:w-7 md:h-7 text-accent-text ${language === 'ar' ? 'rotate-180' : ''}`}
+              className={`w-6 h-6 md:w-7 md:h-7 lg:w-8 lg:h-8 text-accent-text ${language === 'ar' ? 'rotate-180' : ''}`}
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
             </svg>
@@ -1039,7 +1061,7 @@ export function PersonDetail() {
               <div className="flex flex-wrap justify-center gap-4 md:gap-6 lg:gap-8">
                 {familyMembers.map((member) => (
                   <div key={member.id} className="w-40 sm:w-44 md:w-44 lg:w-48">
-                    <PersonCard person={member} variant="thumbnail" showName={true} disableNavigation={isGameMode} />
+                    <PersonCard person={member} variant="thumbnail" showName={true} disableNavigation={isGameMode} navigateTo="detail" />
                   </div>
                 ))}
               </div>
@@ -1078,6 +1100,9 @@ export function PersonDetail() {
         )}
       </motion.div>
       </AnimatePresence>
+
+      {/* Corner Menu - outside animated container to stay fixed */}
+      <CollapsibleButtonMenu buttons={menuButtons} />
 
       {/* Photo Gallery Modal */}
       {isModalOpen && (

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, memo } from 'react';
 import { X, MoveDownLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -18,7 +18,7 @@ interface CollapsibleButtonMenuProps {
   className?: string;
 }
 
-export function CollapsibleButtonMenu({ buttons, className = '' }: CollapsibleButtonMenuProps) {
+export const CollapsibleButtonMenu = memo(function CollapsibleButtonMenu({ buttons, className = '' }: CollapsibleButtonMenuProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -50,7 +50,16 @@ export function CollapsibleButtonMenu({ buttons, className = '' }: CollapsibleBu
   };
 
   return (
-    <div ref={menuRef} className={`fixed top-0 safe-right z-50 ${className}`}>
+    <div 
+      ref={menuRef} 
+      className={`fixed top-0 safe-right z-50 ${className}`}
+      style={{
+        // Force GPU acceleration to prevent flash during navigation
+        transform: 'translateZ(0)',
+        willChange: 'transform',
+        backfaceVisibility: 'hidden',
+      }}
+    >
       {/* Semi-circle toggle button - touches both edges of corner */}
       <motion.button
         onClick={() => setIsExpanded(!isExpanded)}
@@ -97,4 +106,17 @@ export function CollapsibleButtonMenu({ buttons, className = '' }: CollapsibleBu
       </div>
     </div>
   );
-}
+}, (prevProps, nextProps) => {
+  // Only re-render if buttons array actually changed (by ID and show state)
+  if (prevProps.buttons.length !== nextProps.buttons.length) return false;
+  if (prevProps.className !== nextProps.className) return false;
+  
+  return prevProps.buttons.every((prevBtn, index) => {
+    const nextBtn = nextProps.buttons[index];
+    return (
+      prevBtn.id === nextBtn.id &&
+      prevBtn.show === nextBtn.show &&
+      prevBtn.disabled === nextBtn.disabled
+    );
+  });
+});

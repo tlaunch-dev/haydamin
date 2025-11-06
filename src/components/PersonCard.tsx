@@ -15,6 +15,7 @@ interface PersonCardProps {
   onZoomClick?: (person: Person, rect: DOMRect, showName: boolean, imageSrc: string) => void;
   isHidden?: boolean; // Hide card during zoom transition
   disableNavigation?: boolean; // Disable navigation but keep visual feedback
+  navigateTo?: 'auto' | 'hub' | 'detail'; // Explicitly control navigation destination
 }
 
 // Smooth transition config - optimized for fluid motion
@@ -33,6 +34,7 @@ const PersonCard = ({
   onZoomClick,
   isHidden = false,
   disableNavigation = false,
+  navigateTo = 'auto',
 }: PersonCardProps) => {
   const { language } = useLanguage();
   const { setNavigationDirection } = useNavigation();
@@ -40,9 +42,19 @@ const PersonCard = ({
   const hasChildren = person.childrenIds && person.childrenIds.length > 0;
   const hasSpouse = !!person.spouseId;
 
-  // Navigate to hub if person has spouse or children AND is not at root level
-  // Otherwise go to person detail page
-  const linkTo = ((hasSpouse || hasChildren) && !isRootLevel) ? `/hub/${person.id}` : `/person/${person.id}`;
+  // Determine navigation destination
+  // Reason: Explicit control via navigateTo prop, with 'auto' falling back to smart defaults
+  const linkTo = (() => {
+    if (navigateTo === 'detail') {
+      return `/person/${person.id}`;
+    }
+    if (navigateTo === 'hub') {
+      return `/hub/${person.id}`;
+    }
+    // 'auto' mode: Navigate to hub if person has spouse or children AND is not at root level
+    // Otherwise go to person detail page
+    return ((hasSpouse || hasChildren) && !isRootLevel) ? `/hub/${person.id}` : `/person/${person.id}`;
+  })();
 
   const fontClass = language === 'ar' ? 'font-arabic' : 'font-sans';
 
@@ -184,7 +196,8 @@ const areEqual = (prevProps: PersonCardProps, nextProps: PersonCardProps) => {
     prevProps.variant === nextProps.variant &&
     prevProps.isRootLevel === nextProps.isRootLevel &&
     prevProps.showName === nextProps.showName &&
-    prevProps.isHidden === nextProps.isHidden
+    prevProps.isHidden === nextProps.isHidden &&
+    prevProps.navigateTo === nextProps.navigateTo
   );
 };
 

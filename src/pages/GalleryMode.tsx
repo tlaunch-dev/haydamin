@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePeople } from '../hooks/usePeople';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
+import { CollapsibleButtonMenu, ButtonConfig } from '../components/CollapsibleButtonMenu';
 import { t } from '../utils/i18n';
 import { Person } from '../types';
 import LoadingScreen from '../components/LoadingScreen';
@@ -21,7 +22,7 @@ const minSwipeDistance = 50;
 
 export function GalleryMode() {
   const navigate = useNavigate();
-  const { language } = useLanguage();
+  const { language, toggleLanguage } = useLanguage();
   const { initialLoadComplete } = useAuth();
   const { people, loading, error } = usePeople();
   const [photos, setPhotos] = useState<PhotoWithMetadata[]>([]);
@@ -217,6 +218,17 @@ export function GalleryMode() {
     togglePause();
   }, [togglePause]);
 
+  // Configure menu buttons - memoized to prevent re-renders
+  // MUST be before early returns to follow Rules of Hooks
+  const menuButtons: ButtonConfig[] = useMemo(() => [
+    {
+      id: 'language',
+      icon: <span className="text-accent font-bold text-lg">{language === 'ar' ? 'EN' : 'ع'}</span>,
+      label: language === 'ar' ? 'English' : 'العربية',
+      onClick: toggleLanguage,
+    },
+  ], [language, toggleLanguage]);
+
   // Show loading state - only show full animation if initial load is not complete
   if (loading) {
     if (initialLoadComplete) {
@@ -259,13 +271,17 @@ export function GalleryMode() {
   const displayRelationship = language === 'ar' ? currentPhoto.relationshipAr : currentPhoto.relationship;
 
   return (
-    <div
-      className="fixed inset-0 bg-black z-50 overflow-hidden"
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
-      onClick={handleTap}
-    >
+    <>
+      {/* Corner Menu - language toggle */}
+      <CollapsibleButtonMenu buttons={menuButtons} />
+      
+      <div
+        className="fixed inset-0 bg-black z-50 overflow-hidden"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        onClick={handleTap}
+      >
       {/* Main photo display with smooth transitions */}
       <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
         <div
@@ -361,6 +377,7 @@ export function GalleryMode() {
         </div>
       )}
     </div>
+    </>
   );
 }
 

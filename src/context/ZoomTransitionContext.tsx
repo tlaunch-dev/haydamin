@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
 import { Person } from '../types';
 
 type ZoomPhase = 'zoom-in' | 'zoom-out' | 'reveal-card' | 'complete' | null;
@@ -40,18 +40,21 @@ export const ZoomTransitionProvider = ({ children }: { children: ReactNode }) =>
     setHiddenPersonId(null);
   }, []);
 
+  const value = useMemo(
+    () => ({
+      zoomTransition,
+      zoomPhase,
+      hiddenPersonId,
+      startZoomTransition,
+      setZoomPhase,
+      setHiddenPersonId,
+      clearZoomTransition,
+    }),
+    [zoomTransition, zoomPhase, hiddenPersonId, startZoomTransition, clearZoomTransition]
+  );
+
   return (
-    <ZoomTransitionContext.Provider
-      value={{
-        zoomTransition,
-        zoomPhase,
-        hiddenPersonId,
-        startZoomTransition,
-        setZoomPhase,
-        setHiddenPersonId,
-        clearZoomTransition,
-      }}
-    >
+    <ZoomTransitionContext.Provider value={value}>
       {children}
     </ZoomTransitionContext.Provider>
   );

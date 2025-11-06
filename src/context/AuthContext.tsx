@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
 import {
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
@@ -79,16 +79,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password);
-  };
+  }, []);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     await firebaseSignOut(auth);
-  };
+  }, []);
+
+  const value = useMemo(
+    () => ({ user, loading, initialLoadComplete, signIn, signOut }),
+    [user, loading, initialLoadComplete, signIn, signOut]
+  );
 
   return (
-    <AuthContext.Provider value={{ user, loading, initialLoadComplete, signIn, signOut }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

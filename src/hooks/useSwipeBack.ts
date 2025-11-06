@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useNavigation } from '../context/NavigationContext';
+import { setBackNavigationPending } from '../utils/navigationState';
 
 interface SwipeBackOptions {
   enabled?: boolean;
@@ -23,6 +24,7 @@ export const useSwipeBack = (options: SwipeBackOptions = {}) => {
   const [isSwipping, setIsSwipping] = useState(false);
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const swipeStartedRef = useRef(false);
+  const currentTouchRef = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     if (!enabled) return;
@@ -71,26 +73,42 @@ export const useSwipeBack = (options: SwipeBackOptions = {}) => {
       // Calculate progress (0 to 1, capped at 1)
       const progress = Math.min(deltaX / threshold, 1);
       setSwipeProgress(progress);
+      
+      // Store current touch position for use in handleTouchEnd
+      currentTouchRef.current = { x: touch.clientX, y: touch.clientY };
     };
 
     const handleTouchEnd = () => {
       if (!touchStartRef.current || !swipeStartedRef.current) {
         touchStartRef.current = null;
         swipeStartedRef.current = false;
+        currentTouchRef.current = null;
         setSwipeProgress(0);
         setIsSwipping(false);
         return;
       }
 
+      // Calculate final progress from touch position to avoid stale closure
+      let finalProgress = swipeProgress;
+      if (currentTouchRef.current && touchStartRef.current) {
+        const finalDeltaX = currentTouchRef.current.x - touchStartRef.current.x;
+        finalProgress = Math.min(finalDeltaX / threshold, 1);
+      }
+
       // If swipe progress is sufficient, trigger back navigation
-      if (swipeProgress >= 0.5) {
+      if (finalProgress >= 0.5) {
+        // Set navigation direction in context
         setNavigationDirection('back');
+        // Set module-level flag for back navigation
+        // This persists across route changes and is available immediately when component mounts
+        setBackNavigationPending();
         navigate(-1);
       }
 
       // Reset state
       touchStartRef.current = null;
       swipeStartedRef.current = false;
+      currentTouchRef.current = null;
       setSwipeProgress(0);
       setIsSwipping(false);
     };
@@ -98,6 +116,7 @@ export const useSwipeBack = (options: SwipeBackOptions = {}) => {
     const handleTouchCancel = () => {
       touchStartRef.current = null;
       swipeStartedRef.current = false;
+      currentTouchRef.current = null;
       setSwipeProgress(0);
       setIsSwipping(false);
     };
@@ -114,7 +133,7 @@ export const useSwipeBack = (options: SwipeBackOptions = {}) => {
       document.removeEventListener('touchend', handleTouchEnd);
       document.removeEventListener('touchcancel', handleTouchCancel);
     };
-  }, [enabled, threshold, edgeThreshold, swipeProgress, navigate, setNavigationDirection]);
+  }, [enabled, threshold, edgeThreshold, navigate, setNavigationDirection]);
 
   // Reset on route change
   useEffect(() => {
@@ -122,6 +141,7 @@ export const useSwipeBack = (options: SwipeBackOptions = {}) => {
     setIsSwipping(false);
     touchStartRef.current = null;
     swipeStartedRef.current = false;
+    currentTouchRef.current = null;
   }, [location.pathname]);
 
   return {

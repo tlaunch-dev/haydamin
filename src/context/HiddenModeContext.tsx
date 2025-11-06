@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
 
 interface HiddenModeContextType {
   showNames: boolean;
@@ -21,12 +21,17 @@ export function HiddenModeProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(SHOW_NAMES_STORAGE_KEY, String(showNames));
   }, [showNames]);
 
-  const toggleShowNames = () => {
+  const toggleShowNames = useCallback(() => {
     setShowNames((prev) => !prev);
-  };
+  }, []);
+
+  const value = useMemo(
+    () => ({ showNames, toggleShowNames }),
+    [showNames, toggleShowNames]
+  );
 
   return (
-    <HiddenModeContext.Provider value={{ showNames, toggleShowNames }}>
+    <HiddenModeContext.Provider value={value}>
       {children}
     </HiddenModeContext.Provider>
   );
