@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" fill="#5F8575" rx="64"/>
+  
+  <!-- Cedar tree centered and scaled -->
+  <g fill="#FAF7F5" transform="translate(256,256)">
+    <!-- Trunk -->
+    <rect x="-16" y="80" width="32" height="48"/>
+    
+    <!-- Bottom branches -->
+    <polygon points="0,64 -96,64 -80,48 -96,48 0,0 96,48 80,48 96,64"/>
+    
+    <!-- Middle branches -->
+    <polygon points="0,16 -72,16 -60,0 -72,0 0,-48 72,0 60,0 72,16"/>
+    
+    <!-- Upper branches -->
+    <polygon points="0,-32 -48,-32 -40,-48 -48,-48 0,-80 48,-48 40,-48 48,-32"/>
+    
+    <!-- Top -->
+    <polygon points="0,-64 -24,-64 0,-96 24,-64"/>
+  </g>
+</svg>
+

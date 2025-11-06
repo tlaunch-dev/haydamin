@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import imageCompression from 'browser-image-compression';
@@ -99,22 +99,22 @@ export function PersonDetail() {
   const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
   const [touchEnd, setTouchEnd] = useState<{ x: number; y: number } | null>(null);
 
-  // Helper functions
-  const getPersonById = (id: string): Person | undefined => {
+  // Helper functions (memoized)
+  const getPersonById = useCallback((id: string): Person | undefined => {
     return people.find(p => p.id === id);
-  };
-  
-  const getSpouse = (id: string): Person | undefined => {
+  }, [people]);
+
+  const getSpouse = useCallback((id: string): Person | undefined => {
     const person = getPersonById(id);
     if (!person?.spouseId) return undefined;
     return getPersonById(person.spouseId);
-  };
-  
-  const getChildren = (id: string): Person[] => {
+  }, [getPersonById]);
+
+  const getChildren = useCallback((id: string): Person[] => {
     const person = getPersonById(id);
     if (!person?.childrenIds) return [];
     return person.childrenIds.map(childId => getPersonById(childId)).filter(Boolean) as Person[];
-  };
+  }, [getPersonById]);
 
   // Reset reveal state when person changes, and auto-reveal if not in hidden mode
   // Note: Game mode always shows "Who is this?" prompt regardless of hidden mode
@@ -241,6 +241,25 @@ export function PersonDetail() {
     };
   }, []);
 
+  // Memoize person and family data calculations
+  // Must be before early returns to follow Rules of Hooks
+  const person = useMemo(() =>
+    personId ? getPersonById(personId) : null,
+    [personId, getPersonById]
+  );
+
+  const familyData = useMemo(() => {
+    if (!person) return { spouse: undefined, children: [], familyMembers: [] };
+
+    const spouse = getSpouse(person.id);
+    const children = getChildren(person.id);
+    const familyMembers = [spouse, ...children].filter(Boolean) as Person[];
+
+    return { spouse, children, familyMembers };
+  }, [person, getSpouse, getChildren]);
+
+  const { familyMembers } = familyData;
+
   // Scroll to top on back navigation
   useEffect(() => {
     if (navigationDirection === 'back') {
@@ -265,9 +284,7 @@ export function PersonDetail() {
       </div>
     );
   }
-  
-  const person = personId ? getPersonById(personId) : null;
-  
+
   if (!person) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -277,10 +294,6 @@ export function PersonDetail() {
   }
 
   const fontClass = language === 'ar' ? 'font-arabic' : 'font-sans';
-
-  const spouse = getSpouse(person.id);
-  const children = getChildren(person.id);
-  const familyMembers = [spouse, ...children].filter(Boolean) as Person[];
 
   const openModal = (startIndex: number = 0) => {
     setGalleryStartIndex(startIndex);
@@ -477,8 +490,8 @@ export function PersonDetail() {
       onClick: isRevealed ? handleNextPerson : () => {},
       show: isRevealed,
     });
-  } else if (isRevealed) {
-    // Normal mode: Show Edit button
+  } else if (isRevealed && !isEditing) {
+    // Normal mode: Show Edit button (only when not editing)
     menuButtons.push({
       id: 'edit',
       icon: <Pencil className="w-5 h-5 text-accent" />,
@@ -554,6 +567,36 @@ export function PersonDetail() {
           )}
         </div>
 
+        {/* Save/Cancel Buttons - Top Right (Desktop only, when editing) */}
+        {isEditing && !isGameMode && (
+          <div className="fixed top-6 right-40 md:right-44 z-50 hidden md:flex gap-3">
+            <button
+              onClick={handleCancel}
+              disabled={isUploadingPhotos}
+              className={`${fontClass} bg-card text-text font-bold px-6 py-3 rounded-lg shadow-md transition-all duration-300 ease-out hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-accent/20 flex items-center justify-center gap-2`}
+              aria-label={language === 'ar' ? 'إلغاء' : 'Cancel'}
+            >
+              <X className="w-5 h-5" />
+              <span>{language === 'ar' ? 'إلغاء' : 'Cancel'}</span>
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isUploadingPhotos}
+              className={`${fontClass} bg-accent text-accent-text font-bold px-6 py-3 rounded-lg shadow-md transition-all duration-300 ease-out hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
+              aria-label={language === 'ar' ? 'حفظ' : 'Save'}
+            >
+              {isUploadingPhotos ? (
+                <span className="animate-spin">⏳</span>
+              ) : (
+                <>
+                  <Save className="w-5 h-5" />
+                  <span>{language === 'ar' ? 'حفظ' : 'Save'}</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
+
         {/* Corner Menu */}
         <CollapsibleButtonMenu buttons={menuButtons} />
 
@@ -569,7 +612,7 @@ export function PersonDetail() {
               viewBox="0 0 24 24"
               strokeWidth={2.5}
               stroke="currentColor"
-              className={`w-5 h-5 text-accent-text ${language === 'ar' ? 'rotate-180' : ''}`}
+              className={`w-6 h-6 md:w-7 md:h-7 text-accent-text ${language === 'ar' ? 'rotate-180' : ''}`}
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
             </svg>
@@ -1006,7 +1049,7 @@ export function PersonDetail() {
 
         {/* Bottom action bar for mobile edit mode */}
         {isEditing && !isGameMode && (
-          <div className="fixed bottom-0 left-0 right-0 z-50 flex md:hidden">
+          <div className="fixed bottom-0 left-0 right-0 z-50 flex md:hidden shadow-lg">
             <button
               onClick={handleCancel}
               disabled={isUploadingPhotos}

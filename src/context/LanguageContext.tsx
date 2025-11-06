@@ -9,11 +9,21 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
+const LANGUAGE_STORAGE_KEY = 'haydamin_language';
+
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguage] = useState<Language>('en');
+  const [language, setLanguage] = useState<Language>(() => {
+    // Initialize from localStorage
+    const saved = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    return (saved === 'en' || saved === 'ar') ? saved : 'en';
+  });
 
   const toggleLanguage = () => {
-    setLanguage((prev) => (prev === 'en' ? 'ar' : 'en'));
+    setLanguage((prev) => {
+      const newLang = prev === 'en' ? 'ar' : 'en';
+      localStorage.setItem(LANGUAGE_STORAGE_KEY, newLang);
+      return newLang;
+    });
   };
 
   return (

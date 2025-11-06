@@ -81,7 +81,7 @@ const PersonCard = ({
             src={person.primaryPhoto}
             alt={`Photo of ${getPersonName(person, language)}`}
             loading="lazy"
-            className="aspect-square object-cover w-full rounded-full ring-2 ring-accent/30 bg-gray-100"
+            className="profile-image aspect-square object-cover w-full rounded-full ring-2 ring-accent/30 bg-gray-100"
           />
         </motion.div>
         <motion.h2

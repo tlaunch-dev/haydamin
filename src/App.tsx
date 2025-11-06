@@ -1,16 +1,19 @@
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence, LayoutGroup } from 'framer-motion';
 import { useLanguage } from './context/LanguageContext';
 import { useZoomTransition } from './context/ZoomTransitionContext';
 import { ZoomTransitionOverlay } from './components/ZoomTransitionOverlay';
 import CedarBackground from './components/CedarBackground';
-import FamilyHub from './pages/FamilyHub';
-import { PersonDetail } from './pages/PersonDetail';
-import { AddPerson } from './pages/AddPerson';
-import { GalleryMode } from './pages/GalleryMode';
-import Login from './pages/Login';
+import LoadingScreen from './components/LoadingScreen';
 import ProtectedRoute from './components/ProtectedRoute';
+
+// Lazy load page components for code splitting
+const FamilyHub = lazy(() => import('./pages/FamilyHub'));
+const PersonDetail = lazy(() => import('./pages/PersonDetail').then(module => ({ default: module.PersonDetail })));
+const AddPerson = lazy(() => import('./pages/AddPerson').then(module => ({ default: module.AddPerson })));
+const GalleryMode = lazy(() => import('./pages/GalleryMode').then(module => ({ default: module.GalleryMode })));
+const Login = lazy(() => import('./pages/Login'));
 
 function AppRoutes() {
   const location = useLocation();
@@ -43,49 +46,51 @@ function AppRoutes() {
 
       <LayoutGroup>
         <AnimatePresence initial={false}>
-          <Routes location={location} key={location.pathname}>
-            <Route path="/login" element={<Login />} />
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <FamilyHub />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/hub/:personId"
-              element={
-                <ProtectedRoute>
-                  <FamilyHub />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/person/:personId"
-              element={
-                <ProtectedRoute>
-                  <PersonDetail />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/add-person"
-              element={
-                <ProtectedRoute>
-                  <AddPerson />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/gallery"
-              element={
-                <ProtectedRoute>
-                  <GalleryMode />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
+          <Suspense fallback={<LoadingScreen />}>
+            <Routes location={location} key={location.pathname}>
+              <Route path="/login" element={<Login />} />
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <FamilyHub />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/hub/:personId"
+                element={
+                  <ProtectedRoute>
+                    <FamilyHub />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/person/:personId"
+                element={
+                  <ProtectedRoute>
+                    <PersonDetail />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/add-person"
+                element={
+                  <ProtectedRoute>
+                    <AddPerson />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/gallery"
+                element={
+                  <ProtectedRoute>
+                    <GalleryMode />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </Suspense>
         </AnimatePresence>
       </LayoutGroup>
     </div>

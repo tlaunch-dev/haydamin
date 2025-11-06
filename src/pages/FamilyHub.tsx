@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import PersonCard from '../components/PersonCard';
@@ -131,41 +131,53 @@ const FamilyHub = () => {
 
   // Use routePersonId as the active person
   const personId = routePersonId;
-  
-  // Helper functions to query people array
-  const getPersonById = (id: string): Person | undefined => {
+
+  // Helper functions to query people array (memoized)
+  const getPersonById = useCallback((id: string): Person | undefined => {
     return people.find(p => p.id === id);
-  };
-  
-  const getSpouse = (id: string): Person | undefined => {
+  }, [people]);
+
+  const getSpouse = useCallback((id: string): Person | undefined => {
     const person = getPersonById(id);
     if (!person?.spouseId) return undefined;
     return getPersonById(person.spouseId);
-  };
-  
-  const getChildren = (id: string): Person[] => {
+  }, [getPersonById]);
+
+  const getChildren = useCallback((id: string): Person[] => {
     const person = getPersonById(id);
     if (!person?.childrenIds) return [];
     return person.childrenIds.map(childId => getPersonById(childId)).filter(Boolean) as Person[];
-  };
+  }, [getPersonById]);
 
   // Determine who to display based on route (do this before early returns)
   const isRootHub = !personId;
-  
-  let centerPerson, spousePerson, childrenList;
-  
-  if (isRootHub) {
-    // Root hub: show both root people at top
-    centerPerson = getPersonById(ROOT_PERSON_1);
-    spousePerson = getPersonById(ROOT_PERSON_2);
-    childrenList = centerPerson ? getChildren(centerPerson.id) : [];
-  } else {
-    // Individual hub: show person, their spouse, and their children
-    centerPerson = getPersonById(personId);
-    spousePerson = centerPerson ? getSpouse(personId) : undefined;
-    childrenList = centerPerson ? getChildren(personId) : [];
-  }
-  
+
+  // Memoize family data calculations
+  const { centerPerson, spousePerson, childrenList } = useMemo(() => {
+    let center, spouse, children;
+
+    if (isRootHub) {
+      // Root hub: show both root people at top
+      center = getPersonById(ROOT_PERSON_1);
+      spouse = getPersonById(ROOT_PERSON_2);
+      children = center ? getChildren(center.id) : [];
+    } else {
+      // Individual hub: show person, their spouse, and their children
+      center = getPersonById(personId);
+      spouse = center ? getSpouse(personId) : undefined;
+      children = center ? getChildren(center.id) : [];
+    }
+
+    return { centerPerson: center, spousePerson: spouse, childrenList: children };
+  }, [isRootHub, personId, getPersonById, getSpouse, getChildren, ROOT_PERSON_1, ROOT_PERSON_2]);
+
+  // Check if gallery mode should be available (memoized)
+  // Must be before early returns to follow Rules of Hooks
+  const hasAdditionalPhotos = useMemo(() =>
+    people.some(person => person.photos && person.photos.length > 0),
+    [people]
+  );
+
   // Show loading state - only show full animation if initial load is not complete
   if (loading) {
     // If we've already done the initial load, show empty background while loading data
@@ -215,9 +227,6 @@ const FamilyHub = () => {
     const randomPerson = people[Math.floor(Math.random() * people.length)];
     navigate(`/person/${randomPerson.id}?game=true`);
   };
-
-  // Check if gallery mode should be available
-  const hasAdditionalPhotos = people.some(person => person.photos && person.photos.length > 0);
 
   // Handle gallery mode button click
   const handleGalleryMode = () => {
