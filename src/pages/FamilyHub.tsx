@@ -15,6 +15,7 @@ import { useZoomTransition } from '../context/ZoomTransitionContext';
 import { useAuth } from '../context/AuthContext';
 import { usePeople } from '../hooks/usePeople';
 import { useSwipeBack } from '../hooks/useSwipeBack';
+import { usePersonImagePreload } from '../hooks/useImagePreload';
 import { Person } from '../types';
 import { getPersonName, t } from '../utils/i18n';
 import { Eye, EyeOff, Pencil, Dices, Images } from 'lucide-react';
@@ -170,6 +171,17 @@ const FamilyHub = () => {
 
     return { centerPerson: center, spousePerson: spouse, childrenList: children };
   }, [isRootHub, personId, getPersonById, getSpouse, getChildren, ROOT_PERSON_1, ROOT_PERSON_2]);
+
+  // Preload images for visible family members
+  const peopleToPreload = useMemo(() => {
+    const allVisible = [];
+    if (centerPerson) allVisible.push(centerPerson);
+    if (spousePerson) allVisible.push(spousePerson);
+    if (childrenList) allVisible.push(...childrenList);
+    return allVisible;
+  }, [centerPerson, spousePerson, childrenList]);
+
+  usePersonImagePreload(peopleToPreload);
 
   // Check if gallery mode should be available (memoized)
   // Must be before early returns to follow Rules of Hooks
