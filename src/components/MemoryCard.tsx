@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Star, Trash2, MoreVertical, Pencil } from 'lucide-react';
+import { Star, Trash2, MoreVertical, Pencil, Vault } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Memory, Person } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
@@ -262,14 +263,20 @@ export function MemoryCard({
 }: MemoryCardProps) {
   const { language } = useLanguage();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [internalIsExpanded, setInternalIsExpanded] = useState(false);
   const isExpanded = externalIsExpanded !== undefined ? externalIsExpanded : internalIsExpanded;
   const [isDeleting, setIsDeleting] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [betaUnlocked, setBetaUnlocked] = useState(false); // Track if beta features (vault) are unlocked
   const videoRef = useRef<HTMLVideoElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const longPressOccurredRef = useRef(false);
+  const touchStartTimeRef = useRef<number>(0);
+  const longPressDuration = 500; // 500ms for long press
 
   const title = language === 'ar' ? memory.titleAr : memory.title;
   const caption = language === 'ar' ? memory.captionAr : memory.caption;
@@ -348,6 +355,86 @@ export function MemoryCard({
     }
   }, [isMenuOpen]);
 
+  // Setup long press handler for menu button
+  useEffect(() => {
+    const button = menuButtonRef.current;
+    if (!button || isExpanded) return;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      e.stopPropagation();
+      longPressOccurredRef.current = false;
+      touchStartTimeRef.current = Date.now();
+      
+      longPressTimerRef.current = setTimeout(() => {
+        longPressOccurredRef.current = true;
+        setBetaUnlocked(true); // Unlock beta features (vault) on long press
+        setIsMenuOpen(true);
+        
+        // Provide haptic feedback on mobile if available
+        if ('vibrate' in navigator) {
+          navigator.vibrate(50);
+        }
+      }, longPressDuration);
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      e.stopPropagation();
+      const pressDuration = Date.now() - touchStartTimeRef.current;
+      
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+      
+      // If it was a long press, prevent the normal click
+      if (pressDuration >= longPressDuration) {
+        e.preventDefault();
+      } else {
+        // Regular press - open menu without beta features
+        setBetaUnlocked(false);
+        setIsMenuOpen(true);
+      }
+      
+      setTimeout(() => {
+        longPressOccurredRef.current = false;
+      }, 100);
+    };
+
+    const handleTouchCancel = () => {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+    };
+
+    // Use native event listeners with passive: false for better control
+    button.addEventListener('touchstart', handleTouchStart, { passive: false });
+    button.addEventListener('touchend', handleTouchEnd, { passive: false });
+    button.addEventListener('touchcancel', handleTouchCancel, { passive: false });
+
+    return () => {
+      button.removeEventListener('touchstart', handleTouchStart);
+      button.removeEventListener('touchend', handleTouchEnd);
+      button.removeEventListener('touchcancel', handleTouchCancel);
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+      }
+    };
+  }, [isExpanded]);
+
+  // Handle regular click (for desktop/mouse)
+  const handleMenuButtonClick = (e: React.MouseEvent) => {
+    // Prevent normal toggle if long press occurred
+    if (longPressOccurredRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    e.stopPropagation();
+    // Regular click - show menu without beta features
+    setBetaUnlocked(false);
+    setIsMenuOpen(!isMenuOpen);
+  };
 
   // Handle card click - expand and play
   const handleCardClick = () => {
@@ -558,10 +645,7 @@ export function MemoryCard({
             {/* Three-dot menu button */}
             <button
               ref={menuButtonRef}
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsMenuOpen(!isMenuOpen);
-              }}
+              onClick={handleMenuButtonClick}
               className="w-8 h-8 rounded-full bg-background/80 text-text/60 hover:text-accent hover:bg-background flex items-center justify-center transition-colors"
               aria-label={language === 'ar' ? 'القائمة' : 'Menu'}
             >
@@ -620,6 +704,25 @@ export function MemoryCard({
                       {language === 'ar' ? 'حذف' : 'Delete'}
                     </span>
                   </button>
+
+                  {/* Vault option - only shown when beta is unlocked (long press) */}
+                  {betaUnlocked && (
+                    <>
+                      <div className="h-px bg-text/10 my-1" />
+                      <button
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          navigate('/memories');
+                        }}
+                        className="w-full px-4 py-3 flex items-center gap-3 hover:bg-background/50 transition-colors text-left"
+                      >
+                        <Vault className="w-4 h-4 text-accent" />
+                        <span className="text-text text-sm">
+                          {language === 'ar' ? 'الذكريات' : 'Memories'}
+                        </span>
+                      </button>
+                    </>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
