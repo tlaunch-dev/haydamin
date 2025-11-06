@@ -389,11 +389,11 @@ export function MemoryCard({
       // If it was a long press, prevent the normal click
       if (pressDuration >= longPressDuration) {
         e.preventDefault();
-      } else {
-        // Regular press - open menu without beta features
-        setBetaUnlocked(false);
-        setIsMenuOpen(true);
+        e.stopPropagation();
       }
+      
+      // For short press, let the onClick handler open the menu
+      // Don't open it here to avoid conflict with onClick toggle
       
       setTimeout(() => {
         longPressOccurredRef.current = false;
@@ -422,7 +422,7 @@ export function MemoryCard({
     };
   }, [isExpanded]);
 
-  // Handle regular click (for desktop/mouse)
+  // Handle regular click (for desktop/mouse and mobile short press)
   const handleMenuButtonClick = (e: React.MouseEvent) => {
     // Prevent normal toggle if long press occurred
     if (longPressOccurredRef.current) {
