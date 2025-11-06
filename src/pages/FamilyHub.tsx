@@ -480,7 +480,7 @@ const FamilyHub = () => {
                 <motion.div
                   key={spousePerson.id}
                   className="w-40 sm:w-44 md:w-46 lg:w-48"
-                  variants={navigationDirection === 'back' ? undefined : spouseVariants}
+                  variants={navigationDirection === 'back' ? undefined : (isRootHub ? parentItemVariants : spouseVariants)}
                   initial={navigationDirection === 'back' ? false : "hidden"}
                   animate={navigationDirection === 'back' ? false : "visible"}
                   exit="exit"
