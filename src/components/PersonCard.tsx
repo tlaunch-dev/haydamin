@@ -15,6 +15,7 @@ interface PersonCardProps {
   onZoomClick?: (person: Person, rect: DOMRect, showName: boolean, imageSrc: string) => void;
   isHidden?: boolean; // Hide card during zoom transition
   disableNavigation?: boolean; // Disable navigation but keep visual feedback
+  forceDetailPage?: boolean; // Force navigation to detail page instead of hub
 }
 
 // Smooth transition config - optimized for fluid motion
@@ -33,6 +34,7 @@ const PersonCard = ({
   onZoomClick,
   isHidden = false,
   disableNavigation = false,
+  forceDetailPage = false,
 }: PersonCardProps) => {
   const { language } = useLanguage();
   const { setNavigationDirection } = useNavigation();
@@ -42,7 +44,10 @@ const PersonCard = ({
 
   // Navigate to hub if person has spouse or children AND is not at root level
   // Otherwise go to person detail page
-  const linkTo = ((hasSpouse || hasChildren) && !isRootLevel) ? `/hub/${person.id}` : `/person/${person.id}`;
+  // If forceDetailPage is true, always navigate to detail page
+  const linkTo = forceDetailPage 
+    ? `/person/${person.id}` 
+    : ((hasSpouse || hasChildren) && !isRootLevel) ? `/hub/${person.id}` : `/person/${person.id}`;
 
   const fontClass = language === 'ar' ? 'font-arabic' : 'font-sans';
 
@@ -184,7 +189,8 @@ const areEqual = (prevProps: PersonCardProps, nextProps: PersonCardProps) => {
     prevProps.variant === nextProps.variant &&
     prevProps.isRootLevel === nextProps.isRootLevel &&
     prevProps.showName === nextProps.showName &&
-    prevProps.isHidden === nextProps.isHidden
+    prevProps.isHidden === nextProps.isHidden &&
+    prevProps.forceDetailPage === nextProps.forceDetailPage
   );
 };
 

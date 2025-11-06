@@ -1039,7 +1039,7 @@ export function PersonDetail() {
               <div className="flex flex-wrap justify-center gap-4 md:gap-6 lg:gap-8">
                 {familyMembers.map((member) => (
                   <div key={member.id} className="w-40 sm:w-44 md:w-44 lg:w-48">
-                    <PersonCard person={member} variant="thumbnail" showName={true} disableNavigation={isGameMode} />
+                    <PersonCard person={member} variant="thumbnail" showName={true} disableNavigation={isGameMode} forceDetailPage={true} />
                   </div>
                 ))}
               </div>
