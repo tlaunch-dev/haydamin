@@ -258,7 +258,7 @@ export function PersonDetail() {
     return { spouse, children, familyMembers };
   }, [person, getSpouse, getChildren]);
 
-  const { spouse, children, familyMembers } = familyData;
+  const { familyMembers } = familyData;
 
   // Scroll to top on back navigation
   useEffect(() => {
