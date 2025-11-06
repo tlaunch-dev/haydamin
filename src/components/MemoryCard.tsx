@@ -546,10 +546,23 @@ export function MemoryCard({
 
         {/* Action menu (only shown when collapsed and user is authenticated) */}
         {!isExpanded && user && (
-          <div ref={menuRef} className="absolute top-3 right-3 md:top-4 md:right-4 z-10">
+          <div 
+            ref={menuRef} 
+            className="absolute top-3 right-3 md:top-4 md:right-4 z-20"
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
+          >
             {/* Three-dot menu button */}
             <button
               onClick={(e) => {
+                e.stopPropagation();
+                setIsMenuOpen(!isMenuOpen);
+              }}
+              onTouchStart={(e) => {
+                e.stopPropagation();
+              }}
+              onTouchEnd={(e) => {
                 e.stopPropagation();
                 setIsMenuOpen(!isMenuOpen);
               }}
