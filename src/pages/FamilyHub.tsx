@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import PersonCard from '../components/PersonCard';
 import AddPersonCard from '../components/AddPersonCard';
@@ -18,7 +18,7 @@ import { useSwipeBack } from '../hooks/useSwipeBack';
 import { usePersonImagePreload } from '../hooks/useImagePreload';
 import { Person } from '../types';
 import { getPersonName, t } from '../utils/i18n';
-import { getAndClearPendingNavigationDirection } from '../utils/navigationState';
+import { getNavigationDirectionFromLocation, getNavigationDirectionFromHistory } from '../utils/navigationState';
 import { Pencil, Dices, Images } from 'lucide-react';
 
 // Type alias for easing functions
@@ -27,6 +27,7 @@ type Easing = [number, number, number, number];
 const FamilyHub = () => {
   const { personId: routePersonId } = useParams<{ personId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { language, toggleLanguage } = useLanguage();
   const { showNames } = useHiddenMode();
   const { initialLoadComplete } = useAuth();
@@ -52,18 +53,12 @@ const FamilyHub = () => {
     return () => window.removeEventListener('resize', updateTreeWidth);
   }, []);
 
-  // Navigation and zoom transition state from context
-  // Check module-level state first (set before navigation, available immediately on mount)
-  // Then sync with context state for reactivity (needed for exit animations)
+  // Navigation direction: check location state first (for forward nav with state),
+  // then browser history state (for back nav), then context (for reactivity)
   const { navigationDirection: contextDirection } = useNavigation();
-  const [pendingDirection] = useState(() => {
-    // Check module-level state on initial mount - this happens synchronously
-    // The value is cleared after reading, so it's a one-time check per route change
-    return getAndClearPendingNavigationDirection();
-  });
-  // Use pending direction if available, otherwise use context direction
-  // This ensures exit animations work correctly (context updates when direction is set)
-  const navigationDirection = pendingDirection || contextDirection;
+  const locationStateDirection = getNavigationDirectionFromLocation(location.state);
+  const historyStateDirection = getNavigationDirectionFromHistory();
+  const navigationDirection = locationStateDirection || historyStateDirection || contextDirection;
   const {
     zoomPhase,
     hiddenPersonId,
@@ -127,13 +122,17 @@ const FamilyHub = () => {
     setHiddenPersonId(person.id);
 
     // Start zoom transition with navigation callback
+    // Pass navigation direction in location state for forward navigation
     startZoomTransition({
       person,
       startRect: rect,
       showName,
       imageSrc,
       targetPersonId: person.id,
-      onNavigate: () => navigate(`/hub/${person.id}`, { replace: false }),
+      onNavigate: () => navigate(`/hub/${person.id}`, { 
+        replace: false,
+        state: { navigationDirection: 'forward' }
+      }),
     });
   }, [navigate, startZoomTransition, setHiddenPersonId]);
 

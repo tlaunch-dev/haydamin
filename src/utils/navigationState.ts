@@ -1,37 +1,32 @@
 /**
- * Navigation state tracker - module-level state that persists across route changes
- * This ensures navigation direction is available immediately when components mount
+ * Navigation state utilities
+ * Uses React Router's location state and browser history state for reliable navigation direction tracking
  */
 
-type NavigationDirection = 'forward' | 'back' | null;
-
-// Module-level state - persists across React re-renders and route changes
-let pendingNavigationDirection: NavigationDirection = null;
+export type NavigationDirection = 'forward' | 'back' | null;
 
 /**
- * Set the navigation direction before navigation occurs
- * This is called synchronously before navigate() is called
+ * Get navigation direction from location state (for forward navigation)
+ * or from browser history state (for back navigation)
  */
-export const setPendingNavigationDirection = (direction: NavigationDirection): void => {
-  pendingNavigationDirection = direction;
+export const getNavigationDirectionFromLocation = (
+  locationState: unknown
+): NavigationDirection => {
+  if (locationState && typeof locationState === 'object' && 'navigationDirection' in locationState) {
+    return locationState.navigationDirection as NavigationDirection;
+  }
+  return null;
 };
 
 /**
- * Get and clear the pending navigation direction
- * Called when a component mounts to check if it's a back/forward navigation
- * This is a one-time read - the value is cleared after reading
+ * Get navigation direction from browser history state
+ * Used for back navigation when React Router location state isn't available
  */
-export const getAndClearPendingNavigationDirection = (): NavigationDirection => {
-  const direction = pendingNavigationDirection;
-  pendingNavigationDirection = null; // Clear after reading
-  return direction;
-};
-
-/**
- * Clear any pending navigation direction
- * Useful for cleanup or when navigation is cancelled
- */
-export const clearPendingNavigationDirection = (): void => {
-  pendingNavigationDirection = null;
+export const getNavigationDirectionFromHistory = (): NavigationDirection => {
+  if (typeof window !== 'undefined' && window.history?.state) {
+    const state = window.history.state as { navigationDirection?: NavigationDirection };
+    return state?.navigationDirection || null;
+  }
+  return null;
 };
 
