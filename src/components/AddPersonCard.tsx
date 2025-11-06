@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 interface AddPersonCardProps {
@@ -6,7 +7,7 @@ interface AddPersonCardProps {
   variant?: 'child' | 'spouse';
 }
 
-export default function AddPersonCard({ parentIds, spouseId, variant = 'child' }: AddPersonCardProps) {
+const AddPersonCard = memo(({ parentIds, spouseId, variant = 'child' }: AddPersonCardProps) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
@@ -41,5 +42,9 @@ export default function AddPersonCard({ parentIds, spouseId, variant = 'child' }
       </div>
     </button>
   );
-}
+});
+
+AddPersonCard.displayName = 'AddPersonCard';
+
+export default AddPersonCard;
 
