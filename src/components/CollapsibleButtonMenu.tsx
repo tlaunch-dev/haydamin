@@ -11,6 +11,7 @@ export interface ButtonConfig {
   ariaLabel?: string;
   hideOnMobile?: boolean;
   disabled?: boolean;
+  beta?: boolean; // Beta feature - only shown after long press
 }
 
 interface CollapsibleButtonMenuProps {
@@ -20,10 +21,18 @@ interface CollapsibleButtonMenuProps {
 
 export const CollapsibleButtonMenu = memo(function CollapsibleButtonMenu({ buttons, className = '' }: CollapsibleButtonMenuProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [betaUnlocked, setBetaUnlocked] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const longPressOccurredRef = useRef(false);
+  const longPressDuration = 800; // 800ms for long press
 
-  // Filter buttons based on show condition
-  const visibleButtons = buttons.filter(btn => btn.show !== false);
+  // Filter buttons based on show condition and beta status
+  const visibleButtons = buttons.filter(btn => {
+    if (btn.show === false) return false;
+    if (btn.beta && !betaUnlocked) return false;
+    return true;
+  });
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -49,6 +58,48 @@ export const CollapsibleButtonMenu = memo(function CollapsibleButtonMenu({ butto
     setIsExpanded(false);
   };
 
+  // Long press handlers for unlocking beta features
+  const handleLongPressStart = (e: React.MouseEvent | React.TouchEvent) => {
+    // Prevent context menu on long press
+    if (e.type === 'touchstart') {
+      e.preventDefault();
+    }
+    longPressOccurredRef.current = false;
+    longPressTimerRef.current = setTimeout(() => {
+      longPressOccurredRef.current = true;
+      setBetaUnlocked(true);
+      setIsExpanded(true); // Also expand menu when beta is unlocked
+    }, longPressDuration);
+  };
+
+  const handleLongPressEnd = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    // Reset after a short delay to allow onClick to check it
+    setTimeout(() => {
+      longPressOccurredRef.current = false;
+    }, 100);
+  };
+
+  const handleToggleClick = () => {
+    // Prevent normal toggle if long press occurred
+    if (longPressOccurredRef.current) {
+      return;
+    }
+    setIsExpanded(!isExpanded);
+  };
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+      }
+    };
+  }, []);
+
   return (
     <div 
       ref={menuRef} 
@@ -62,7 +113,13 @@ export const CollapsibleButtonMenu = memo(function CollapsibleButtonMenu({ butto
     >
       {/* Semi-circle toggle button - touches both edges of corner */}
       <motion.button
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={handleToggleClick}
+        onMouseDown={handleLongPressStart}
+        onMouseUp={handleLongPressEnd}
+        onMouseLeave={handleLongPressEnd}
+        onTouchStart={handleLongPressStart}
+        onTouchEnd={handleLongPressEnd}
+        onContextMenu={(e) => e.preventDefault()} // Prevent context menu
         className="absolute top-0 right-0 w-12 h-12 md:w-14 md:h-14 bg-accent hover:bg-accent-warm transition-colors duration-300 cursor-pointer shadow-lg flex items-start justify-end"
         style={{
           borderBottomLeftRadius: '100%',
@@ -116,7 +173,8 @@ export const CollapsibleButtonMenu = memo(function CollapsibleButtonMenu({ butto
     return (
       prevBtn.id === nextBtn.id &&
       prevBtn.show === nextBtn.show &&
-      prevBtn.disabled === nextBtn.disabled
+      prevBtn.disabled === nextBtn.disabled &&
+      prevBtn.beta === nextBtn.beta
     );
   });
 });

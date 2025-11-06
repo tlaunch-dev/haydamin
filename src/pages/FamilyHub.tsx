@@ -256,6 +256,7 @@ const FamilyHub = () => {
       icon: <Vault className="w-5 h-5 text-accent" />,
       label: language === 'ar' ? 'الذكريات' : 'Memories',
       onClick: handleMemories,
+      beta: true, // Beta feature - only shown after long press
     },
     {
       id: 'edit-mode',
