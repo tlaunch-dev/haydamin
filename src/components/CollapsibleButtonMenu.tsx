@@ -149,6 +149,12 @@ export const CollapsibleButtonMenu = memo(function CollapsibleButtonMenu({ butto
       if (pressDuration >= longPressDuration) {
         e.preventDefault();
         e.stopPropagation();
+        // Menu already opened by timeout in handleTouchStart
+      } else {
+        // Short press - toggle menu without beta features
+        // Since we called preventDefault in touchstart, we need to manually toggle the menu
+        setBetaUnlocked(false);
+        setIsExpanded(prev => !prev);
       }
       
       setTimeout(() => {
