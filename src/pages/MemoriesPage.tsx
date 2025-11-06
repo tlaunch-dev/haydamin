@@ -102,6 +102,10 @@ export function MemoriesPage() {
                   // Calculate non-featured index for proper alternating pattern
                   // Featured cards are centered, so we only alternate non-featured cards
                   const nonFeaturedIndex = memories.slice(0, index).filter(m => !m.featured).length;
+                  
+                  // Determine if this card should show a node (cards after the featured one)
+                  const featuredIndex = memories.findIndex((m) => m.featured);
+                  const showNode = featuredIndex >= 0 && index > featuredIndex;
 
                   return (
                     <MemoryCard
@@ -111,6 +115,7 @@ export function MemoriesPage() {
                       isFeatured={memory.featured || false}
                       index={index}
                       nonFeaturedIndex={nonFeaturedIndex}
+                      showNode={showNode}
                       isExpanded={expandedCardId === memory.id}
                       onExpand={() => setExpandedCardId(memory.id)}
                       onCollapse={() => setExpandedCardId(null)}

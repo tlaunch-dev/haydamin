@@ -49,86 +49,45 @@ export function MemoryTimelineConnector({ memoryCount, featuredIndex = -1 }: Mem
   const cardHeight = getCardHeight(viewportWidth);
   const gap = getGap(viewportWidth);
 
-  // Generate central trunk path (vertical line down the center)
-  const generateTrunkPath = () => {
+  // Generate simple vertical line path behind cards
+  const generateLinePath = () => {
     const startY = 0;
     const endY = dimensions.height - 100;
     return `M ${centerX} ${startY} L ${centerX} ${endY}`;
   };
 
-  // Get responsive branch length - shorter so nodes stay visible
-  const getBranchLength = () => {
-    const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
-    if (viewportWidth < 768) {
-      return 60; // Mobile - very short branches
-    } else if (viewportWidth < 1024) {
-      return 80; // Tablet - short branches
-    } else {
-      return 100; // Desktop - medium branches (not too long)
-    }
-  };
-
-  const branchLength = getBranchLength();
-
-  // Generate branches extending from trunk toward cards
-  // Branches stop before reaching cards so nodes are visible in gaps
-  const generateBranches = () => {
-    const branches: Array<{
-      path: string;
-      delay: number;
-      isLeft: boolean;
-      y: number;
-    }> = [];
-
-    for (let i = 0; i < memoryCount; i++) {
-      const isFeatured = i === featuredIndex;
-
-      // Featured card: no branch (trunk goes straight through)
-      if (isFeatured) {
-        continue;
+  // Generate node positions at the top of each card (after the featured one)
+  const generateNodes = () => {
+    const nodes: Array<{ y: number; delay: number }> = [];
+    
+    // Determine the index to start from (after featured card)
+    const startIndex = featuredIndex >= 0 ? featuredIndex + 1 : 1;
+    
+    for (let i = startIndex; i < memoryCount; i++) {
+      // Position node at the top of each card
+      // Calculate cumulative height up to this card
+      let cumulativeHeight = 0;
+      for (let j = 0; j < i; j++) {
+        cumulativeHeight += cardHeight + gap;
       }
-
-      const isLeft = i % 2 === 0;
-
-      // Position branch in the gap ABOVE each card
-      const cardTop = i * (cardHeight + gap);
-      const branchY = cardTop - gap / 2; // Position in middle of gap above card
-
-      let branchPath: string;
-
-      if (isLeft) {
-        // Left branch: curves from trunk to left
-        const startX = centerX;
-        const endX = centerX - branchLength;
-        const controlX = centerX - branchLength * 0.6;
-        branchPath = `M ${startX} ${branchY} Q ${controlX} ${branchY} ${endX} ${branchY}`;
-      } else {
-        // Right branch: curves from trunk to right
-        const startX = centerX;
-        const endX = centerX + branchLength;
-        const controlX = centerX + branchLength * 0.6;
-        branchPath = `M ${startX} ${branchY} Q ${controlX} ${branchY} ${endX} ${branchY}`;
-      }
-
-      branches.push({
-        path: branchPath,
-        delay: 1.5 + i * 0.15, // Stagger branch animations after trunk (which is 1.5s)
-        isLeft,
-        y: branchY,
+      
+      // Node position is at the top of the card
+      const nodeY = cumulativeHeight;
+      
+      nodes.push({
+        y: nodeY,
+        delay: 0.5 + (i - startIndex) * 0.1, // Stagger node animations
       });
     }
-
-    return branches;
+    
+    return nodes;
   };
 
-  const trunkPath = generateTrunkPath();
-  const branches = generateBranches();
-
-  // Animation timing
-  const TRUNK_DURATION = 1.5;
+  const linePath = generateLinePath();
+  const nodes = generateNodes();
 
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-visible" style={{ zIndex: 10 }}>
+    <div className="absolute inset-0 pointer-events-none overflow-visible" style={{ zIndex: 1 }}>
       <svg
         width={dimensions.width}
         height={dimensions.height}
@@ -136,19 +95,19 @@ export function MemoryTimelineConnector({ memoryCount, featuredIndex = -1 }: Mem
         className="absolute top-0 left-1/2 -translate-x-1/2"
         style={{ overflow: 'visible' }}
       >
-        {/* Central trunk - vertical timeline */}
+        {/* Simple vertical line behind cards */}
         <motion.path
-          d={trunkPath}
+          d={linePath}
           stroke="currentColor"
-          strokeWidth="6"
+          strokeWidth="2"
           fill="none"
-          className="text-accent/40"
+          className="text-accent/30"
           strokeLinecap="round"
           initial={{ pathLength: 0, opacity: 0 }}
           animate={{ pathLength: 1, opacity: 1 }}
           transition={{
             pathLength: {
-              duration: TRUNK_DURATION,
+              duration: 1,
               ease: [0.4, 0, 0.2, 1],
             },
             opacity: {
@@ -157,91 +116,26 @@ export function MemoryTimelineConnector({ memoryCount, featuredIndex = -1 }: Mem
           }}
         />
 
-        {/* Branches extending to each card */}
-        {branches.map((branch, idx) => (
-          <motion.path
-            key={`branch-${idx}`}
-            d={branch.path}
-            stroke="currentColor"
-            strokeWidth="4"
-            fill="none"
-            className="text-accent/60"
-            strokeLinecap="round"
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 1 }}
-            transition={{
-              pathLength: {
-                delay: branch.delay,
-                duration: 0.5,
-                ease: [0.4, 0, 0.2, 1],
-              },
-              opacity: {
-                delay: branch.delay,
-                duration: 0.3,
-              },
-            }}
-          />
-        ))}
-
-        {/* Trunk nodes at branch connection points */}
-        {branches.map((branch, idx) => (
+        {/* Nodes at the top of each card (after the featured one) */}
+        {nodes.map((node, idx) => (
           <motion.circle
-            key={`trunk-node-${idx}`}
+            key={`node-${idx}`}
             cx={centerX}
-            cy={branch.y}
+            cy={node.y}
             r="6"
             className="text-accent/70"
             fill="currentColor"
+            stroke="currentColor"
+            strokeWidth="2"
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{
-              delay: branch.delay,
+              delay: node.delay,
               duration: 0.3,
               ease: [0.34, 1.56, 0.64, 1],
             }}
           />
         ))}
-
-        {/* Nodes at branch endpoints (the "leaves") */}
-        {branches.map((branch, idx) => {
-          const nodeX = branch.isLeft ? centerX - branchLength : centerX + branchLength;
-          const nodeY = branch.y;
-
-          return (
-            <motion.g key={`leaf-${idx}`}>
-              {/* Outer circle */}
-              <motion.circle
-                cx={nodeX}
-                cy={nodeY}
-                r="10"
-                className="text-accent/40"
-                fill="currentColor"
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{
-                  delay: branch.delay + 0.4,
-                  duration: 0.3,
-                  ease: [0.34, 1.56, 0.64, 1],
-                }}
-              />
-              {/* Inner circle */}
-              <motion.circle
-                cx={nodeX}
-                cy={nodeY}
-                r="5"
-                className="text-accent"
-                fill="currentColor"
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{
-                  delay: branch.delay + 0.5,
-                  duration: 0.2,
-                  ease: [0.34, 1.56, 0.64, 1],
-                }}
-              />
-            </motion.g>
-          );
-        })}
       </svg>
     </div>
   );

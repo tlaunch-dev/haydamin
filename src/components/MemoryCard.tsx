@@ -40,20 +40,33 @@ const useResponsiveWidth = (isExpanded: boolean, isFeatured: boolean, index: num
         expandedMaxWidth = '100%';
       }
       
+      // On mobile, use auto margins for proper centering
+      if (viewportWidth < 768) {
+        return { width: expandedWidth, maxWidth: expandedMaxWidth, marginLeft: 'auto', marginLeftPx: null };
+      }
+      
+      // Tablet+: calculate center margin
       const containerMaxWidth = viewportWidth >= 1280 ? 1024 : Math.min(viewportWidth * 0.9, 1024);
       const widthValue = expandedWidth.includes('%') 
         ? (viewportWidth * parseFloat(expandedWidth) / 100)
         : parseFloat(expandedWidth.replace('rem', '')) * 16;
       const actualWidth = Math.min(widthValue, parseFloat(expandedMaxWidth.replace('rem', '')) * 16);
-      const centerMargin = (containerMaxWidth - actualWidth) / 2;
+      const centerMargin = Math.max(0, (containerMaxWidth - actualWidth) / 2); // Ensure non-negative
       
       return { width: expandedWidth, maxWidth: expandedMaxWidth, marginLeft: '0', marginLeftPx: centerMargin };
     } else if (isFeatured) {
       // Featured collapsed
-      const containerMaxWidth = viewportWidth >= 1280 ? 1024 : Math.min(viewportWidth * 0.9, 1024);
-      const featuredWidth = 42 * 16;
-      const centerMargin = (containerMaxWidth - featuredWidth) / 2;
-      return { width: '100%', maxWidth: '42rem', marginLeft: '0', marginLeftPx: centerMargin };
+      if (viewportWidth < 768) {
+        // Mobile: use auto margins for centering, ensure maxWidth doesn't exceed viewport
+        const maxWidthPx = Math.min(viewportWidth - 24, 672); // 42rem = 672px, but respect viewport
+        return { width: '100%', maxWidth: `${maxWidthPx}px`, marginLeft: 'auto', marginLeftPx: null };
+      } else {
+        // Tablet+: calculate center margin
+        const containerMaxWidth = viewportWidth >= 1280 ? 1024 : Math.min(viewportWidth * 0.9, 1024);
+        const featuredWidth = 42 * 16;
+        const centerMargin = Math.max(0, (containerMaxWidth - featuredWidth) / 2); // Ensure non-negative
+        return { width: '100%', maxWidth: '42rem', marginLeft: '0', marginLeftPx: centerMargin };
+      }
     } else {
       // Non-featured collapsed
       let collapsedWidth: string;
@@ -132,26 +145,41 @@ const useResponsiveWidth = (isExpanded: boolean, isFeatured: boolean, index: num
         setWidth(expandedWidth);
         setMaxWidth(expandedMaxWidth);
         
-        // Calculate center position for smooth animation
-        // Get container width (assuming max-w-5xl = 64rem = 1024px or use viewport)
-        const containerMaxWidth = viewportWidth >= 1280 ? 1024 : Math.min(viewportWidth * 0.9, 1024);
-        const widthValue = expandedWidth.includes('%') 
-          ? (viewportWidth * parseFloat(expandedWidth) / 100)
-          : parseFloat(expandedWidth.replace('rem', '')) * 16;
-        const actualWidth = Math.min(widthValue, parseFloat(expandedMaxWidth.replace('rem', '')) * 16);
-        const centerMargin = (containerMaxWidth - actualWidth) / 2;
-        setMarginLeftPx(centerMargin);
-        setMarginLeft('0'); // Use pixel value for animation
+        // On mobile, use auto margins for proper centering
+        if (viewportWidth < 768) {
+          setMarginLeft('auto');
+          setMarginLeftPx(null);
+        } else {
+          // Tablet+: calculate center position for smooth animation
+          // Get container width (assuming max-w-5xl = 64rem = 1024px or use viewport)
+          const containerMaxWidth = viewportWidth >= 1280 ? 1024 : Math.min(viewportWidth * 0.9, 1024);
+          const widthValue = expandedWidth.includes('%') 
+            ? (viewportWidth * parseFloat(expandedWidth) / 100)
+            : parseFloat(expandedWidth.replace('rem', '')) * 16;
+          const actualWidth = Math.min(widthValue, parseFloat(expandedMaxWidth.replace('rem', '')) * 16);
+          const centerMargin = Math.max(0, (containerMaxWidth - actualWidth) / 2); // Ensure non-negative
+          setMarginLeftPx(centerMargin);
+          setMarginLeft('0'); // Use pixel value for animation
+        }
       } else if (isFeatured) {
         // Featured card collapsed state
         setWidth('100%');
         setMaxWidth('42rem'); // max-w-2xl
         // Featured cards are always centered
-        const containerMaxWidth = viewportWidth >= 1280 ? 1024 : Math.min(viewportWidth * 0.9, 1024);
-        const featuredWidth = 42 * 16; // 42rem in pixels
-        const centerMargin = (containerMaxWidth - featuredWidth) / 2;
-        setMarginLeftPx(centerMargin);
-        setMarginLeft('0');
+        // On mobile, ensure we don't push the card off-screen
+        if (viewportWidth < 768) {
+          // Mobile: use auto margins for centering, ensure maxWidth doesn't exceed viewport
+          setMaxWidth(`${Math.min(viewportWidth - 24, 672)}px`); // 42rem = 672px, but respect viewport
+          setMarginLeft('auto');
+          setMarginLeftPx(null);
+        } else {
+          // Tablet+: calculate center margin
+          const containerMaxWidth = viewportWidth >= 1280 ? 1024 : Math.min(viewportWidth * 0.9, 1024);
+          const featuredWidth = 42 * 16; // 42rem in pixels
+          const centerMargin = Math.max(0, (containerMaxWidth - featuredWidth) / 2); // Ensure non-negative
+          setMarginLeftPx(centerMargin);
+          setMarginLeft('0');
+        }
       } else {
         // Collapsed state - alternating widths
         if (viewportWidth >= 1536) {
@@ -215,6 +243,7 @@ interface MemoryCardProps {
   isFeatured?: boolean;
   index: number;
   nonFeaturedIndex?: number; // Index among non-featured cards only (for alternating pattern)
+  showNode?: boolean; // Whether to show a node at the top of the card
   isExpanded?: boolean;
   onExpand?: () => void;
   onCollapse?: () => void;
@@ -226,6 +255,7 @@ export function MemoryCard({
   isFeatured = false, 
   index,
   nonFeaturedIndex,
+  showNode = false,
   isExpanded: externalIsExpanded,
   onExpand,
   onCollapse,
@@ -461,7 +491,7 @@ export function MemoryCard({
         width: width,
         maxWidth: maxWidth,
         marginLeft: marginLeftPx !== null ? `${marginLeftPx}px` : marginLeft,
-        marginRight: marginLeftPx !== null ? '0' : (marginLeft === 'auto' ? '0' : 'auto'),
+        marginRight: marginLeftPx !== null ? '0' : (marginLeft === 'auto' ? 'auto' : '0'),
       }}
       transition={{
         duration: 0.6,
@@ -498,6 +528,22 @@ export function MemoryCard({
           ${isDeleting ? 'opacity-50 pointer-events-none' : ''}
         `}
       >
+        {/* Node at the top of the card (for cards after featured) */}
+        {showNode && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{
+              delay: index * 0.1 + 0.5,
+              duration: 0.3,
+              ease: [0.34, 1.56, 0.64, 1],
+            }}
+            className="absolute -top-3 left-1/2 -translate-x-1/2 z-10"
+          >
+            <div className="w-3 h-3 rounded-full bg-accent border-2 border-background shadow-sm" />
+          </motion.div>
+        )}
+
         {/* Action menu (only shown when collapsed and user is authenticated) */}
         {!isExpanded && user && (
           <div ref={menuRef} className="absolute top-3 right-3 md:top-4 md:right-4 z-10">
