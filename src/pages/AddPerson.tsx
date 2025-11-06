@@ -258,7 +258,7 @@ export function AddPerson() {
       <CollapsibleButtonMenu buttons={menuButtons} />
 
       {/* Back button - aligned with hamburger */}
-      <div className="fixed top-6 left-6 z-50">
+      <div className="fixed safe-top safe-left z-50">
         <BackButton />
       </div>
 
