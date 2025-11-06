@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { X } from 'lucide-react';
+import { X, MoveDownLeft } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export interface ButtonConfig {
   id: string;
@@ -48,27 +49,31 @@ export function CollapsibleButtonMenu({ buttons, className = '' }: CollapsibleBu
   };
 
   return (
-    <div ref={menuRef} className={`fixed top-0 right-0 z-50 ${className}`}>
+    <div ref={menuRef} className={`fixed top-0 safe-right z-50 ${className}`}>
       {/* Semi-circle toggle button - touches both edges of corner */}
-      <button
+      <motion.button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="absolute top-0 right-0 w-24 h-24 md:w-28 md:h-28 bg-accent hover:bg-accent-warm transition-all duration-300 cursor-pointer shadow-lg"
+        className="absolute top-0 right-0 w-12 h-12 md:w-14 md:h-14 bg-accent hover:bg-accent-warm transition-colors duration-300 cursor-pointer shadow-lg flex items-start justify-end"
         style={{
           borderBottomLeftRadius: '100%',
         }}
         aria-label={isExpanded ? 'Close menu' : 'Open menu'}
         aria-expanded={isExpanded}
+        whileTap={{ scale: 1.3 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 17 }}
       >
-        {isExpanded && (
-          <div className="absolute bottom-2 left-2 md:bottom-3 md:left-3">
-            <X className="w-6 h-6 md:w-7 md:h-7 text-accent-text" />
-          </div>
-        )}
-      </button>
+        <div className="pt-1 pr-1 md:pt-1.5 md:pr-1.5">
+          {isExpanded ? (
+            <X className="w-5 h-5 md:w-6 md:h-6 text-accent-text" />
+          ) : (
+            <MoveDownLeft className="w-5 h-5 md:w-6 md:h-6 text-accent-text" />
+          )}
+        </div>
+      </motion.button>
 
       {/* Expanded Buttons - slide down from the semi-circle with original styling */}
       <div
-        className={`absolute top-20 right-3 md:top-24 md:right-4 flex flex-col items-end gap-3 transition-all duration-300 ease-in-out ${
+        className={`absolute top-14 right-2 md:top-16 md:right-3 flex flex-col items-end gap-3 transition-all duration-300 ease-in-out ${
           isExpanded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'
         }`}
       >
