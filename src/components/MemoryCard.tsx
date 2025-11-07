@@ -248,6 +248,7 @@ interface MemoryCardProps {
   isExpanded?: boolean;
   onExpand?: () => void;
   onCollapse?: () => void;
+  disableInitialAnimation?: boolean; // Disable initial animation when used in stagger context
 }
 
 export function MemoryCard({ 
@@ -260,6 +261,7 @@ export function MemoryCard({
   isExpanded: externalIsExpanded,
   onExpand,
   onCollapse,
+  disableInitialAnimation = false,
 }: MemoryCardProps) {
   const { language } = useLanguage();
   const { user } = useAuth();
@@ -590,24 +592,33 @@ export function MemoryCard({
       }}
     >
       <motion.div
-        layout
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{
-          layout: {
-            duration: 0.6,
-            ease: [0.4, 0, 0.2, 1],
-          },
-          opacity: {
-            duration: 0.5,
-            delay: index * 0.1,
-          },
-          scale: {
-            duration: 0.5,
-            delay: index * 0.1,
-            ease: [0.34, 1.56, 0.64, 1],
-          },
-        }}
+        layout={!disableInitialAnimation} // Only use layout animation when not in stagger mode
+        {...(disableInitialAnimation
+          ? { 
+              // When in stagger mode, let parent control the animation
+              // Don't set initial/animate here - parent wrapper will handle it
+              initial: false,
+            }
+          : {
+              initial: { opacity: 0, scale: 0.8 },
+              animate: { opacity: 1, scale: 1 },
+              transition: {
+                layout: {
+                  duration: 0.6,
+                  ease: [0.4, 0, 0.2, 1],
+                },
+                opacity: {
+                  duration: 0.5,
+                  delay: index * 0.1,
+                },
+                scale: {
+                  duration: 0.5,
+                  delay: index * 0.1,
+                  ease: [0.34, 1.56, 0.64, 1],
+                },
+              },
+            }
+        )}
         whileHover={!isExpanded ? { scale: 1.02 } : {}}
         whileTap={!isExpanded ? { scale: 0.98 } : {}}
         onClick={!isExpanded ? handleCardClick : undefined}

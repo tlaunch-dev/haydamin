@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { useMemories } from '../hooks/useMemories';
 import { usePeople } from '../hooks/usePeople';
 import { useLanguage } from '../context/LanguageContext';
@@ -17,8 +18,22 @@ export function MemoriesPage() {
   const { user } = useAuth();
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
+  const [shouldAnimate, setShouldAnimate] = useState(false);
 
   const loading = memoriesLoading || peopleLoading;
+
+  // Trigger animation when memories are loaded
+  useEffect(() => {
+    if (!loading && memories.length > 0) {
+      // Small delay to ensure DOM is ready
+      const timer = setTimeout(() => {
+        setShouldAnimate(true);
+      }, 100);
+      return () => clearTimeout(timer);
+    } else if (memories.length === 0) {
+      setShouldAnimate(false);
+    }
+  }, [loading, memories.length]);
 
   if (loading) {
     return <LoadingScreen />;
@@ -26,6 +41,35 @@ export function MemoriesPage() {
 
   // For now, just show a simple layout with empty state
   const hasMemories = memories.length > 0;
+
+  // Animation variants for stagger children
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.12, // Stagger each card by 0.12s for more visible effect
+        delayChildren: 0.1, // Start after 0.1s delay
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { 
+      opacity: 0, 
+      y: 40, // Start more below for visibility
+      scale: 0.85 
+    },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        duration: 0.7,
+        ease: [0.4, 0, 0.2, 1], // Smooth easing
+      },
+    },
+  };
 
   return (
     <div className="min-h-screen bg-background text-text overflow-x-hidden">
@@ -97,7 +141,14 @@ export function MemoriesPage() {
               />
 
               {/* Memory cards */}
-              <div className="relative space-y-3 md:space-y-4 lg:space-y-5" style={{ zIndex: 20 }}>
+              <motion.div
+                key={`memories-${memories.length}`}
+                className="relative space-y-3 md:space-y-4 lg:space-y-5"
+                style={{ zIndex: 20 }}
+                variants={containerVariants}
+                initial="hidden"
+                animate={shouldAnimate ? "visible" : "hidden"}
+              >
                 {memories.map((memory, index) => {
                   // Calculate non-featured index for proper alternating pattern
                   // Featured cards are centered, so we only alternate non-featured cards
@@ -108,21 +159,27 @@ export function MemoriesPage() {
                   const showNode = featuredIndex >= 0 && index > featuredIndex;
 
                   return (
-                    <MemoryCard
+                    <motion.div
                       key={memory.id}
-                      memory={memory}
-                      people={people}
-                      isFeatured={memory.featured || false}
-                      index={index}
-                      nonFeaturedIndex={nonFeaturedIndex}
-                      showNode={showNode}
-                      isExpanded={expandedCardId === memory.id}
-                      onExpand={() => setExpandedCardId(memory.id)}
-                      onCollapse={() => setExpandedCardId(null)}
-                    />
+                      variants={itemVariants}
+                      style={{ willChange: 'transform, opacity' }}
+                    >
+                      <MemoryCard
+                        memory={memory}
+                        people={people}
+                        isFeatured={memory.featured || false}
+                        index={index}
+                        nonFeaturedIndex={nonFeaturedIndex}
+                        showNode={showNode}
+                        isExpanded={expandedCardId === memory.id}
+                        onExpand={() => setExpandedCardId(memory.id)}
+                        onCollapse={() => setExpandedCardId(null)}
+                        disableInitialAnimation={true}
+                      />
+                    </motion.div>
                   );
                 })}
-              </div>
+              </motion.div>
             </div>
           )}
         </div>
