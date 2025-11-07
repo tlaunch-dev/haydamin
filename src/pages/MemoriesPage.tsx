@@ -8,7 +8,6 @@ import BackButton from '../components/BackButton';
 import LoadingScreen from '../components/LoadingScreen';
 import { MemoryCard } from '../components/MemoryCard';
 import { MemoryUploadModal } from '../components/MemoryUploadModal';
-import { MemoryTimelineConnector } from '../components/MemoryTimelineConnector';
 import { Plus } from 'lucide-react';
 
 export function MemoriesPage() {
@@ -132,14 +131,8 @@ export function MemoriesPage() {
               )}
             </div>
           ) : (
-            // Memories List with Timeline Connector
+            // Memories List
             <div className="relative max-w-5xl mx-auto">
-              {/* Timeline connector visible beside cards */}
-              <MemoryTimelineConnector
-                memoryCount={memories.length}
-                featuredIndex={memories.findIndex((m) => m.featured)}
-              />
-
               {/* Memory cards */}
               <motion.div
                 key={`memories-${memories.length}`}
