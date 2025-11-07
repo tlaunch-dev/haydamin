@@ -10,6 +10,26 @@ import { DeviceProvider } from './context/DeviceContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import App from './App.tsx'
 import './index.css'
+import { registerSW } from 'virtual:pwa-register'
+
+// Register service worker and handle updates
+const updateSW = registerSW({
+  onNeedRefresh() {
+    // Automatically update when a new version is available
+    // This ensures users always get the latest version after deployment
+    console.log('New version available, updating...')
+    updateSW(true)
+  },
+  onOfflineReady() {
+    console.log('App ready to work offline')
+  },
+  onRegisteredSW(_swUrl: string, registration: ServiceWorkerRegistration | undefined) {
+    // Check for updates every hour
+    registration && setInterval(() => {
+      registration.update()
+    }, 60 * 60 * 1000) // 1 hour
+  }
+})
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

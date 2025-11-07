@@ -2,6 +2,11 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { readFileSync } from 'fs'
+
+// Read version from package.json for cache versioning
+const packageJson = JSON.parse(readFileSync('./package.json', 'utf-8'))
+const version = packageJson.version
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -37,7 +42,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt', // Changed from 'autoUpdate' to prompt user for updates
       includeAssets: ['cedar.svg', 'favicon.ico'],
       manifest: {
         name: 'Hayda Min - هيدا مين؟',
@@ -78,6 +83,8 @@ export default defineConfig({
       workbox: {
         // Cache all static assets
         globPatterns: ['**/*.{js,css,html,svg,png,jpg,jpeg,gif,webp,woff,woff2}'],
+        // Clean up old caches on activation
+        cleanupOutdatedCaches: true,
         // Runtime caching for Firebase Storage images
         runtimeCaching: [
           // Firebase Auth endpoints - NEVER cache, always hit network
@@ -89,7 +96,7 @@ export default defineConfig({
             urlPattern: /^https:\/\/firebasestorage\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',
             options: {
-              cacheName: 'firebase-images-cache',
+              cacheName: `firebase-images-cache-v${version}`, // Version cache name
               expiration: {
                 maxEntries: 100,
                 maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
@@ -103,7 +110,7 @@ export default defineConfig({
             urlPattern: /^https:\/\/firestore\.googleapis\.com\/.*/i,
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'firestore-cache',
+              cacheName: `firestore-cache-v${version}`, // Version cache name
               networkTimeoutSeconds: 3, // Reduced from 10s to 3s
               expiration: {
                 maxEntries: 50,
