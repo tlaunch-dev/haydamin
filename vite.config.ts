@@ -80,6 +80,11 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,jpg,jpeg,gif,webp,woff,woff2}'],
         // Runtime caching for Firebase Storage images
         runtimeCaching: [
+          // Firebase Auth endpoints - NEVER cache, always hit network
+          {
+            urlPattern: /^https:\/\/(identitytoolkit|securetoken)\.googleapis\.com\/.*/i,
+            handler: 'NetworkOnly',
+          },
           {
             urlPattern: /^https:\/\/firebasestorage\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',
@@ -99,7 +104,7 @@ export default defineConfig({
             handler: 'NetworkFirst',
             options: {
               cacheName: 'firestore-cache',
-              networkTimeoutSeconds: 10,
+              networkTimeoutSeconds: 3, // Reduced from 10s to 3s
               expiration: {
                 maxEntries: 50,
                 maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
