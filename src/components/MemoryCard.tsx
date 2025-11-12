@@ -313,8 +313,8 @@ export function MemoryCard({
 
   const dateStr = getTimeAgo(memory.dateRecorded);
 
-  // Pause all other videos when this one starts playing - useCallback for stable reference
-  const pauseOtherVideos = useCallback(() => {
+  // Stop and reset all other videos when this one starts playing - useCallback for stable reference
+  const stopOtherVideos = useCallback(() => {
     const currentVideo = videoRef.current;
     if (!currentVideo) return;
 
@@ -323,6 +323,7 @@ export function MemoryCard({
       // More robust comparison - check if it's not the current video
       if (video !== currentVideo && !video.paused) {
         video.pause();
+        video.currentTime = 0; // Reset to beginning, free up resources
       }
     });
   }, []);
@@ -335,7 +336,7 @@ export function MemoryCard({
     const handlePlay = () => {
       // Small delay to ensure ref is properly set on iOS
       setTimeout(() => {
-        pauseOtherVideos();
+        stopOtherVideos();
       }, 10);
     };
 
@@ -344,7 +345,7 @@ export function MemoryCard({
     return () => {
       video.removeEventListener('play', handlePlay);
     };
-  }, [isExpanded, pauseOtherVideos]);
+  }, [isExpanded, stopOtherVideos]);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -460,8 +461,8 @@ export function MemoryCard({
   // Handle animation complete - play video when expansion finishes
   const handleExpansionComplete = useCallback(() => {
     if (isExpanded && videoRef.current) {
-      // Don't call pauseOtherVideos here - the 'play' event listener will handle it
-      // This prevents double-pausing race conditions on iOS
+      // Don't call stopOtherVideos here - the 'play' event listener will handle it
+      // This prevents race conditions on iOS
       videoRef.current.play().catch((error) => {
         console.error('Error playing video:', error);
       });
@@ -473,7 +474,7 @@ export function MemoryCard({
     e.stopPropagation();
     if (videoRef.current) {
       if (videoRef.current.paused) {
-        // Don't call pauseOtherVideos here - the 'play' event listener will handle it
+        // Don't call stopOtherVideos here - the 'play' event listener will handle it
         videoRef.current.play().catch((error) => {
           console.error('Error playing video:', error);
         });
