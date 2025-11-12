@@ -88,18 +88,19 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,jpg,jpeg,gif,webp,woff,woff2}'],
         // Clean up old caches on activation
         cleanupOutdatedCaches: true,
-        // Runtime caching for Firebase Storage images
+        // Runtime caching strategies
         runtimeCaching: [
           // Firebase Auth endpoints - NEVER cache, always hit network
           {
             urlPattern: /^https:\/\/(identitytoolkit|securetoken)\.googleapis\.com\/.*/i,
             handler: 'NetworkOnly',
           },
+          // Firebase Storage (images/videos) - serve cached, update in background
           {
             urlPattern: /^https:\/\/firebasestorage\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst',
+            handler: 'StaleWhileRevalidate',
             options: {
-              cacheName: `firebase-images-cache-v${version}`, // Version cache name
+              cacheName: `firebase-storage-v${version}`,
               expiration: {
                 maxEntries: 100,
                 maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
@@ -108,22 +109,10 @@ export default defineConfig({
                 statuses: [0, 200]
               }
             }
-          },
-          {
-            urlPattern: /^https:\/\/firestore\.googleapis\.com\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: `firestore-cache-v${version}`, // Version cache name
-              networkTimeoutSeconds: 3, // Reduced from 10s to 3s
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
           }
+          // NOTE: Firestore is NOT cached here - Firebase SDK handles its own
+          // offline persistence via IndexedDB (see firebase.ts enableIndexedDbPersistence)
+          // Service worker caching would conflict with Firebase's intelligent cache
         ]
       },
       devOptions: {
