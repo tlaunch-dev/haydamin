@@ -1,25 +1,10 @@
 import { motion } from 'framer-motion';
-import { useEffect, useState, useLayoutEffect } from 'react';
+import { useState, useLayoutEffect } from 'react';
 import React from 'react';
 
 interface MemoryCedarConnectorProps {
   cardRefs: Array<React.RefObject<HTMLDivElement> | null>; // Refs to actual card elements
 }
-
-// Helper functions for responsive sizing
-const getCardHeight = (viewportWidth: number): number => {
-  if (viewportWidth >= 1536) return 280;
-  if (viewportWidth >= 1280) return 320;
-  if (viewportWidth >= 1024) return 380;
-  if (viewportWidth >= 768) return 360;
-  return 300;
-};
-
-const getGap = (viewportWidth: number): number => {
-  if (viewportWidth >= 1024) return 20;
-  if (viewportWidth >= 768) return 16;
-  return 12;
-};
 
 export function MemoryCedarConnector({ 
   cardRefs

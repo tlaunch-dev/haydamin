@@ -54,10 +54,10 @@ export function MemoriesPage() {
   };
 
   const itemVariants = {
-    hidden: { 
-      opacity: 0, 
+    hidden: {
+      opacity: 0,
       y: 40, // Start more below for visibility
-      scale: 0.85 
+      scale: 0.85
     },
     visible: {
       opacity: 1,
@@ -65,7 +65,7 @@ export function MemoriesPage() {
       scale: 1,
       transition: {
         duration: 0.7,
-        ease: [0.4, 0, 0.2, 1], // Smooth easing
+        ease: [0.4, 0, 0.2, 1] as [number, number, number, number], // Smooth easing
       },
     },
   };
