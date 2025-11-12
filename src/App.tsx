@@ -20,6 +20,11 @@ function AppRoutes() {
   const location = useLocation();
   const { zoomTransition, setZoomPhase, setHiddenPersonId } = useZoomTransition();
 
+  // Scroll to top on route change (important for iOS Safari)
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [location.pathname]);
+
   const handleZoomPhaseChange = (phase: 'zoom-in' | 'zoom-out' | 'reveal-card') => {
     setZoomPhase(phase);
     if (phase === 'reveal-card') {

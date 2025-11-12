@@ -119,12 +119,10 @@ const FamilyHub = () => {
     return () => clearTimeout(timer);
   }, [routePersonId, zoomPhase, navigationDirection, TREE_WRAPPER_DELAY, TREE_WRAPPER_FADE, TREE_DROP_DELAY]);
 
-  // Scroll to top on back navigation
+  // Scroll to top on route change (especially important for iOS)
   useEffect(() => {
-    if (navigationDirection === 'back') {
-      window.scrollTo({ top: 0, behavior: 'instant' });
-    }
-  }, [routePersonId, navigationDirection]);
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [routePersonId]);
 
   // Handle zoom transition click
   const handleZoomClick = useCallback((person: Person, rect: DOMRect, showName: boolean, imageSrc: string) => {
