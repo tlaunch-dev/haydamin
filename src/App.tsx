@@ -13,11 +13,17 @@ const FamilyHub = lazy(() => import('./pages/FamilyHub'));
 const PersonDetail = lazy(() => import('./pages/PersonDetail').then(module => ({ default: module.PersonDetail })));
 const AddPerson = lazy(() => import('./pages/AddPerson').then(module => ({ default: module.AddPerson })));
 const GalleryMode = lazy(() => import('./pages/GalleryMode').then(module => ({ default: module.GalleryMode })));
+const MemoriesPage = lazy(() => import('./pages/MemoriesPage').then(module => ({ default: module.MemoriesPage })));
 const Login = lazy(() => import('./pages/Login'));
 
 function AppRoutes() {
   const location = useLocation();
   const { zoomTransition, setZoomPhase, setHiddenPersonId } = useZoomTransition();
+
+  // Scroll to top on route change (important for iOS Safari)
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [location.pathname]);
 
   const handleZoomPhaseChange = (phase: 'zoom-in' | 'zoom-out' | 'reveal-card') => {
     setZoomPhase(phase);
@@ -86,6 +92,14 @@ function AppRoutes() {
                 element={
                   <ProtectedRoute>
                     <GalleryMode />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/memories"
+                element={
+                  <ProtectedRoute>
+                    <MemoriesPage />
                   </ProtectedRoute>
                 }
               />

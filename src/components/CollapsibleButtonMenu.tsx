@@ -11,6 +11,7 @@ export interface ButtonConfig {
   ariaLabel?: string;
   hideOnMobile?: boolean;
   disabled?: boolean;
+  beta?: boolean; // Beta feature - only shown after long press
 }
 
 interface CollapsibleButtonMenuProps {
@@ -20,10 +21,20 @@ interface CollapsibleButtonMenuProps {
 
 export const CollapsibleButtonMenu = memo(function CollapsibleButtonMenu({ buttons, className = '' }: CollapsibleButtonMenuProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [betaUnlocked, setBetaUnlocked] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<any>(null); // motion.button ref type
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const longPressOccurredRef = useRef(false);
+  const touchStartTimeRef = useRef<number>(0);
+  const longPressDuration = 800; // 800ms for long press
 
-  // Filter buttons based on show condition
-  const visibleButtons = buttons.filter(btn => btn.show !== false);
+  // Filter buttons based on show condition and beta status
+  const visibleButtons = buttons.filter(btn => {
+    if (btn.show === false) return false;
+    if (btn.beta && !betaUnlocked) return false;
+    return true;
+  });
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -49,23 +60,147 @@ export const CollapsibleButtonMenu = memo(function CollapsibleButtonMenu({ butto
     setIsExpanded(false);
   };
 
+  // Long press handlers for unlocking beta features
+  const handleLongPressStart = (e: React.MouseEvent | React.TouchEvent) => {
+    longPressOccurredRef.current = false;
+    touchStartTimeRef.current = Date.now();
+    
+    // For touch events, prevent default to avoid scrolling/zooming
+    if (e.type === 'touchstart') {
+      e.preventDefault();
+    }
+    
+    longPressTimerRef.current = setTimeout(() => {
+      longPressOccurredRef.current = true;
+      setBetaUnlocked(true);
+      setIsExpanded(true); // Also expand menu when beta is unlocked
+      
+      // Provide haptic feedback on mobile if available
+      if ('vibrate' in navigator) {
+        navigator.vibrate(50);
+      }
+    }, longPressDuration);
+  };
+
+  const handleLongPressEnd = (e?: React.MouseEvent | React.TouchEvent) => {
+    const pressDuration = Date.now() - touchStartTimeRef.current;
+    
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    
+    // If it was a long press, prevent the normal click
+    if (pressDuration >= longPressDuration) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    }
+    
+    // Reset after a short delay to allow onClick to check it
+    setTimeout(() => {
+      longPressOccurredRef.current = false;
+    }, 100);
+  };
+
+  const handleToggleClick = (e: React.MouseEvent) => {
+    // Prevent normal toggle if long press occurred
+    if (longPressOccurredRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    setIsExpanded(!isExpanded);
+  };
+
+  // Setup native touch event listeners for better mobile support
+  useEffect(() => {
+    // Get the actual DOM element (motion.button forwards ref to underlying button)
+    const button = buttonRef.current as HTMLButtonElement | null;
+    if (!button) return;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      e.preventDefault(); // Prevent scrolling/zooming
+      longPressOccurredRef.current = false;
+      touchStartTimeRef.current = Date.now();
+      
+      longPressTimerRef.current = setTimeout(() => {
+        longPressOccurredRef.current = true;
+        setBetaUnlocked(true);
+        setIsExpanded(true);
+        
+        // Provide haptic feedback on mobile if available
+        if ('vibrate' in navigator) {
+          navigator.vibrate(50);
+        }
+      }, longPressDuration);
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      const pressDuration = Date.now() - touchStartTimeRef.current;
+      
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+      
+      // If it was a long press, prevent the normal click
+      if (pressDuration >= longPressDuration) {
+        e.preventDefault();
+        e.stopPropagation();
+        // Menu already opened by timeout in handleTouchStart
+      } else {
+        // Short press - toggle menu without beta features
+        // Since we called preventDefault in touchstart, we need to manually toggle the menu
+        setBetaUnlocked(false);
+        setIsExpanded(prev => !prev);
+      }
+      
+      setTimeout(() => {
+        longPressOccurredRef.current = false;
+      }, 100);
+    };
+
+    const handleTouchCancel = () => {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+    };
+
+    // Use native event listeners with passive: false for better control
+    button.addEventListener('touchstart', handleTouchStart, { passive: false });
+    button.addEventListener('touchend', handleTouchEnd, { passive: false });
+    button.addEventListener('touchcancel', handleTouchCancel, { passive: false });
+
+    return () => {
+      button.removeEventListener('touchstart', handleTouchStart);
+      button.removeEventListener('touchend', handleTouchEnd);
+      button.removeEventListener('touchcancel', handleTouchCancel);
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+      }
+    };
+  }, [longPressDuration]);
+
   return (
-    <div 
-      ref={menuRef} 
-      className={`fixed top-0 safe-right z-50 ${className}`}
-      style={{
-        // Force GPU acceleration to prevent flash during navigation
-        transform: 'translateZ(0)',
-        willChange: 'transform',
-        backfaceVisibility: 'hidden',
-      }}
+    <div
+      ref={menuRef}
+      className={`fixed top-0 safe-right z-50 ios-fixed-optimized ${className}`}
     >
       {/* Semi-circle toggle button - touches both edges of corner */}
       <motion.button
-        onClick={() => setIsExpanded(!isExpanded)}
+        ref={buttonRef}
+        onClick={handleToggleClick}
+        onMouseDown={handleLongPressStart}
+        onMouseUp={handleLongPressEnd}
+        onMouseLeave={handleLongPressEnd}
+        onContextMenu={(e) => e.preventDefault()} // Prevent context menu
         className="absolute top-0 right-0 w-12 h-12 md:w-14 md:h-14 bg-accent hover:bg-accent-warm transition-colors duration-300 cursor-pointer shadow-lg flex items-start justify-end"
         style={{
           borderBottomLeftRadius: '100%',
+          touchAction: 'manipulation', // Prevent double-tap zoom
         }}
         aria-label={isExpanded ? 'Close menu' : 'Open menu'}
         aria-expanded={isExpanded}
@@ -116,7 +251,8 @@ export const CollapsibleButtonMenu = memo(function CollapsibleButtonMenu({ butto
     return (
       prevBtn.id === nextBtn.id &&
       prevBtn.show === nextBtn.show &&
-      prevBtn.disabled === nextBtn.disabled
+      prevBtn.disabled === nextBtn.disabled &&
+      prevBtn.beta === nextBtn.beta
     );
   });
 });

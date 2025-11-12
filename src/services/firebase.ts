@@ -20,14 +20,22 @@ export const db = getFirestore(app);
 export const storage = getStorage(app);
 export const auth = getAuth(app);
 
-// Enable offline persistence for instant loads and offline support
-enableIndexedDbPersistence(db).catch((err) => {
-  if (err.code === 'failed-precondition') {
-    console.warn('Offline persistence failed: Multiple tabs open');
-  } else if (err.code === 'unimplemented') {
-    console.warn('Offline persistence not available in this browser');
+// Enable offline persistence asynchronously (non-blocking)
+// This ensures auth initialization is not delayed
+const initializePersistence = async () => {
+  try {
+    await enableIndexedDbPersistence(db);
+  } catch (err: any) {
+    if (err.code === 'failed-precondition') {
+      console.warn('Offline persistence failed: Multiple tabs open');
+    } else if (err.code === 'unimplemented') {
+      console.warn('Offline persistence not available in this browser');
+    }
   }
-});
+};
+
+// Initialize persistence without blocking
+initializePersistence();
 
 export default app;
 

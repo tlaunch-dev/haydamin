@@ -569,7 +569,7 @@ export function PersonDetail() {
           onTouchEnd={onTouchEnd}
         >
         {/* Back/Exit Button - Top Left */}
-        <div className="fixed safe-top safe-left z-50">
+        <div className="fixed safe-top safe-left z-50 ios-fixed-optimized">
           {!isGameMode && <BackButton />}
           {isGameMode && (
             <button

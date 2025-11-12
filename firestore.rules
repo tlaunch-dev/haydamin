@@ -17,6 +17,15 @@ service cloud.firestore {
       allow create, update, delete: if isAuthenticated();
     }
     
+    // Memories collection
+    match /memories/{memoryId} {
+      // Anyone can read (for viewing mode)
+      allow read: if true;
+
+      // Require authentication for write operations
+      allow create, update, delete: if isAuthenticated();
+    }
+    
     // Deny all other access by default
     match /{document=**} {
       allow read, write: if false;
