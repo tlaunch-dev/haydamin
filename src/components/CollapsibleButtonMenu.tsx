@@ -227,15 +227,18 @@ export const CollapsibleButtonMenu = memo(function CollapsibleButtonMenu({ butto
             key={button.id}
             onClick={() => !button.disabled && handleButtonClick(button.onClick)}
             disabled={button.disabled}
-            className={`w-14 h-14 md:w-16 md:h-16 rounded-full bg-card/80 backdrop-blur-md shadow-lg border border-border/50 flex items-center justify-center transition-all transform ${
+            className={`w-48 bg-card/80 backdrop-blur-md shadow-lg border border-border/50 flex items-center gap-2 px-3 py-2 rounded-full transition-all transform ${
               button.disabled 
                 ? 'opacity-50 cursor-not-allowed' 
                 : 'hover:bg-card hover:scale-105'
-            } ${button.hideOnMobile ? 'hidden md:flex' : ''}`}
+            } ${button.hideOnMobile ? 'hidden md:flex' : 'flex'}`}
             aria-label={button.ariaLabel || button.label}
             title={button.label}
           >
-            {button.icon}
+            <span className="text-sm md:text-base text-text whitespace-nowrap flex-1 text-right">{button.label}</span>
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0">
+              {button.icon}
+            </div>
           </button>
         ))}
       </div>

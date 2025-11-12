@@ -238,7 +238,7 @@ const FamilyHub = () => {
     {
       id: 'game-mode',
       icon: <Dices className="w-5 h-5 text-accent" />,
-      label: language === 'ar' ? 'وضع اللعبة' : 'Game Mode',
+      label: language === 'ar' ? 'هيدا مين؟' : 'Hayda Min?',
       onClick: handleGameMode,
       show: people.length > 0,
     },
@@ -259,7 +259,7 @@ const FamilyHub = () => {
     {
       id: 'edit-mode',
       icon: <Pencil className="w-5 h-5 text-accent" />,
-      label: isEditMode ? 'Exit edit mode' : 'Enter edit mode',
+      label: isEditMode ? 'Exit edit mode' : 'Edit',
       onClick: handleToggleEditMode,
     },
     {

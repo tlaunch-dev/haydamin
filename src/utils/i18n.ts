@@ -55,7 +55,7 @@ export const t = (key: string, language: Language): string => {
     'add_photos': { en: 'Add Photos', ar: 'إضافة صور' },
     
     // Gallery Mode
-    'gallery_mode': { en: 'Gallery Mode', ar: 'وضع المعرض' },
+    'gallery_mode': { en: 'Gallery', ar: 'وضع المعرض' },
     'loading': { en: 'Loading...', ar: 'جاري التحميل...' },
     'error_loading': { en: 'Error loading photos', ar: 'خطأ في تحميل الصور' },
     'no_photos': { en: 'No photos available', ar: 'لا توجد صور متاحة' },
