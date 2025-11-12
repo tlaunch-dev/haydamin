@@ -328,6 +328,7 @@ export function MemoryCard({
   }, []);
 
   // Centralized video event handling - this is the source of truth for playback state
+  // Re-run when isExpanded changes to ensure listeners are attached when video renders
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -352,7 +353,7 @@ export function MemoryCard({
       video.removeEventListener('play', handlePlay);
       video.removeEventListener('pause', handlePause);
     };
-  }, [stopOtherVideos]);
+  }, [isExpanded, stopOtherVideos]);
 
   // Close menu when clicking outside
   useEffect(() => {
