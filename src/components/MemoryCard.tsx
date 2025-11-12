@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, Trash2, MoreVertical, Pencil, Vault } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -313,15 +313,19 @@ export function MemoryCard({
 
   const dateStr = getTimeAgo(memory.dateRecorded);
 
-  // Pause all other videos when this one starts playing
-  const pauseOtherVideos = () => {
+  // Pause all other videos when this one starts playing - useCallback for stable reference
+  const pauseOtherVideos = useCallback(() => {
+    const currentVideo = videoRef.current;
+    if (!currentVideo) return;
+
     const allVideos = document.querySelectorAll('video');
     allVideos.forEach((video) => {
-      if (video !== videoRef.current && !video.paused) {
+      // More robust comparison - check if it's not the current video
+      if (video !== currentVideo && !video.paused) {
         video.pause();
       }
     });
-  };
+  }, []);
 
   // Listen for native video control play events
   useEffect(() => {
@@ -329,7 +333,10 @@ export function MemoryCard({
     if (!video) return;
 
     const handlePlay = () => {
-      pauseOtherVideos();
+      // Small delay to ensure ref is properly set on iOS
+      setTimeout(() => {
+        pauseOtherVideos();
+      }, 10);
     };
 
     video.addEventListener('play', handlePlay);
@@ -337,7 +344,7 @@ export function MemoryCard({
     return () => {
       video.removeEventListener('play', handlePlay);
     };
-  }, [isExpanded]);
+  }, [isExpanded, pauseOtherVideos]);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -447,25 +454,29 @@ export function MemoryCard({
       } else {
         setInternalIsExpanded(true);
       }
-      // Wait for animation to complete before playing
-      setTimeout(() => {
-        if (videoRef.current) {
-          pauseOtherVideos();
-          videoRef.current.play().catch((error) => {
-            console.error('Error playing video:', error);
-          });
-        }
-      }, 500);
     }
   };
+
+  // Handle animation complete - play video when expansion finishes
+  const handleExpansionComplete = useCallback(() => {
+    if (isExpanded && videoRef.current) {
+      // Don't call pauseOtherVideos here - the 'play' event listener will handle it
+      // This prevents double-pausing race conditions on iOS
+      videoRef.current.play().catch((error) => {
+        console.error('Error playing video:', error);
+      });
+    }
+  }, [isExpanded]);
 
   // Handle video click - toggle play/pause
   const handleVideoClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (videoRef.current) {
       if (videoRef.current.paused) {
-        pauseOtherVideos();
-        videoRef.current.play();
+        // Don't call pauseOtherVideos here - the 'play' event listener will handle it
+        videoRef.current.play().catch((error) => {
+          console.error('Error playing video:', error);
+        });
       } else {
         videoRef.current.pause();
       }
@@ -590,6 +601,7 @@ export function MemoryCard({
         duration: 0.6,
         ease: [0.4, 0, 0.2, 1], // smooth easing
       }}
+      onAnimationComplete={handleExpansionComplete}
     >
       <motion.div
         layout={!disableInitialAnimation} // Only use layout animation when not in stagger mode
