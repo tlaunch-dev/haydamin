@@ -185,15 +185,9 @@ export const CollapsibleButtonMenu = memo(function CollapsibleButtonMenu({ butto
   }, [longPressDuration]);
 
   return (
-    <div 
-      ref={menuRef} 
-      className={`fixed top-0 safe-right z-50 ${className}`}
-      style={{
-        // Force GPU acceleration to prevent flash during navigation
-        transform: 'translateZ(0)',
-        willChange: 'transform',
-        backfaceVisibility: 'hidden',
-      }}
+    <div
+      ref={menuRef}
+      className={`fixed top-0 safe-right z-50 ios-fixed-optimized ${className}`}
     >
       {/* Semi-circle toggle button - touches both edges of corner */}
       <motion.button

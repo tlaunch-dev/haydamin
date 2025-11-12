@@ -289,3 +289,15 @@ body {
 .safe-bottom {
   bottom: calc(env(safe-area-inset-bottom, 0px) + 1.5rem);
 }
+
+/* iOS-optimized fixed positioning - prevents flickering and improves keyboard handling */
+.ios-fixed-optimized {
+  /* Force GPU acceleration to prevent flickering on iOS */
+  will-change: transform;
+  /* Prevent repainting issues on iOS Safari */
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  /* Enable hardware acceleration */
+  -webkit-perspective: 1000;
+  perspective: 1000;
+}

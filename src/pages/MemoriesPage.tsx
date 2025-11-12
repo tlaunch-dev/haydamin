@@ -24,11 +24,15 @@ export function MemoriesPage() {
   // Trigger animation when memories are loaded
   useEffect(() => {
     if (!loading && memories.length > 0) {
-      // Small delay to ensure DOM is ready
-      const timer = setTimeout(() => {
-        setShouldAnimate(true);
-      }, 100);
-      return () => clearTimeout(timer);
+      // Use requestAnimationFrame to ensure DOM is ready (more reliable than setTimeout)
+      let rafId: number;
+      // Double RAF for guaranteed DOM paint
+      rafId = requestAnimationFrame(() => {
+        rafId = requestAnimationFrame(() => {
+          setShouldAnimate(true);
+        });
+      });
+      return () => cancelAnimationFrame(rafId);
     } else if (memories.length === 0) {
       setShouldAnimate(false);
     }
@@ -73,7 +77,7 @@ export function MemoriesPage() {
   return (
     <div className="min-h-screen bg-background text-text overflow-x-hidden">
       {/* Back Button - Fixed at top left */}
-      <div className="fixed top-6 left-6 z-50">
+      <div className="fixed safe-top safe-left z-50 ios-fixed-optimized">
         <BackButton />
       </div>
 

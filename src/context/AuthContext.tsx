@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef, ReactNode } from 'react';
 import {
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
@@ -22,59 +22,72 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
+  // Centralized state management - prevent race conditions with multiple timers
+  const completedRef = useRef(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const delayTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     const startTime = Date.now();
     const minLoadingTime = 2100; // Minimum 2.1 seconds to show full cedar animation (1.8s animation + 0.3s buffer)
-    
-    // Set a timeout to prevent infinite loading if auth fails to initialize
-    const timeout = setTimeout(() => {
-      console.error('Auth initialization timeout');
+
+    // Centralized completion handler - ensures state is only set once
+    const completeInitialization = () => {
+      if (completedRef.current) return; // Already completed, prevent duplicate state updates
+      completedRef.current = true;
+
       setLoading(false);
       setInitialLoadComplete(true);
+
+      // Clean up any pending timers
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (delayTimerRef.current) clearTimeout(delayTimerRef.current);
+    };
+
+    // Set a timeout to prevent infinite loading if auth fails to initialize
+    timeoutRef.current = setTimeout(() => {
+      console.error('Auth initialization timeout');
+      completeInitialization();
     }, 5000);
 
     const unsubscribe = onAuthStateChanged(
       auth,
       (user) => {
-        clearTimeout(timeout);
         setUser(user);
-        
+
         // Ensure minimum loading time for animation
         const elapsed = Date.now() - startTime;
         const remaining = minLoadingTime - elapsed;
-        
+
         if (remaining > 0) {
-          setTimeout(() => {
-            setLoading(false);
-            setInitialLoadComplete(true);
+          delayTimerRef.current = setTimeout(() => {
+            completeInitialization();
           }, remaining);
         } else {
-          setLoading(false);
-          setInitialLoadComplete(true);
+          completeInitialization();
         }
       },
       (error) => {
-        clearTimeout(timeout);
         console.error('Auth state change error:', error);
-        
+
         // Ensure minimum loading time even on error
         const elapsed = Date.now() - startTime;
         const remaining = minLoadingTime - elapsed;
-        
+
         if (remaining > 0) {
-          setTimeout(() => {
-            setLoading(false);
-            setInitialLoadComplete(true);
+          delayTimerRef.current = setTimeout(() => {
+            completeInitialization();
           }, remaining);
         } else {
-          setLoading(false);
-          setInitialLoadComplete(true);
+          completeInitialization();
         }
       }
     );
 
     return () => {
-      clearTimeout(timeout);
+      // Clean up all timers on unmount
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (delayTimerRef.current) clearTimeout(delayTimerRef.current);
       unsubscribe();
     };
   }, []);

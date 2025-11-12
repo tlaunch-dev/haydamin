@@ -272,12 +272,14 @@ export function MemoryCard({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [betaUnlocked, setBetaUnlocked] = useState(false); // Track if beta features (vault) are unlocked
+  const [showPlayPauseIcon, setShowPlayPauseIcon] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const longPressOccurredRef = useRef(false);
   const touchStartTimeRef = useRef<number>(0);
+  const iconTimerRef = useRef<NodeJS.Timeout | null>(null);
   const longPressDuration = 500; // 500ms for long press
 
   const title = language === 'ar' ? memory.titleAr : memory.title;
@@ -314,29 +316,28 @@ export function MemoryCard({
   const dateStr = getTimeAgo(memory.dateRecorded);
 
   // Stop and reset all other videos when this one starts playing - useCallback for stable reference
-  const stopOtherVideos = useCallback(() => {
-    const currentVideo = videoRef.current;
-    if (!currentVideo) return;
-
+  const stopOtherVideos = useCallback((playingVideo: HTMLVideoElement) => {
     const allVideos = document.querySelectorAll('video');
+
     allVideos.forEach((video) => {
-      // More robust comparison - check if it's not the current video
-      if (video !== currentVideo && !video.paused) {
+      // Pause other videos that are currently playing
+      if (video !== playingVideo && video.src !== playingVideo.src && !video.paused) {
         video.pause();
         video.currentTime = 0; // Reset to beginning, free up resources
       }
     });
   }, []);
 
-  // Listen for native video control play events
+  // Listen for video play events to stop other videos
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    const handlePlay = () => {
+    const handlePlay = (event: Event) => {
+      const playingVideo = event.target as HTMLVideoElement;
       // Small delay to ensure ref is properly set on iOS
       setTimeout(() => {
-        stopOtherVideos();
+        stopOtherVideos(playingVideo);
       }, 10);
     };
 
@@ -469,19 +470,33 @@ export function MemoryCard({
     }
   }, [isExpanded]);
 
-  // Handle video click - toggle play/pause
-  const handleVideoClick = (e: React.MouseEvent) => {
+  // Handle video click - toggle play/pause with icon feedback
+  const handleVideoClick = (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
-    if (videoRef.current) {
-      if (videoRef.current.paused) {
-        // Don't call stopOtherVideos here - the 'play' event listener will handle it
-        videoRef.current.play().catch((error) => {
-          console.error('Error playing video:', error);
-        });
-      } else {
-        videoRef.current.pause();
-      }
+
+    if (!videoRef.current) return;
+
+    // Toggle play/pause
+    if (videoRef.current.paused) {
+      videoRef.current.play().catch((error) => {
+        console.error('Error playing video:', error);
+      });
+    } else {
+      videoRef.current.pause();
     }
+
+    // Show the play/pause icon overlay
+    setShowPlayPauseIcon(true);
+
+    // Clear any existing timer
+    if (iconTimerRef.current) {
+      clearTimeout(iconTimerRef.current);
+    }
+
+    // Hide the icon after 800ms
+    iconTimerRef.current = setTimeout(() => {
+      setShowPlayPauseIcon(false);
+    }, 800);
   };
 
   // Handle close - pause and collapse
@@ -490,6 +505,13 @@ export function MemoryCard({
       videoRef.current.pause();
       videoRef.current.currentTime = 0;
     }
+
+    // Clear any pending icon timer
+    if (iconTimerRef.current) {
+      clearTimeout(iconTimerRef.current);
+    }
+    setShowPlayPauseIcon(false);
+
     // Notify parent to collapse this card
     if (onCollapse) {
       onCollapse();
@@ -504,10 +526,17 @@ export function MemoryCard({
       // Using external control
       if (!externalIsExpanded && isExpanded) {
         // Card was externally collapsed - pause and reset video
-        if (videoRef.current) {
+        // Only pause if video is actually playing to avoid race conditions
+        if (videoRef.current && !videoRef.current.paused) {
           videoRef.current.pause();
           videoRef.current.currentTime = 0;
         }
+
+        // Clear any pending icon timer
+        if (iconTimerRef.current) {
+          clearTimeout(iconTimerRef.current);
+        }
+        setShowPlayPauseIcon(false);
         setInternalIsExpanded(false);
       }
     }
@@ -793,25 +822,50 @@ export function MemoryCard({
               </div>
             </>
           ) : (
-            // Expanded: Show video player
+            // Expanded: Show video player with custom controls
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3, delay: 0.1 }}
-              className="relative w-full h-full"
+              className="relative w-full h-full cursor-pointer"
+              onClick={handleVideoClick}
             >
               <video
                 ref={videoRef}
                 src={memory.videoUrl}
                 poster={memory.thumbnailUrl}
-                controls
-                controlsList="nodownload"
                 playsInline
-                className="w-full h-full rounded-2xl"
-                onClick={handleVideoClick}
+                className="w-full h-full rounded-2xl object-cover"
               >
                 Your browser does not support the video tag.
               </video>
+
+              {/* Custom Play/Pause Overlay */}
+              <AnimatePresence>
+                {showPlayPauseIcon && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+                    className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                  >
+                    <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center">
+                      {videoRef.current?.paused ? (
+                        // Play icon
+                        <svg className="w-10 h-10 md:w-12 md:h-12 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M8 5v14l11-7z" />
+                        </svg>
+                      ) : (
+                        // Pause icon
+                        <svg className="w-10 h-10 md:w-12 md:h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M6 4h4v16H6zM14 4h4v16h-4z" />
+                        </svg>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           )}
         </div>
