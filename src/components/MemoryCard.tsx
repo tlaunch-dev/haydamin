@@ -272,6 +272,7 @@ export function MemoryCard({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [betaUnlocked, setBetaUnlocked] = useState(false); // Track if beta features (vault) are unlocked
+  const [isPlaying, setIsPlaying] = useState(false); // Track actual video playback state
   const [showPlayPauseIcon, setShowPlayPauseIcon] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -315,38 +316,43 @@ export function MemoryCard({
 
   const dateStr = getTimeAgo(memory.dateRecorded);
 
-  // Stop and reset all other videos when this one starts playing - useCallback for stable reference
-  const stopOtherVideos = useCallback((playingVideo: HTMLVideoElement) => {
+  // Stop and reset all other videos - synchronous, no delays
+  const stopOtherVideos = useCallback((currentVideo: HTMLVideoElement) => {
     const allVideos = document.querySelectorAll('video');
-
     allVideos.forEach((video) => {
-      // Pause other videos that are currently playing
-      if (video !== playingVideo && video.src !== playingVideo.src && !video.paused) {
+      if (video !== currentVideo && !video.paused) {
         video.pause();
-        video.currentTime = 0; // Reset to beginning, free up resources
+        video.currentTime = 0;
       }
     });
   }, []);
 
-  // Listen for video play events to stop other videos
+  // Centralized video event handling - this is the source of truth for playback state
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    const handlePlay = (event: Event) => {
-      const playingVideo = event.target as HTMLVideoElement;
-      // Small delay to ensure ref is properly set on iOS
-      setTimeout(() => {
-        stopOtherVideos(playingVideo);
-      }, 10);
+    const handlePlay = () => {
+      // Update state to reflect actual playback
+      setIsPlaying(true);
+      // Stop all other videos synchronously
+      stopOtherVideos(video);
     };
 
+    const handlePause = () => {
+      // Update state to reflect actual playback
+      setIsPlaying(false);
+    };
+
+    // Listen to actual video events as source of truth
     video.addEventListener('play', handlePlay);
+    video.addEventListener('pause', handlePause);
 
     return () => {
       video.removeEventListener('play', handlePlay);
+      video.removeEventListener('pause', handlePause);
     };
-  }, [isExpanded, stopOtherVideos]);
+  }, [stopOtherVideos]);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -459,13 +465,12 @@ export function MemoryCard({
     }
   };
 
-  // Handle animation complete - play video when expansion finishes
-  const handleExpansionComplete = useCallback(() => {
+  // Autoplay when card expands - simple and clean
+  useEffect(() => {
     if (isExpanded && videoRef.current) {
-      // Don't call stopOtherVideos here - the 'play' event listener will handle it
-      // This prevents race conditions on iOS
+      // Just call play - the event listener will handle coordination
       videoRef.current.play().catch((error) => {
-        console.error('Error playing video:', error);
+        console.error('Error autoplaying video:', error);
       });
     }
   }, [isExpanded]);
@@ -474,45 +479,44 @@ export function MemoryCard({
   const handleVideoClick = (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
 
-    if (!videoRef.current) return;
+    const video = videoRef.current;
+    if (!video) return;
 
-    // Toggle play/pause
-    if (videoRef.current.paused) {
-      videoRef.current.play().catch((error) => {
+    // Toggle play/pause - use isPlaying state as source of truth
+    if (isPlaying) {
+      video.pause();
+    } else {
+      video.play().catch((error) => {
         console.error('Error playing video:', error);
       });
-    } else {
-      videoRef.current.pause();
     }
 
-    // Show the play/pause icon overlay
+    // Show icon feedback
     setShowPlayPauseIcon(true);
-
-    // Clear any existing timer
     if (iconTimerRef.current) {
       clearTimeout(iconTimerRef.current);
     }
-
-    // Hide the icon after 800ms
     iconTimerRef.current = setTimeout(() => {
       setShowPlayPauseIcon(false);
     }, 800);
   };
 
-  // Handle close - pause and collapse
+  // Handle close - pause and reset everything
   const handleClose = () => {
-    if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.currentTime = 0;
+    const video = videoRef.current;
+    if (video) {
+      video.pause();
+      video.currentTime = 0;
     }
 
-    // Clear any pending icon timer
+    // Clear timers and reset state
     if (iconTimerRef.current) {
       clearTimeout(iconTimerRef.current);
     }
     setShowPlayPauseIcon(false);
+    setIsPlaying(false);
 
-    // Notify parent to collapse this card
+    // Collapse the card
     if (onCollapse) {
       onCollapse();
     } else {
@@ -522,25 +526,23 @@ export function MemoryCard({
 
   // Watch for external collapse (when another card expands)
   useEffect(() => {
-    if (externalIsExpanded !== undefined) {
-      // Using external control
-      if (!externalIsExpanded && isExpanded) {
-        // Card was externally collapsed - pause and reset video
-        // Only pause if video is actually playing to avoid race conditions
-        if (videoRef.current && !videoRef.current.paused) {
-          videoRef.current.pause();
-          videoRef.current.currentTime = 0;
-        }
-
-        // Clear any pending icon timer
-        if (iconTimerRef.current) {
-          clearTimeout(iconTimerRef.current);
-        }
-        setShowPlayPauseIcon(false);
-        setInternalIsExpanded(false);
+    if (externalIsExpanded !== undefined && !externalIsExpanded && isExpanded) {
+      // Card was externally collapsed - pause and reset
+      const video = videoRef.current;
+      if (video && isPlaying) {
+        video.pause();
+        video.currentTime = 0;
       }
+
+      // Clean up state
+      if (iconTimerRef.current) {
+        clearTimeout(iconTimerRef.current);
+      }
+      setShowPlayPauseIcon(false);
+      setIsPlaying(false);
+      setInternalIsExpanded(false);
     }
-  }, [externalIsExpanded, isExpanded]);
+  }, [externalIsExpanded, isExpanded, isPlaying]);
 
   // Handle edit
   const handleEdit = (e: React.MouseEvent) => {
@@ -631,7 +633,6 @@ export function MemoryCard({
         duration: 0.6,
         ease: [0.4, 0, 0.2, 1], // smooth easing
       }}
-      onAnimationComplete={handleExpansionComplete}
     >
       <motion.div
         layout={!disableInitialAnimation} // Only use layout animation when not in stagger mode
@@ -851,7 +852,7 @@ export function MemoryCard({
                     className="absolute inset-0 flex items-center justify-center pointer-events-none"
                   >
                     <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center">
-                      {videoRef.current?.paused ? (
+                      {!isPlaying ? (
                         // Play icon
                         <svg className="w-10 h-10 md:w-12 md:h-12 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M8 5v14l11-7z" />
