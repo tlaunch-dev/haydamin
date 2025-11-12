@@ -81,6 +81,9 @@ export default defineConfig({
         ]
       },
       workbox: {
+        // CRITICAL: Force new service worker to activate immediately
+        skipWaiting: true,
+        clientsClaim: true,
         // Cache all static assets
         globPatterns: ['**/*.{js,css,html,svg,png,jpg,jpeg,gif,webp,woff,woff2}'],
         // Clean up old caches on activation

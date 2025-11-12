@@ -16,7 +16,8 @@ import { registerSW } from 'virtual:pwa-register'
 const updateSW = registerSW({
   onNeedRefresh() {
     // Automatically update when a new version is available
-    // This ensures users always get the latest version after deployment
+    // Combined with skipWaiting + clientsClaim in vite.config.ts,
+    // this ensures immediate activation without requiring users to close tabs
     console.log('New version available, updating...')
     updateSW(true)
   },
