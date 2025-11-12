@@ -793,6 +793,7 @@ export function MemoryCard({
                 poster={memory.thumbnailUrl}
                 controls
                 controlsList="nodownload"
+                playsInline
                 className="w-full h-full rounded-2xl"
                 onClick={handleVideoClick}
               >
