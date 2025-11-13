@@ -56,6 +56,7 @@ export function MemoryCard({
     videoRef,
     isPlaying,
     showPlayPauseIcon,
+    hasError,
     handleCardClick: videoHandleCardClick,
     handleVideoClick,
     handleClose,
@@ -214,6 +215,7 @@ export function MemoryCard({
           isExpanded={isExpanded}
           isPlaying={isPlaying}
           showPlayPauseIcon={showPlayPauseIcon}
+          hasError={hasError}
           videoRef={videoRef}
           onVideoClick={handleVideoClick}
           onCardClick={handleCardClick}

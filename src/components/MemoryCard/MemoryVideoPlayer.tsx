@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect } from 'react';
 import { Memory } from '../../types';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface MemoryVideoPlayerProps {
   memory: Memory;
@@ -8,9 +9,10 @@ interface MemoryVideoPlayerProps {
   isExpanded: boolean;
   isPlaying: boolean;
   showPlayPauseIcon: boolean;
+  hasError?: boolean;
   videoRef: React.RefObject<HTMLVideoElement>;
   onVideoClick: (e: React.MouseEvent<HTMLVideoElement>) => void;
-  onCardClick?: () => void; // Handler for card click when collapsed
+  onCardClick?: () => void;
 }
 
 /**
@@ -23,26 +25,52 @@ export function MemoryVideoPlayer({
   isExpanded,
   isPlaying,
   showPlayPauseIcon,
+  hasError = false,
   videoRef,
   onVideoClick,
   onCardClick,
 }: MemoryVideoPlayerProps) {
-  // Set iOS Safari specific attributes after mount
+  const { language } = useLanguage();
+
+  // iOS Safari requires webkit attributes to be set imperatively
   useEffect(() => {
     const video = videoRef.current;
     if (video) {
-      // iOS Safari requires these attributes to be set on the DOM element
       video.setAttribute('webkit-playsinline', 'true');
       video.setAttribute('x-webkit-airplay', 'allow');
     }
   }, [videoRef]);
+
+  // Consolidated handler for both click and touch events (iOS Safari requirement)
+  const handleVideoInteraction = (e: React.MouseEvent<HTMLVideoElement> | React.TouchEvent<HTMLVideoElement>) => {
+    e.stopPropagation();
+
+    const video = videoRef.current;
+    if (!video || !video.paused) return;
+
+    // Call play() synchronously within user gesture event (iOS Safari requirement)
+    video.play()
+      .then(() => {
+        // Expand card after successful play
+        if (onCardClick) {
+          onCardClick();
+        }
+      })
+      .catch(() => {
+        // Still expand so user can manually play
+        if (onCardClick) {
+          onCardClick();
+        }
+      });
+  };
+
   return (
     <div
       className={`relative bg-text/10 rounded-xl md:rounded-2xl mb-2 md:mb-3 lg:mb-4 overflow-hidden ${
         !isExpanded ? 'aspect-[16/10] md:aspect-video' : 'aspect-video'
       }`}
     >
-      {/* Video element always rendered (hidden when collapsed) */}
+      {/* Video element - always rendered but hidden when collapsed */}
       <video
         ref={videoRef}
         src={memory.videoUrl}
@@ -50,98 +78,9 @@ export function MemoryVideoPlayer({
         preload="metadata"
         controls={false}
         muted={false}
-        onClick={!isExpanded ? (e) => {
-          // Handle click directly on video element when collapsed (for desktop and iOS)
-          // iOS Safari requires play() to be called directly on video element
-          e.stopPropagation();
-          const video = videoRef.current;
-          if (video && video.paused) {
-            console.log(`[Video Debug] Memory ${memory.id} - Click on video (collapsed), attempting play`);
-            // Call play() synchronously within click event
-            const playPromise = video.play();
-            if (playPromise !== undefined) {
-              playPromise
-                .then(() => {
-                  console.log(`[Video Debug] Memory ${memory.id} - play() succeeded on click`);
-                  // Expand card after successful play
-                  if (onCardClick) {
-                    onCardClick();
-                  }
-                })
-                .catch((error) => {
-                  console.error(`[Video Debug] Memory ${memory.id} - play() failed on click:`, error);
-                  // Still expand so user can manually play
-                  if (onCardClick) {
-                    onCardClick();
-                  }
-                });
-            }
-          }
-        } : onVideoClick}
-        onTouchStart={!isExpanded ? (e) => {
-          // On iOS Safari, handle touch directly on video element for autoplay
-          // This ensures play() is called within the user interaction
-          e.stopPropagation();
-          const video = videoRef.current;
-          if (video && video.paused) {
-            console.log(`[Video Debug] Memory ${memory.id} - Touch start on video (collapsed), attempting play`);
-            // Call play() synchronously within touch event
-            const playPromise = video.play();
-            if (playPromise !== undefined) {
-              playPromise
-                .then(() => {
-                  console.log(`[Video Debug] Memory ${memory.id} - play() succeeded on touch`);
-                  // Expand card after successful play
-                  if (onCardClick) {
-                    onCardClick();
-                  }
-                })
-                .catch((error) => {
-                  console.error(`[Video Debug] Memory ${memory.id} - play() failed on touch:`, error);
-                  // Still expand so user can manually play
-                  if (onCardClick) {
-                    onCardClick();
-                  }
-                });
-            }
-          }
-        } : undefined}
-        onError={(e) => {
-          const video = e.currentTarget;
-          const error = video.error;
-          
-          console.error(`[Video Debug] Memory ${memory.id} - Video error event fired`, {
-            memoryId: memory.id,
-            videoUrl: memory.videoUrl,
-            error: error ? {
-              code: error.code,
-              message: error.message,
-              codeName: error.code === MediaError.MEDIA_ERR_ABORTED ? 'MEDIA_ERR_ABORTED' :
-                       error.code === MediaError.MEDIA_ERR_NETWORK ? 'MEDIA_ERR_NETWORK' :
-                       error.code === MediaError.MEDIA_ERR_DECODE ? 'MEDIA_ERR_DECODE' :
-                       error.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED ? 'MEDIA_ERR_SRC_NOT_SUPPORTED' :
-                       'UNKNOWN',
-            } : null,
-            networkState: video.networkState,
-            networkStateName: video.networkState === 0 ? 'NETWORK_EMPTY' :
-                             video.networkState === 1 ? 'NETWORK_IDLE' :
-                             video.networkState === 2 ? 'NETWORK_LOADING' :
-                             video.networkState === 3 ? 'NETWORK_NO_SOURCE' : 'UNKNOWN',
-            readyState: video.readyState,
-            readyStateName: video.readyState === 0 ? 'HAVE_NOTHING' :
-                           video.readyState === 1 ? 'HAVE_METADATA' :
-                           video.readyState === 2 ? 'HAVE_CURRENT_DATA' :
-                           video.readyState === 3 ? 'HAVE_FUTURE_DATA' :
-                           video.readyState === 4 ? 'HAVE_ENOUGH_DATA' : 'UNKNOWN',
-            src: video.src,
-            currentSrc: video.currentSrc,
-            poster: video.poster,
-            paused: video.paused,
-            muted: video.muted,
-            playsInline: video.playsInline,
-            userAgent: navigator.userAgent,
-          });
-        }}
+        playsInline
+        onClick={!isExpanded ? handleVideoInteraction : onVideoClick}
+        onTouchStart={!isExpanded ? handleVideoInteraction : undefined}
         className={`w-full h-full rounded-2xl object-contain ${
           !isExpanded ? 'opacity-0 absolute inset-0' : 'opacity-100'
         }`}
@@ -159,7 +98,7 @@ export function MemoryVideoPlayer({
             className="w-full h-full object-contain pointer-events-none"
           />
           {/* Play button overlay */}
-          <div 
+          <div
             className="absolute inset-0 flex items-center justify-center pointer-events-none"
             style={{ zIndex: 0 }}
           >
@@ -179,8 +118,35 @@ export function MemoryVideoPlayer({
         </>
       )}
 
-      {/* Custom Play/Pause Overlay (only when expanded) */}
-      {isExpanded && (
+      {/* Error message (only when expanded) */}
+      {isExpanded && hasError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="text-center px-6">
+            <svg
+              className="w-16 h-16 text-red-400 mx-auto mb-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <p className="text-white text-lg font-medium mb-2">
+              {language === 'ar' ? 'فشل تحميل الفيديو' : 'Video failed to load'}
+            </p>
+            <p className="text-white/70 text-sm">
+              {language === 'ar' ? 'يرجى المحاولة مرة أخرى لاحقاً' : 'Please try again later'}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Play/Pause icon feedback (only when expanded) */}
+      {isExpanded && !hasError && (
         <AnimatePresence>
           {showPlayPauseIcon && (
             <motion.div
@@ -218,4 +184,3 @@ export function MemoryVideoPlayer({
     </div>
   );
 }
-
