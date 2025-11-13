@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { Memory, Person } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
+import { usePlayback } from '../context/PlaybackContext';
 import { updateMemory, deleteMemory, getAllMemories } from '../services/firestore';
 import { deleteVideo, deleteThumbnail } from '../services/storage';
 import { MemoryUploadModal } from './MemoryUploadModal';
@@ -249,6 +250,7 @@ export function MemoryCard({
 }: MemoryCardProps) {
   const { language } = useLanguage();
   const { user } = useAuth();
+  const { playingMemoryId, setPlayingMemoryId } = usePlayback();
   const navigate = useNavigate();
   const [internalIsExpanded, setInternalIsExpanded] = useState(false);
   const isExpanded = externalIsExpanded !== undefined ? externalIsExpanded : internalIsExpanded;
@@ -300,17 +302,6 @@ export function MemoryCard({
 
   const dateStr = getTimeAgo(memory.dateRecorded);
 
-  // Stop and reset all other videos - synchronous, no delays
-  const stopOtherVideos = useCallback((currentVideo: HTMLVideoElement) => {
-    const allVideos = document.querySelectorAll('video');
-    allVideos.forEach((video) => {
-      if (video !== currentVideo && !video.paused) {
-        video.pause();
-        video.currentTime = 0;
-      }
-    });
-  }, []);
-
   // Centralized video event handling - this is the source of truth for playback state
   // Video element is always rendered, so listeners can be attached immediately
   useEffect(() => {
@@ -320,18 +311,25 @@ export function MemoryCard({
     const handlePlay = () => {
       // Update state to reflect actual playback
       setIsPlaying(true);
-      // Stop all other videos synchronously
-      stopOtherVideos(video);
+      // Set this memory as the currently playing one via context
+      setPlayingMemoryId(memory.id);
     };
 
     const handlePause = () => {
       // Update state to reflect actual playback
       setIsPlaying(false);
+      // Clear playing memory if this video was paused
+      if (playingMemoryId === memory.id) {
+        setPlayingMemoryId(null);
+      }
     };
 
     const handleError = (e: Event) => {
       console.error('Video error:', e);
       setIsPlaying(false);
+      if (playingMemoryId === memory.id) {
+        setPlayingMemoryId(null);
+      }
     };
 
     // Listen to actual video events as source of truth
@@ -344,7 +342,18 @@ export function MemoryCard({
       video.removeEventListener('pause', handlePause);
       video.removeEventListener('error', handleError);
     };
-  }, [stopOtherVideos]);
+  }, [memory.id, playingMemoryId, setPlayingMemoryId]);
+
+  // Pause this video if another memory starts playing
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (playingMemoryId !== null && playingMemoryId !== memory.id && !video.paused) {
+      video.pause();
+      video.currentTime = 0;
+    }
+  }, [playingMemoryId, memory.id]);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -530,7 +539,7 @@ export function MemoryCard({
   useEffect(() => {
     if (externalIsExpanded !== undefined && !externalIsExpanded && isExpanded) {
       // Card was externally collapsed - reset video position
-      // Note: Video is already paused by stopOtherVideos() in the playing card's handlePlay
+      // Note: Video is already paused by PlaybackContext when another memory starts playing
       const video = videoRef.current;
       if (video) {
         video.currentTime = 0;
