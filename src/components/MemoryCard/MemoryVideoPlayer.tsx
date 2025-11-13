@@ -12,7 +12,6 @@ interface MemoryVideoPlayerProps {
   hasError?: boolean;
   videoRef: React.RefObject<HTMLVideoElement>;
   onVideoClick: (e: React.MouseEvent<HTMLVideoElement>) => void;
-  onCardClick?: () => void;
 }
 
 /**
@@ -28,7 +27,6 @@ export function MemoryVideoPlayer({
   hasError = false,
   videoRef,
   onVideoClick,
-  onCardClick,
 }: MemoryVideoPlayerProps) {
   const { language } = useLanguage();
 
@@ -40,29 +38,6 @@ export function MemoryVideoPlayer({
       video.setAttribute('x-webkit-airplay', 'allow');
     }
   }, [videoRef]);
-
-  // Consolidated handler for both click and touch events (iOS Safari requirement)
-  const handleVideoInteraction = (e: React.MouseEvent<HTMLVideoElement> | React.TouchEvent<HTMLVideoElement>) => {
-    e.stopPropagation();
-
-    const video = videoRef.current;
-    if (!video || !video.paused) return;
-
-    // Call play() synchronously within user gesture event (iOS Safari requirement)
-    video.play()
-      .then(() => {
-        // Expand card after successful play
-        if (onCardClick) {
-          onCardClick();
-        }
-      })
-      .catch(() => {
-        // Still expand so user can manually play
-        if (onCardClick) {
-          onCardClick();
-        }
-      });
-  };
 
   return (
     <div
@@ -79,12 +54,13 @@ export function MemoryVideoPlayer({
         controls={false}
         muted={false}
         playsInline
-        onClick={!isExpanded ? handleVideoInteraction : onVideoClick}
-        onTouchStart={!isExpanded ? handleVideoInteraction : undefined}
+        onPointerDown={isExpanded ? (e) => {
+          e.preventDefault();
+          onVideoClick(e as any);
+        } : undefined}
         className={`w-full h-full rounded-2xl object-contain ${
-          !isExpanded ? 'opacity-0 absolute inset-0' : 'opacity-100'
+          !isExpanded ? 'opacity-0 pointer-events-none absolute inset-0' : 'opacity-100'
         }`}
-        style={!isExpanded ? { pointerEvents: 'auto', zIndex: 1 } : undefined}
       >
         Your browser does not support the video tag.
       </video>

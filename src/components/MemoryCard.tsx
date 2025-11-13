@@ -93,9 +93,11 @@ export function MemoryCard({
   const caption = language === 'ar' ? memory.captionAr : memory.caption;
   const dateStr = getTimeAgo(memory.dateRecorded, language);
 
-  // Handle card click - play video and expand
+  // Handle card click - just expand (video will auto-play via effect)
   const handleCardClick = () => {
-    videoHandleCardClick();
+    if (!isExpanded) {
+      videoHandleCardClick();
+    }
   };
 
   // Handle menu close
@@ -119,14 +121,14 @@ export function MemoryCard({
         marginRight: marginLeftPx !== null ? '0' : (marginLeft === 'auto' ? 'auto' : '0'),
       }}
       transition={{
-        duration: 0.6, // Smooth animation for both expand and collapse
+        duration: 0.6,
         ease: [0.4, 0, 0.2, 1],
       }}
     >
       <motion.div
         layout={!disableInitialAnimation} // Animate layout for both expand and collapse
         {...(disableInitialAnimation
-          ? { 
+          ? {
               // When in stagger mode, let parent control the animation
               // Don't set initial/animate here - parent wrapper will handle it
               initial: false,
@@ -153,7 +155,17 @@ export function MemoryCard({
         )}
         whileHover={!isExpanded ? { scale: 1.02 } : {}}
         whileTap={!isExpanded ? { scale: 0.98 } : {}}
-        onClick={!isExpanded ? handleCardClick : undefined}
+        onPointerDown={!isExpanded ? (e) => {
+          const target = e.currentTarget as HTMLElement;
+          target.setPointerCapture(e.pointerId); // Capture all events from this pointer
+          e.preventDefault();
+          e.stopPropagation();
+          handleCardClick();
+        } : undefined}
+        onPointerUp={!isExpanded ? (e) => {
+          const target = e.currentTarget as HTMLElement;
+          target.releasePointerCapture(e.pointerId); // Release capture
+        } : undefined}
         className={`
           bg-card rounded-xl md:rounded-2xl p-3 md:p-4 lg:p-5 shadow-sm relative
           ${!isExpanded ? 'cursor-pointer' : ''}
@@ -218,7 +230,6 @@ export function MemoryCard({
           hasError={hasError}
           videoRef={videoRef}
           onVideoClick={handleVideoClick}
-          onCardClick={handleCardClick}
         />
 
         {/* Content */}

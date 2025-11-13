@@ -70,13 +70,12 @@ export const useMemoryVideo = ({
 
     const handleError = () => {
       const error = video.error;
-      console.error('Video playback error:', {
-        code: error?.code,
-        message: error?.message,
-        src: video.src,
-      });
 
-      setHasError(true);
+      // Only show error UI for actual media errors
+      if (error && error.code) {
+        setHasError(true);
+      }
+
       setIsPlaying(false);
       setIsLoading(false);
 
@@ -132,21 +131,20 @@ export const useMemoryVideo = ({
     }
   }, [externalIsExpanded, isExpanded]);
 
-  // Handle card click - play and expand
-  const handleCardClick = () => {
-    if (!isExpanded && videoRef.current) {
-      const video = videoRef.current;
-
-      // Attempt to play - modern browsers handle readyState automatically
-      video.play().catch((error) => {
-        // Silent fail - user can manually play after expansion
-        console.warn('Autoplay failed:', error.message);
+  // Auto-play when card expands
+  useEffect(() => {
+    if (isExpanded && videoRef.current?.paused) {
+      // Play video when card finishes expanding
+      videoRef.current.play().catch(() => {
+        // Autoplay failed - user can manually play
       });
+    }
+  }, [isExpanded]);
 
-      // Expand the card
-      if (onExpand) {
-        onExpand();
-      }
+  // Handle card click - just expand (video will auto-play via effect)
+  const handleCardClick = () => {
+    if (!isExpanded && onExpand) {
+      onExpand();
     }
   };
 
