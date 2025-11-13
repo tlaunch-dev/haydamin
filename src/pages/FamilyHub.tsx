@@ -391,7 +391,8 @@ const FamilyHub = () => {
       {/* Swipe-back gesture indicator */}
       <SwipeBackIndicator isSwipping={isSwipping} progress={swipeProgress} />
 
-      <div
+      <motion.div
+        key={personId || 'root'}
         className="p-3 sm:p-4 md:p-6 lg:p-8 pt-20 sm:pt-24 md:pt-20 min-h-screen flex flex-col relative overflow-hidden"
       >
 
@@ -527,7 +528,7 @@ const FamilyHub = () => {
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
 
     {/* Corner Menu - outside animated container to stay fixed */}
     <CollapsibleButtonMenu buttons={menuButtons} />
