@@ -41,12 +41,7 @@ const useResponsiveWidth = (isExpanded: boolean, isFeatured: boolean, index: num
         expandedMaxWidth = '100%';
       }
       
-      // On mobile, use auto margins for proper centering
-      if (viewportWidth < 768) {
-        return { width: expandedWidth, maxWidth: expandedMaxWidth, marginLeft: 'auto', marginLeftPx: null };
-      }
-      
-      // Tablet+: calculate center margin
+      // Always use pixel values for marginLeft to allow smooth animation (never 'auto')
       const containerMaxWidth = viewportWidth >= 1280 ? 1024 : Math.min(viewportWidth * 0.9, 1024);
       const widthValue = expandedWidth.includes('%') 
         ? (viewportWidth * parseFloat(expandedWidth) / 100)
@@ -56,18 +51,18 @@ const useResponsiveWidth = (isExpanded: boolean, isFeatured: boolean, index: num
       
       return { width: expandedWidth, maxWidth: expandedMaxWidth, marginLeft: '0', marginLeftPx: centerMargin };
     } else if (isFeatured) {
-      // Featured collapsed
-      if (viewportWidth < 768) {
-        // Mobile: use auto margins for centering, ensure maxWidth doesn't exceed viewport
-        const maxWidthPx = Math.min(viewportWidth - 24, 672); // 42rem = 672px, but respect viewport
-        return { width: '100%', maxWidth: `${maxWidthPx}px`, marginLeft: 'auto', marginLeftPx: null };
-      } else {
-        // Tablet+: calculate center margin
-        const containerMaxWidth = viewportWidth >= 1280 ? 1024 : Math.min(viewportWidth * 0.9, 1024);
-        const featuredWidth = 42 * 16;
-        const centerMargin = Math.max(0, (containerMaxWidth - featuredWidth) / 2); // Ensure non-negative
-        return { width: '100%', maxWidth: '42rem', marginLeft: '0', marginLeftPx: centerMargin };
-      }
+      // Featured collapsed - always use pixel values for marginLeft to allow smooth animation
+      const containerMaxWidth = viewportWidth >= 1280 ? 1024 : Math.min(viewportWidth * 0.9, 1024);
+      const featuredMaxWidth = viewportWidth < 768 
+        ? Math.min(viewportWidth - 24, 672) // Mobile: respect viewport, max 42rem
+        : 42 * 16; // Tablet+: 42rem in pixels
+      const centerMargin = Math.max(0, (containerMaxWidth - featuredMaxWidth) / 2); // Ensure non-negative
+      return { 
+        width: '100%', 
+        maxWidth: viewportWidth < 768 ? `${featuredMaxWidth}px` : '42rem', 
+        marginLeft: '0', 
+        marginLeftPx: centerMargin 
+      };
     } else {
       // Non-featured collapsed
       let collapsedWidth: string;
@@ -146,41 +141,30 @@ const useResponsiveWidth = (isExpanded: boolean, isFeatured: boolean, index: num
         setWidth(expandedWidth);
         setMaxWidth(expandedMaxWidth);
         
-        // On mobile, use auto margins for proper centering
-        if (viewportWidth < 768) {
-          setMarginLeft('auto');
-          setMarginLeftPx(null);
-        } else {
-          // Tablet+: calculate center position for smooth animation
-          // Get container width (assuming max-w-5xl = 64rem = 1024px or use viewport)
-          const containerMaxWidth = viewportWidth >= 1280 ? 1024 : Math.min(viewportWidth * 0.9, 1024);
-          const widthValue = expandedWidth.includes('%') 
-            ? (viewportWidth * parseFloat(expandedWidth) / 100)
-            : parseFloat(expandedWidth.replace('rem', '')) * 16;
-          const actualWidth = Math.min(widthValue, parseFloat(expandedMaxWidth.replace('rem', '')) * 16);
-          const centerMargin = Math.max(0, (containerMaxWidth - actualWidth) / 2); // Ensure non-negative
-          setMarginLeftPx(centerMargin);
-          setMarginLeft('0'); // Use pixel value for animation
-        }
+        // Calculate center position for smooth animation (always use pixel values, never 'auto')
+        // Get container width (assuming max-w-5xl = 64rem = 1024px or use viewport)
+        const containerMaxWidth = viewportWidth >= 1280 ? 1024 : Math.min(viewportWidth * 0.9, 1024);
+        const widthValue = expandedWidth.includes('%') 
+          ? (viewportWidth * parseFloat(expandedWidth) / 100)
+          : parseFloat(expandedWidth.replace('rem', '')) * 16;
+        const actualWidth = Math.min(widthValue, parseFloat(expandedMaxWidth.replace('rem', '')) * 16);
+        const centerMargin = Math.max(0, (containerMaxWidth - actualWidth) / 2); // Ensure non-negative
+        setMarginLeftPx(centerMargin);
+        setMarginLeft('0'); // Use pixel value for animation
       } else if (isFeatured) {
         // Featured card collapsed state
         setWidth('100%');
         setMaxWidth('42rem'); // max-w-2xl
         // Featured cards are always centered
-        // On mobile, ensure we don't push the card off-screen
-        if (viewportWidth < 768) {
-          // Mobile: use auto margins for centering, ensure maxWidth doesn't exceed viewport
-          setMaxWidth(`${Math.min(viewportWidth - 24, 672)}px`); // 42rem = 672px, but respect viewport
-          setMarginLeft('auto');
-          setMarginLeftPx(null);
-        } else {
-          // Tablet+: calculate center margin
-          const containerMaxWidth = viewportWidth >= 1280 ? 1024 : Math.min(viewportWidth * 0.9, 1024);
-          const featuredWidth = 42 * 16; // 42rem in pixels
-          const centerMargin = Math.max(0, (containerMaxWidth - featuredWidth) / 2); // Ensure non-negative
-          setMarginLeftPx(centerMargin);
-          setMarginLeft('0');
-        }
+        // Always use pixel values for marginLeft to allow smooth animation (never 'auto')
+        const containerMaxWidth = viewportWidth >= 1280 ? 1024 : Math.min(viewportWidth * 0.9, 1024);
+        const featuredMaxWidth = viewportWidth < 768 
+          ? Math.min(viewportWidth - 24, 672) // Mobile: respect viewport, max 42rem
+          : 42 * 16; // Tablet+: 42rem in pixels
+        setMaxWidth(viewportWidth < 768 ? `${featuredMaxWidth}px` : '42rem');
+        const centerMargin = Math.max(0, (containerMaxWidth - featuredMaxWidth) / 2); // Ensure non-negative
+        setMarginLeftPx(centerMargin);
+        setMarginLeft('0'); // Use pixel value for animation
       } else {
         // Collapsed state - alternating widths
         if (viewportWidth >= 1536) {
@@ -328,7 +312,7 @@ export function MemoryCard({
   }, []);
 
   // Centralized video event handling - this is the source of truth for playback state
-  // Re-run when isExpanded changes to ensure listeners are attached when video renders
+  // Video element is always rendered, so listeners can be attached immediately
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -345,15 +329,22 @@ export function MemoryCard({
       setIsPlaying(false);
     };
 
+    const handleError = (e: Event) => {
+      console.error('Video error:', e);
+      setIsPlaying(false);
+    };
+
     // Listen to actual video events as source of truth
     video.addEventListener('play', handlePlay);
     video.addEventListener('pause', handlePause);
+    video.addEventListener('error', handleError);
 
     return () => {
       video.removeEventListener('play', handlePlay);
       video.removeEventListener('pause', handlePause);
+      video.removeEventListener('error', handleError);
     };
-  }, [isExpanded, stopOtherVideos]);
+  }, [stopOtherVideos]);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -454,10 +445,30 @@ export function MemoryCard({
     setIsMenuOpen(!isMenuOpen);
   };
 
-  // Handle card click - expand and play
+  // Handle card click - play first (synchronously), then expand
   const handleCardClick = () => {
-    if (!isExpanded) {
-      // Notify parent to expand this card (will collapse others)
+    if (!isExpanded && videoRef.current) {
+      // Call play() synchronously within user interaction for iOS unmuted autoplay
+      const video = videoRef.current;
+      
+      // Check if video is ready to play
+      if (video.readyState >= 2) { // HAVE_CURRENT_DATA or higher
+        video.play().catch((error) => {
+          console.error('Error playing video:', error);
+          // If play fails, still expand so user can manually play
+        });
+      } else {
+        // Video not ready yet, wait for it to load
+        const handleCanPlay = () => {
+          video.play().catch((error) => {
+            console.error('Error playing video:', error);
+          });
+          video.removeEventListener('canplay', handleCanPlay);
+        };
+        video.addEventListener('canplay', handleCanPlay);
+      }
+      
+      // Then expand the card (video already playing)
       if (onExpand) {
         onExpand();
       } else {
@@ -466,30 +477,20 @@ export function MemoryCard({
     }
   };
 
-  // Autoplay when card expands - simple and clean
-  useEffect(() => {
-    if (isExpanded && videoRef.current) {
-      // Just call play - the event listener will handle coordination
-      videoRef.current.play().catch((error) => {
-        console.error('Error autoplaying video:', error);
-      });
-    }
-  }, [isExpanded]);
-
   // Handle video click - toggle play/pause with icon feedback
-  const handleVideoClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleVideoClick = (e: React.MouseEvent<HTMLVideoElement>) => {
     e.stopPropagation();
 
     const video = videoRef.current;
     if (!video) return;
 
-    // Toggle play/pause - use isPlaying state as source of truth
-    if (isPlaying) {
-      video.pause();
-    } else {
+    // Toggle play/pause - use native video.paused property as source of truth
+    if (video.paused) {
       video.play().catch((error) => {
         console.error('Error playing video:', error);
       });
+    } else {
+      video.pause();
     }
 
     // Show icon feedback
@@ -528,10 +529,10 @@ export function MemoryCard({
   // Watch for external collapse (when another card expands)
   useEffect(() => {
     if (externalIsExpanded !== undefined && !externalIsExpanded && isExpanded) {
-      // Card was externally collapsed - pause and reset
+      // Card was externally collapsed - reset video position
+      // Note: Video is already paused by stopOtherVideos() in the playing card's handlePlay
       const video = videoRef.current;
-      if (video && isPlaying) {
-        video.pause();
+      if (video) {
         video.currentTime = 0;
       }
 
@@ -543,7 +544,7 @@ export function MemoryCard({
       setIsPlaying(false);
       setInternalIsExpanded(false);
     }
-  }, [externalIsExpanded, isExpanded, isPlaying]);
+  }, [externalIsExpanded, isExpanded]);
 
   // Handle edit
   const handleEdit = (e: React.MouseEvent) => {
@@ -631,12 +632,12 @@ export function MemoryCard({
         marginRight: marginLeftPx !== null ? '0' : (marginLeft === 'auto' ? 'auto' : '0'),
       }}
       transition={{
-        duration: 0.6,
-        ease: [0.4, 0, 0.2, 1], // smooth easing
+        duration: 0.6, // Smooth animation for both expand and collapse
+        ease: [0.4, 0, 0.2, 1],
       }}
     >
       <motion.div
-        layout={!disableInitialAnimation} // Only use layout animation when not in stagger mode
+        layout={!disableInitialAnimation} // Animate layout for both expand and collapse
         {...(disableInitialAnimation
           ? { 
               // When in stagger mode, let parent control the animation
@@ -648,7 +649,7 @@ export function MemoryCard({
               animate: { opacity: 1, scale: 1 },
               transition: {
                 layout: {
-                  duration: 0.6,
+                  duration: 0.6, // Smooth layout animation for both expand and collapse
                   ease: [0.4, 0, 0.2, 1],
                 },
                 opacity: {
@@ -799,8 +800,23 @@ export function MemoryCard({
 
         {/* Video/Thumbnail Area */}
         <div className={`relative bg-text/10 rounded-xl md:rounded-2xl mb-2 md:mb-3 lg:mb-4 overflow-hidden ${!isExpanded ? 'aspect-[16/10] md:aspect-video' : 'aspect-video'}`}>
-          {!isExpanded ? (
-            // Collapsed: Show thumbnail with play button
+          {/* Video element always rendered (hidden when collapsed) */}
+          <video
+            ref={videoRef}
+            src={memory.videoUrl}
+            poster={memory.thumbnailUrl}
+            playsInline
+            preload="metadata"
+            onClick={handleVideoClick}
+            className={`w-full h-full rounded-2xl object-contain ${
+              !isExpanded ? 'opacity-0 absolute inset-0 pointer-events-none' : 'opacity-100'
+            }`}
+          >
+            Your browser does not support the video tag.
+          </video>
+
+          {/* Thumbnail overlay when collapsed */}
+          {!isExpanded && (
             <>
               <img
                 src={memory.thumbnailUrl}
@@ -823,52 +839,35 @@ export function MemoryCard({
                 </motion.div>
               </div>
             </>
-          ) : (
-            // Expanded: Show video player with custom controls
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3, delay: 0.1 }}
-              className="relative w-full h-full cursor-pointer"
-              onClick={handleVideoClick}
-            >
-              <video
-                ref={videoRef}
-                src={memory.videoUrl}
-                poster={memory.thumbnailUrl}
-                playsInline
-                className="w-full h-full rounded-2xl object-contain"
-              >
-                Your browser does not support the video tag.
-              </video>
+          )}
 
-              {/* Custom Play/Pause Overlay */}
-              <AnimatePresence>
-                {showPlayPauseIcon && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-                    className="absolute inset-0 flex items-center justify-center pointer-events-none"
-                  >
-                    <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center">
-                      {!isPlaying ? (
-                        // Play icon
-                        <svg className="w-10 h-10 md:w-12 md:h-12 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M8 5v14l11-7z" />
-                        </svg>
-                      ) : (
-                        // Pause icon
-                        <svg className="w-10 h-10 md:w-12 md:h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M6 4h4v16H6zM14 4h4v16h-4z" />
-                        </svg>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
+          {/* Custom Play/Pause Overlay (only when expanded) */}
+          {isExpanded && (
+            <AnimatePresence>
+              {showPlayPauseIcon && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+                  className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                >
+                  <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center">
+                    {!isPlaying ? (
+                      // Play icon
+                      <svg className="w-10 h-10 md:w-12 md:h-12 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    ) : (
+                      // Pause icon
+                      <svg className="w-10 h-10 md:w-12 md:h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M6 4h4v16H6zM14 4h4v16h-4z" />
+                      </svg>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           )}
         </div>
 
