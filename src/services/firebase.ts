@@ -38,4 +38,3 @@ const initializePersistence = async () => {
 initializePersistence();
 
 export default app;
-
