@@ -28,7 +28,7 @@ function AppRoutes() {
       <CedarBackground />
 
       <LayoutGroup>
-        <AnimatePresence initial={false}>
+        <AnimatePresence initial={false} mode="wait">
           <Suspense fallback={<LoadingScreen />}>
             <Routes location={location} key={location.pathname}>
               <Route path="/login" element={<Login />} />

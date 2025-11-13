@@ -669,13 +669,17 @@ export function PersonDetail() {
           {!isRevealed ? (
             /* Initial State: Centered Photo */
             <div className="flex flex-col items-center gap-8 mt-12 animate-fade-in">
-              <div className="p-1 bg-background rounded-full shadow-xl transition-all duration-500 ease-out cursor-pointer hover:scale-105" onClick={handleReveal}>
+              <motion.div
+                layoutId={`person-photo-${person.id}`}
+                className="p-1 bg-background rounded-full shadow-xl transition-all duration-500 ease-out cursor-pointer hover:scale-105"
+                onClick={handleReveal}
+              >
                 <img
                   src={person.primaryPhoto}
                   alt={`Photo`}
                   className="w-80 h-80 md:w-96 md:h-96 lg:w-[450px] lg:h-[450px] rounded-full object-cover ring-2 ring-accent/30 transition-all duration-500 ease-out bg-gray-100 animate-fade-in pointer-events-none"
                 />
-              </div>
+              </motion.div>
             </div>
           ) : (
             /* Revealed State: Full Layout */

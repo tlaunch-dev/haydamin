@@ -337,19 +337,6 @@ const FamilyHub = () => {
     },
   };
 
-  // Children fade in and bounce when tree connector reaches them
-  // Note: Timing controlled via showChildren state in useEffect
-  const childrenContainerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.084, // Stagger from left to right (30% faster)
-        delayChildren: 0, // No delay needed - timing controlled by state
-      },
-    },
-  };
-
   // Create variant function that varies per child
   const getChildItemVariants = (index: number) => {
     // Vary the drop height slightly for more organic feel
@@ -404,29 +391,8 @@ const FamilyHub = () => {
       {/* Swipe-back gesture indicator */}
       <SwipeBackIndicator isSwipping={isSwipping} progress={swipeProgress} />
 
-      <AnimatePresence initial={false}>
-        <motion.div
-          key={personId || 'root'}
+      <div
         className="p-3 sm:p-4 md:p-6 lg:p-8 pt-20 sm:pt-24 md:pt-20 min-h-screen flex flex-col relative overflow-hidden"
-        initial={{
-          opacity: navigationDirection === 'back' ? 1 : 0,
-          x: navigationDirection === 'back' ? '-100%' : 0
-        }}
-        animate={{
-          opacity: 1,
-          x: 0
-        }}
-        transition={{
-          duration: 0.5,
-          ease: [0.4, 0, 0.2, 1] as Easing,
-        }}
-        exit={{
-          opacity: 0,
-          transition: {
-            duration: 0.5,
-            ease: [0.4, 0, 0.2, 1] as Easing,
-          }
-        }}
       >
 
       {/* Back Button */}
@@ -437,11 +403,16 @@ const FamilyHub = () => {
       )}
 
       {/* Header */}
-      <div className="mb-4 md:mb-6 lg:mb-8 max-w-7xl mx-auto w-full relative z-10">
+      <motion.div
+        className="mb-4 md:mb-6 lg:mb-8 max-w-7xl mx-auto w-full relative z-10"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}
+      >
         <div className="text-center">
           <h1 className={`${fontClass} text-4xl md:text-5xl lg:text-6xl font-bold text-text`}>{headerText}</h1>
         </div>
-      </div>
+      </motion.div>
 
       <div className="max-w-7xl mx-auto w-full relative z-10">
         {/* Center Person(s) Row - Fade in first */}
@@ -524,22 +495,17 @@ const FamilyHub = () => {
         </AnimatePresence>
 
         {/* Children Row - Grow from tree connectors */}
-        <AnimatePresence>
-          {(childrenList.length > 0 || isEditMode) && (
-            <motion.div
-              key="children-container"
-              className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-5 lg:gap-6"
-              variants={navigationDirection === 'back' ? undefined : childrenContainerVariants}
-              initial={navigationDirection === 'back' ? false : "hidden"}
-              animate={navigationDirection === 'back' ? false : (showChildren ? "visible" : "hidden")}
-            >
-              {childrenList.map((child, index) => (
+        {(childrenList.length > 0 || isEditMode) && (
+          <div className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+            <AnimatePresence>
+              {showChildren && childrenList.map((child, index) => (
                 <motion.div
                   key={child.id}
                   className="w-40 sm:w-44 md:w-46 lg:w-48"
-                  variants={navigationDirection === 'back' ? undefined : getChildItemVariants(index)}
-                  initial={navigationDirection === 'back' ? false : undefined}
-                  animate={navigationDirection === 'back' ? false : undefined}
+                  variants={getChildItemVariants(index)}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
                 >
                   <PersonCard
                     person={child}
@@ -549,23 +515,22 @@ const FamilyHub = () => {
                   />
                 </motion.div>
               ))}
-              {/* Add Person Card - only show in edit mode */}
-              {isEditMode && (
-                <div className="w-40 sm:w-44 md:w-46 lg:w-48">
-                  <AddPersonCard
-                    parentIds={spousePerson ? [centerPerson.id, spousePerson.id] : [centerPerson.id]}
-                  />
-                </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </AnimatePresence>
+            {/* Add Person Card - only show in edit mode */}
+            {isEditMode && (
+              <div className="w-40 sm:w-44 md:w-46 lg:w-48">
+                <AddPersonCard
+                  parentIds={spousePerson ? [centerPerson.id, spousePerson.id] : [centerPerson.id]}
+                />
+              </div>
+            )}
+          </div>
+        )}
       </div>
-        </motion.div>
-      </AnimatePresence>
+    </div>
 
-      {/* Corner Menu - outside animated container to stay fixed */}
-      <CollapsibleButtonMenu buttons={menuButtons} />
+    {/* Corner Menu - outside animated container to stay fixed */}
+    <CollapsibleButtonMenu buttons={menuButtons} />
     </>
   );
 };
