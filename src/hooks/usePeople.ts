@@ -14,23 +14,56 @@ export const usePeople = () => {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(
-      collection(db, 'people'),
-      (snapshot) => {
-        const peopleData = snapshot.docs.map((doc) =>
-          docToPerson(doc.id, doc.data())
-        );
-        setPeople(peopleData);
-        setLoading(false);
-      },
-      (err) => {
-        console.error('Error fetching people:', err);
-        setError(err as Error);
-        setLoading(false);
-      }
-    );
+    let retryCount = 0;
+    const maxRetries = 3;
+    const retryDelay = 2000; // 2 seconds
+    let unsubscribe: (() => void) | null = null;
+    let retryTimeout: NodeJS.Timeout | null = null;
 
-    return () => unsubscribe();
+    const setupListener = () => {
+      // Clean up previous listener if retrying
+      if (unsubscribe) {
+        unsubscribe();
+      }
+
+      unsubscribe = onSnapshot(
+        collection(db, 'people'),
+        (snapshot) => {
+          const peopleData = snapshot.docs.map((doc) =>
+            docToPerson(doc.id, doc.data())
+          );
+          setPeople(peopleData);
+          setLoading(false);
+          setError(null);
+          retryCount = 0; // Reset retry count on success
+        },
+        (err) => {
+          console.error('Error fetching people:', err);
+          
+          // Check if it's a CORS/network error (common on iOS Safari)
+          const isNetworkError = err.code === 'unavailable' || 
+                                err.message?.includes('access control') ||
+                                err.message?.includes('CORS') ||
+                                err.message?.includes('network');
+          
+          if (isNetworkError && retryCount < maxRetries) {
+            retryCount++;
+            console.warn(`Retrying people fetch (attempt ${retryCount}/${maxRetries})...`);
+            retryTimeout = setTimeout(setupListener, retryDelay * retryCount);
+          } else {
+            setError(err as Error);
+            setLoading(false);
+          }
+        }
+      );
+    };
+
+    setupListener();
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+      if (retryTimeout) clearTimeout(retryTimeout);
+    };
   }, []);
 
   return { people, loading, error };

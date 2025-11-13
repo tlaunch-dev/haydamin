@@ -47,7 +47,6 @@ export function MemoryVideoPlayer({
         ref={videoRef}
         src={memory.videoUrl}
         poster={memory.thumbnailUrl}
-        playsInline
         preload="metadata"
         controls={false}
         muted={false}

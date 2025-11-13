@@ -45,7 +45,6 @@ export const useMemoryVideo = ({
       });
     }
   }, [memory.id, memory.videoUrl]);
-
   // Centralized video event handling - this is the source of truth for playback state
   // Video element is always rendered, so listeners can be attached immediately
   useEffect(() => {
@@ -288,6 +287,7 @@ export const useMemoryVideo = ({
     }
   }, [externalIsExpanded, isExpanded]);
 
+  // Handle card click - play first (synchronously), then expand
   // Handle card click - play first (synchronously), then expand
   const handleCardClick = () => {
     if (!isExpanded && videoRef.current) {

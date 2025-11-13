@@ -20,9 +20,24 @@ export const db = getFirestore(app);
 export const storage = getStorage(app);
 export const auth = getAuth(app);
 
+// Detect iOS Safari
+const isIOSSafari = () => {
+  const ua = navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(ua);
+  const isSafari = /Safari/.test(ua) && !/Chrome|CriOS|FxiOS|EdgiOS/.test(ua);
+  return isIOS && isSafari;
+};
+
 // Enable offline persistence asynchronously (non-blocking)
+// Skip on iOS Safari due to known CORS issues with Firestore real-time listeners
 // This ensures auth initialization is not delayed
 const initializePersistence = async () => {
+  // Skip persistence on iOS Safari to avoid CORS issues with Firestore Listen channel
+  if (isIOSSafari()) {
+    console.warn('Skipping offline persistence on iOS Safari to avoid CORS issues');
+    return;
+  }
+
   try {
     await enableIndexedDbPersistence(db);
   } catch (err: any) {
