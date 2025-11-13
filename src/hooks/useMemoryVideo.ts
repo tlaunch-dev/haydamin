@@ -288,7 +288,6 @@ export const useMemoryVideo = ({
   }, [externalIsExpanded, isExpanded]);
 
   // Handle card click - play first (synchronously), then expand
-  // Handle card click - play first (synchronously), then expand
   const handleCardClick = () => {
     if (!isExpanded && videoRef.current) {
       const video = videoRef.current;
