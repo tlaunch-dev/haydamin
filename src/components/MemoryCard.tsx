@@ -805,7 +805,7 @@ export function MemoryCard({
               <img
                 src={memory.thumbnailUrl}
                 alt={title}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
               />
               {/* Play button overlay */}
               <div className="absolute inset-0 flex items-center justify-center">
@@ -837,7 +837,7 @@ export function MemoryCard({
                 src={memory.videoUrl}
                 poster={memory.thumbnailUrl}
                 playsInline
-                className="w-full h-full rounded-2xl object-cover"
+                className="w-full h-full rounded-2xl object-contain"
               >
                 Your browser does not support the video tag.
               </video>
