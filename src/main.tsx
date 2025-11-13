@@ -5,7 +5,6 @@ import { LanguageProvider } from './context/LanguageContext'
 import { AuthProvider } from './context/AuthContext'
 import { HiddenModeProvider } from './context/HiddenModeContext'
 import { NavigationProvider } from './context/NavigationContext'
-import { ZoomTransitionProvider } from './context/ZoomTransitionContext'
 import { DeviceProvider } from './context/DeviceContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import App from './App.tsx'
@@ -39,13 +38,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <LanguageProvider>
           <HiddenModeProvider>
             <NavigationProvider>
-              <ZoomTransitionProvider>
-                <DeviceProvider>
-                  <BrowserRouter>
-                    <App />
-                  </BrowserRouter>
-                </DeviceProvider>
-              </ZoomTransitionProvider>
+              <DeviceProvider>
+                <BrowserRouter>
+                  <App />
+                </BrowserRouter>
+              </DeviceProvider>
             </NavigationProvider>
           </HiddenModeProvider>
         </LanguageProvider>

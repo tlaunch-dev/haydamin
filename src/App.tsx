@@ -2,8 +2,6 @@ import { useEffect, lazy, Suspense } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence, LayoutGroup } from 'framer-motion';
 import { useLanguage } from './context/LanguageContext';
-import { useZoomTransition } from './context/ZoomTransitionContext';
-import { ZoomTransitionOverlay } from './components/ZoomTransitionOverlay';
 import CedarBackground from './components/CedarBackground';
 import LoadingScreen from './components/LoadingScreen';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -18,37 +16,16 @@ const Login = lazy(() => import('./pages/Login'));
 
 function AppRoutes() {
   const location = useLocation();
-  const { zoomTransition, setZoomPhase, setHiddenPersonId } = useZoomTransition();
 
   // Scroll to top on route change (important for iOS Safari)
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [location.pathname]);
 
-  const handleZoomPhaseChange = (phase: 'zoom-in' | 'zoom-out' | 'reveal-card') => {
-    setZoomPhase(phase);
-    if (phase === 'reveal-card') {
-      setHiddenPersonId(null);
-    }
-  };
-
   return (
     <div style={{ position: 'relative', minHeight: '100vh' }}>
       {/* Global Cedar Background - always visible */}
       <CedarBackground />
-      
-      {/* Global Zoom Transition Overlay - renders once regardless of route changes */}
-      {zoomTransition && (
-        <ZoomTransitionOverlay
-          person={zoomTransition.person}
-          startRect={zoomTransition.startRect}
-          targetPersonId={zoomTransition.targetPersonId}
-          showName={zoomTransition.showName}
-          imageSrc={zoomTransition.imageSrc}
-          onNavigate={zoomTransition.onNavigate}
-          onPhaseChange={handleZoomPhaseChange}
-        />
-      )}
 
       <LayoutGroup>
         <AnimatePresence initial={false}>

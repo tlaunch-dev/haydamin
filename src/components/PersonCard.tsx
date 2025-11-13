@@ -12,8 +12,6 @@ interface PersonCardProps {
   isRootLevel?: boolean;
   showName?: boolean;
   disableInitialAnimation?: boolean;
-  onZoomClick?: (person: Person, rect: DOMRect, showName: boolean, imageSrc: string) => void;
-  isHidden?: boolean; // Hide card during zoom transition
   disableNavigation?: boolean; // Disable navigation but keep visual feedback
   navigateTo?: 'auto' | 'hub' | 'detail'; // Explicitly control navigation destination
 }
@@ -21,7 +19,7 @@ interface PersonCardProps {
 // Smooth transition config - optimized for fluid motion
 const smoothTransition = {
   type: 'tween' as const,
-  duration: 0.5,
+  duration: 0.6,
   ease: [0.4, 0, 0.2, 1] as [number, number, number, number], // easeInOut
 };
 
@@ -31,8 +29,6 @@ const PersonCard = ({
   isRootLevel = false,
   showName = true,
   disableInitialAnimation = false,
-  onZoomClick,
-  isHidden = false,
   disableNavigation = false,
   navigateTo = 'auto',
 }: PersonCardProps) => {
@@ -58,25 +54,10 @@ const PersonCard = ({
 
   const fontClass = language === 'ar' ? 'font-arabic' : 'font-sans';
 
-  // Handle click - trigger zoom transition for hub routes
-  const handleClick = (e: React.MouseEvent) => {
+  // Handle click - just set navigation direction
+  const handleClick = () => {
     // Set navigation direction to forward for all navigations
     setNavigationDirection('forward');
-
-    const isHubRoute = linkTo.startsWith('/hub/');
-
-    if (isHubRoute && !isRootLevel && onZoomClick && cardRef.current) {
-      e.preventDefault();
-      e.stopPropagation();
-
-      // Get card bounds and image source
-      const rect = cardRef.current.getBoundingClientRect();
-      const imgElement = cardRef.current.querySelector('img');
-      const imageSrc = imgElement?.src || person.primaryPhoto;
-
-      // Trigger zoom transition
-      onZoomClick(person, rect, showName, imageSrc);
-    }
   };
 
   // Both hub and thumbnail variants with names: circular with name underneath
@@ -86,6 +67,7 @@ const PersonCard = ({
     const content = (
       <>
         <motion.div
+          layoutId={`person-photo-${person.id}`}
           className="p-1 bg-background rounded-full shadow-xl"
           transition={smoothTransition}
         >
@@ -119,9 +101,9 @@ const PersonCard = ({
             scale: { duration: smoothTransition.duration },
           },
         })}
-        className={`flex flex-col items-center gap-3 ${isHidden ? 'invisible pointer-events-none opacity-0' : ''}`}
-        whileHover={isHidden ? {} : { scale: 1.02 }}
-        whileTap={isHidden ? {} : (disableNavigation ? { scale: 1.1 } : { scale: 0.98 })}
+        className="flex flex-col items-center gap-3"
+        whileHover={{ scale: 1.02 }}
+        whileTap={disableNavigation ? { scale: 1.1 } : { scale: 0.98 }}
       >
         {disableNavigation ? (
           <div className="flex flex-col items-center gap-3 w-full">
@@ -139,6 +121,7 @@ const PersonCard = ({
   // Hidden names: circular only
   const imageContent = (
     <motion.div
+      layoutId={`person-photo-${person.id}`}
       className="p-1 bg-background rounded-full shadow-xl"
       transition={smoothTransition}
     >
@@ -166,9 +149,9 @@ const PersonCard = ({
             },
           }
       )}
-      className={`block ${isHidden ? 'invisible pointer-events-none opacity-0' : ''}`}
-      whileHover={isHidden ? {} : { scale: 1.05 }}
-      whileTap={isHidden ? {} : (disableNavigation ? { scale: 1.1 } : { scale: 0.98 })}
+      className="block"
+      whileHover={{ scale: 1.05 }}
+      whileTap={disableNavigation ? { scale: 1.1 } : { scale: 0.98 }}
     >
       {disableNavigation ? (
         <div className="block">
@@ -184,7 +167,7 @@ const PersonCard = ({
 };
 
 // Custom comparison function for memo
-// Only re-render if person data, variant, isRootLevel, showName, or isHidden actually changes
+// Only re-render if person data, variant, isRootLevel, showName, or navigateTo actually changes
 const areEqual = (prevProps: PersonCardProps, nextProps: PersonCardProps) => {
   return (
     prevProps.person.id === nextProps.person.id &&
@@ -196,7 +179,6 @@ const areEqual = (prevProps: PersonCardProps, nextProps: PersonCardProps) => {
     prevProps.variant === nextProps.variant &&
     prevProps.isRootLevel === nextProps.isRootLevel &&
     prevProps.showName === nextProps.showName &&
-    prevProps.isHidden === nextProps.isHidden &&
     prevProps.navigateTo === nextProps.navigateTo
   );
 };

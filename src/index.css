@@ -10,7 +10,7 @@
 
   --font-family-sans: 'Tajawal', sans-serif;
   --font-family-arabic: 'Tajawal', sans-serif;
-  
+
   /* Font weight variants */
   --font-weight-extralight: 200;
   --font-weight-light: 300;
@@ -19,6 +19,18 @@
   --font-weight-bold: 700;
   --font-weight-extrabold: 800;
   --font-weight-black: 900;
+
+  /* Z-index scale - organized by layer hierarchy */
+  --z-base: 1;
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 2000;
+  --z-tooltip: 3000;
+  --z-transition-overlay: 4000;
+  --z-toast: 5000;
 }
 
 /* Font family utilities - Override Tailwind defaults */

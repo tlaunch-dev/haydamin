@@ -11,7 +11,6 @@ import { CollapsibleButtonMenu, ButtonConfig } from '../components/CollapsibleBu
 import { useLanguage } from '../context/LanguageContext';
 import { useHiddenMode } from '../context/HiddenModeContext';
 import { useNavigation } from '../context/NavigationContext';
-import { useZoomTransition } from '../context/ZoomTransitionContext';
 import { useAuth } from '../context/AuthContext';
 import { usePeople } from '../hooks/usePeople';
 import { useSwipeBack } from '../hooks/useSwipeBack';
@@ -69,12 +68,6 @@ const FamilyHub = () => {
     clearBackNavigationPending();
   }, [routePersonId]);
 
-  const {
-    zoomPhase,
-    hiddenPersonId,
-    startZoomTransition,
-    setHiddenPersonId,
-  } = useZoomTransition();
   const [showChildren, setShowChildren] = useState(false);
   const animationStartedRef = useRef(false);
 
@@ -100,10 +93,11 @@ const FamilyHub = () => {
       return;
     }
 
-    // Don't start if already started, or if we're in zoom-in phase
-    if (animationStartedRef.current || zoomPhase === 'zoom-in') {
+    // Don't start if already started
+    if (animationStartedRef.current) {
       return;
     }
+
 
     // Mark as started
     animationStartedRef.current = true;
@@ -117,32 +111,13 @@ const FamilyHub = () => {
     }, CHILDREN_START_DELAY * 1000); // Convert to milliseconds
 
     return () => clearTimeout(timer);
-  }, [routePersonId, zoomPhase, navigationDirection, TREE_WRAPPER_DELAY, TREE_WRAPPER_FADE, TREE_DROP_DELAY]);
+  }, [routePersonId, navigationDirection, TREE_WRAPPER_DELAY, TREE_WRAPPER_FADE, TREE_DROP_DELAY]);
 
   // Scroll to top on route change (especially important for iOS)
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [routePersonId]);
 
-  // Handle zoom transition click
-  const handleZoomClick = useCallback((person: Person, rect: DOMRect, showName: boolean, imageSrc: string) => {
-    // Hide the clicked card on current page
-    setHiddenPersonId(person.id);
-
-    // Start zoom transition with navigation callback
-    // Pass navigation direction in location state for forward navigation
-    startZoomTransition({
-      person,
-      startRect: rect,
-      showName,
-      imageSrc,
-      targetPersonId: person.id,
-      onNavigate: () => navigate(`/hub/${person.id}`, { 
-        replace: false,
-        state: { navigationDirection: 'forward' }
-      }),
-    });
-  }, [navigate, startZoomTransition, setHiddenPersonId]);
 
   // Get root person IDs from environment
   const ROOT_PERSON_1 = import.meta.env.VITE_ROOT_PERSON_ID_1 || 'teta-1';
@@ -429,42 +404,30 @@ const FamilyHub = () => {
       {/* Swipe-back gesture indicator */}
       <SwipeBackIndicator isSwipping={isSwipping} progress={swipeProgress} />
 
-      <AnimatePresence mode="wait">
+      <AnimatePresence initial={false}>
         <motion.div
           key={personId || 'root'}
-          className="p-3 sm:p-4 md:p-6 lg:p-8 pt-20 sm:pt-24 md:pt-20 min-h-screen flex flex-col relative overflow-hidden"
-          initial={{
-            opacity: navigationDirection === 'back' ? 1 : 0,
-            x: navigationDirection === 'back' ? '-100%' : 0
-          }}
-          animate={{
-            // For back nav: immediately visible and slide in
-            // For forward nav: Hidden during zoom-in, reveal during zoom-out
-            opacity: navigationDirection === 'back' ? 1 : (zoomPhase === 'zoom-in' ? 0 : 1),
-            x: 0
-          }}
-          transition={{
-            opacity: {
-              // No opacity transition on back nav
-              duration: navigationDirection === 'back' ? 0 : (zoomPhase === 'zoom-out' ? 0.8 : 0.5),
-              ease: [0.4, 0, 0.2, 1] as Easing,
-              // Delay to sync with when zoom-out position animation actually starts (after 400ms wait)
-              delay: navigationDirection === 'back' ? 0 : (zoomPhase === 'zoom-out' ? 0.4 : 0),
-            },
-            x: {
-              duration: navigationDirection === 'back' ? 0.3 : 0,
-              ease: [0.4, 0, 0.2, 1] as Easing,
-            }
-          }}
-          exit={{
-            opacity: navigationDirection === 'back' ? 1 : 0,
-            x: navigationDirection === 'back' ? '100%' : 0,
-            transition: {
-              duration: navigationDirection === 'back' ? 0.3 : 0.6,
-              ease: [0.4, 0, 0.2, 1] as Easing,
-            }
-          }}
-        >
+        className="p-3 sm:p-4 md:p-6 lg:p-8 pt-20 sm:pt-24 md:pt-20 min-h-screen flex flex-col relative overflow-hidden"
+        initial={{
+          opacity: navigationDirection === 'back' ? 1 : 0,
+          x: navigationDirection === 'back' ? '-100%' : 0
+        }}
+        animate={{
+          opacity: 1,
+          x: 0
+        }}
+        transition={{
+          duration: 0.5,
+          ease: [0.4, 0, 0.2, 1] as Easing,
+        }}
+        exit={{
+          opacity: 0,
+          transition: {
+            duration: 0.5,
+            ease: [0.4, 0, 0.2, 1] as Easing,
+          }
+        }}
+      >
 
       {/* Back Button */}
       {!isRootHub && (
@@ -502,7 +465,6 @@ const FamilyHub = () => {
                 isRootLevel={true}
                 showName={showNames}
                 disableInitialAnimation={true}
-                isHidden={hiddenPersonId === centerPerson.id}
               />
             </motion.div>
             <AnimatePresence>
@@ -584,8 +546,6 @@ const FamilyHub = () => {
                     variant="thumbnail"
                     showName={showNames}
                     disableInitialAnimation={true}
-                    onZoomClick={handleZoomClick}
-                    isHidden={hiddenPersonId === child.id}
                   />
                 </motion.div>
               ))}
@@ -601,11 +561,11 @@ const FamilyHub = () => {
           )}
         </AnimatePresence>
       </div>
-      </motion.div>
-    </AnimatePresence>
-    
-    {/* Corner Menu - outside animated container to stay fixed */}
-    <CollapsibleButtonMenu buttons={menuButtons} />
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Corner Menu - outside animated container to stay fixed */}
+      <CollapsibleButtonMenu buttons={menuButtons} />
     </>
   );
 };
