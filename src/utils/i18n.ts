@@ -31,7 +31,7 @@ export const getFacts = (person: Person, language: Language): string[] | undefin
 export const t = (key: string, language: Language): string => {
   const translations: Record<string, { en: string; ar: string }> = {
     // Common
-    'family': { en: 'Sadder Family', ar: 'بيت صضّر' },
+    'family': { en: 'Sadder Family', ar: 'بيت صدّر' },
     'family_of': { en: "'s Family", ar: 'عائلة ' },
     
     // Person Detail
