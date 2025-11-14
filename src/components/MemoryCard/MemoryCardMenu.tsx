@@ -1,3 +1,4 @@
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, Trash2, Pencil, Vault, MoreVertical } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
