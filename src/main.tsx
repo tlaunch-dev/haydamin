@@ -6,7 +6,6 @@ import { AuthProvider } from './context/AuthContext'
 import { HiddenModeProvider } from './context/HiddenModeContext'
 import { NavigationProvider } from './context/NavigationContext'
 import { DeviceProvider } from './context/DeviceContext'
-import { PlaybackProvider } from './context/PlaybackContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import App from './App.tsx'
 import './index.css'
@@ -40,11 +39,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <HiddenModeProvider>
             <NavigationProvider>
               <DeviceProvider>
-                <PlaybackProvider>
-                  <BrowserRouter>
-                    <App />
-                  </BrowserRouter>
-                </PlaybackProvider>
+                <BrowserRouter>
+                  <App />
+                </BrowserRouter>
               </DeviceProvider>
             </NavigationProvider>
           </HiddenModeProvider>
