@@ -747,11 +747,19 @@ export function PersonDetail() {
                             </>
                           )}
                           
-                          <span className={`${fontClass} font-semibold`}>{t('lives_in', language)}</span>
-                          <span className={fontClass}>{getLocation(person, language)}</span>
+                          {getLocation(person, language) && (
+                            <>
+                              <span className={`${fontClass} font-semibold`}>{t('lives_in', language)}</span>
+                              <span className={fontClass}>{getLocation(person, language)}</span>
+                            </>
+                          )}
                           
-                          <span className={`${fontClass} font-semibold`}>{t('loves', language)}</span>
-                          <span className={fontClass}>{getFavoriteFood(person, language)}</span>
+                          {getFavoriteFood(person, language) && (
+                            <>
+                              <span className={`${fontClass} font-semibold`}>{t('loves', language)}</span>
+                              <span className={fontClass}>{getFavoriteFood(person, language)}</span>
+                            </>
+                          )}
                         </div>
                         
                         {/* More About section */}
