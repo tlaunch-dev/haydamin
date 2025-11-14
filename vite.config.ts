@@ -42,7 +42,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'prompt', // Changed from 'autoUpdate' to prompt user for updates
+      registerType: 'autoUpdate', // Auto-update to match main.tsx behavior
       includeAssets: ['cedar.svg', 'favicon.ico'],
       manifest: {
         name: 'Hayda Min - هيدا مين؟',
@@ -95,15 +95,31 @@ export default defineConfig({
             urlPattern: /^https:\/\/(identitytoolkit|securetoken)\.googleapis\.com\/.*/i,
             handler: 'NetworkOnly',
           },
-          // Firebase Storage (images/videos) - serve cached, update in background
+          // Firebase Storage IMAGES - serve cached, update in background
           {
-            urlPattern: /^https:\/\/firebasestorage\.googleapis\.com\/.*/i,
+            urlPattern: /^https:\/\/firebasestorage\.googleapis\.com\/.*\.(jpg|jpeg|png|gif|webp|svg)/i,
             handler: 'StaleWhileRevalidate',
             options: {
-              cacheName: `firebase-storage-v${version}`,
+              cacheName: `firebase-images-v${version}`,
               expiration: {
                 maxEntries: 100,
                 maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          // Firebase Storage VIDEOS - network first with fallback cache
+          {
+            urlPattern: /^https:\/\/firebasestorage\.googleapis\.com\/.*\.(mp4|webm|mov|avi)/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: `firebase-videos-v${version}`,
+              networkTimeoutSeconds: 5,
+              expiration: {
+                maxEntries: 20, // Only cache recently played videos
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
               },
               cacheableResponse: {
                 statuses: [0, 200]

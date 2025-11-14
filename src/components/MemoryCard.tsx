@@ -154,18 +154,8 @@ export function MemoryCard({
             }
         )}
         whileHover={!isExpanded ? { scale: 1.02 } : {}}
-        whileTap={!isExpanded ? { scale: 0.98 } : {}}
-        onPointerDown={!isExpanded ? (e) => {
-          const target = e.currentTarget as HTMLElement;
-          target.setPointerCapture(e.pointerId); // Capture all events from this pointer
-          e.preventDefault();
-          e.stopPropagation();
-          handleCardClick();
-        } : undefined}
-        onPointerUp={!isExpanded ? (e) => {
-          const target = e.currentTarget as HTMLElement;
-          target.releasePointerCapture(e.pointerId); // Release capture
-        } : undefined}
+        onClick={!isExpanded ? handleCardClick : undefined}
+        style={!isExpanded ? { touchAction: 'pan-y' } : undefined}
         className={`
           bg-card rounded-xl md:rounded-2xl p-3 md:p-4 lg:p-5 shadow-sm relative
           ${!isExpanded ? 'cursor-pointer' : ''}

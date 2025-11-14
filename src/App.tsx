@@ -11,7 +11,7 @@ const FamilyHub = lazy(() => import('./pages/FamilyHub'));
 const PersonDetail = lazy(() => import('./pages/PersonDetail').then(module => ({ default: module.PersonDetail })));
 const AddPerson = lazy(() => import('./pages/AddPerson').then(module => ({ default: module.AddPerson })));
 const GalleryMode = lazy(() => import('./pages/GalleryMode').then(module => ({ default: module.GalleryMode })));
-const MemoriesPage = lazy(() => import('./pages/MemoriesPage').then(module => ({ default: module.MemoriesPage })));
+const MemoriesPage = lazy(() => import('./pages/MemoriesPageV2').then(module => ({ default: module.MemoriesPageV2 })));
 const Login = lazy(() => import('./pages/Login'));
 
 function AppRoutes() {

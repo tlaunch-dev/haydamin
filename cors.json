@@ -3,6 +3,12 @@
     "origin": ["*"],
     "method": ["GET", "HEAD"],
     "maxAgeSeconds": 3600,
-    "responseHeader": ["Content-Type", "Range"]
+    "responseHeader": [
+      "Content-Type",
+      "Range",
+      "Cache-Control",
+      "Content-Length",
+      "Accept-Ranges"
+    ]
   }
 ]

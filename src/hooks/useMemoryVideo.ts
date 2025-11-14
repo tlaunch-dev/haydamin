@@ -71,6 +71,18 @@ export const useMemoryVideo = ({
     const handleError = () => {
       const error = video.error;
 
+      // Log detailed error for debugging iOS issues
+      console.error('[VIDEO ERROR] iOS Debug:', {
+        memoryId: memory.id,
+        errorCode: error?.code,
+        errorMessage: error?.message,
+        videoSrc: video.src,
+        currentSrc: video.currentSrc,
+        networkState: video.networkState,
+        readyState: video.readyState,
+        crossOrigin: video.crossOrigin,
+      });
+
       // Only show error UI for actual media errors
       if (error && error.code) {
         setHasError(true);
@@ -134,12 +146,28 @@ export const useMemoryVideo = ({
   // Auto-play when card expands
   useEffect(() => {
     if (isExpanded && videoRef.current?.paused) {
-      // Play video when card finishes expanding
-      videoRef.current.play().catch(() => {
-        // Autoplay failed - user can manually play
+      const video = videoRef.current;
+      console.log('[VIDEO] Attempting autoplay:', {
+        memoryId: memory.id,
+        src: video.src,
+        readyState: video.readyState,
+        networkState: video.networkState,
       });
+
+      // Play video when card finishes expanding
+      video.play()
+        .then(() => {
+          console.log('[VIDEO] Autoplay succeeded:', memory.id);
+        })
+        .catch((error) => {
+          console.error('[VIDEO] Autoplay failed:', {
+            memoryId: memory.id,
+            error: error.message,
+            errorName: error.name,
+          });
+        });
     }
-  }, [isExpanded]);
+  }, [isExpanded, memory.id]);
 
   // Handle card click - just expand (video will auto-play via effect)
   const handleCardClick = () => {

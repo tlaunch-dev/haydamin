@@ -54,10 +54,7 @@ export function MemoryVideoPlayer({
         controls={false}
         muted={false}
         playsInline
-        onPointerDown={isExpanded ? (e) => {
-          e.preventDefault();
-          onVideoClick(e as any);
-        } : undefined}
+        onClick={isExpanded ? onVideoClick : undefined}
         className={`w-full h-full rounded-2xl object-contain ${
           !isExpanded ? 'opacity-0 pointer-events-none absolute inset-0' : 'opacity-100'
         }`}

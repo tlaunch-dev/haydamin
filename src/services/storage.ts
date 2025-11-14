@@ -60,8 +60,14 @@ export const uploadVideo = async (
   const extension = file.name.split('.').pop();
   const storageRef = ref(storage, `memories/${memoryId}/video.${extension}`);
 
+  // Set cache metadata for optimal video caching
+  const metadata = {
+    cacheControl: 'public, max-age=31536000, immutable', // 1 year - videos don't change
+    contentType: file.type,
+  };
+
   return new Promise((resolve, reject) => {
-    const uploadTask = uploadBytesResumable(storageRef, file);
+    const uploadTask = uploadBytesResumable(storageRef, file, metadata);
 
     uploadTask.on(
       'state_changed',
@@ -96,7 +102,13 @@ export const uploadThumbnail = async (
 ): Promise<string> => {
   const storageRef = ref(storage, `memories/${memoryId}/thumbnail.jpg`);
 
-  await uploadBytes(storageRef, file);
+  // Set cache metadata for optimal image caching
+  const metadata = {
+    cacheControl: 'public, max-age=31536000, immutable', // 1 year - thumbnails don't change
+    contentType: 'image/jpeg',
+  };
+
+  await uploadBytes(storageRef, file, metadata);
   const downloadURL = await getDownloadURL(storageRef);
 
   return downloadURL;
@@ -201,5 +213,23 @@ export const getVideoDuration = async (videoFile: File): Promise<number> => {
 
     video.src = URL.createObjectURL(videoFile);
   });
+};
+
+/**
+ * Refresh a video URL by regenerating download URL from storage reference
+ * Useful if cached URL becomes stale or has CORS issues
+ * @param videoURL - Current download URL of the video
+ * @returns Fresh download URL
+ */
+export const refreshVideoUrl = async (videoURL: string): Promise<string> => {
+  try {
+    const path = getPathFromURL(videoURL);
+    const videoRef = ref(storage, path);
+    const freshUrl = await getDownloadURL(videoRef);
+    return freshUrl;
+  } catch (error) {
+    console.error('Failed to refresh video URL:', error);
+    throw error;
+  }
 };
 

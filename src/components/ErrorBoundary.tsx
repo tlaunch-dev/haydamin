@@ -1,5 +1,4 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
-import { useLanguage } from '../context/LanguageContext';
 
 interface Props {
   children: ReactNode;
@@ -35,7 +34,16 @@ class ErrorBoundaryClass extends Component<Props, State> {
 
 // Fallback component with language support
 function ErrorFallback({ error }: { error: Error | null }) {
-  const { language } = useLanguage();
+  // Fallback to localStorage directly to avoid context dependency
+  let language: 'en' | 'ar' = 'en';
+  try {
+    const stored = localStorage.getItem('language');
+    if (stored === 'ar' || stored === 'en') {
+      language = stored;
+    }
+  } catch {
+    // If localStorage fails, keep default 'en'
+  }
   const fontClass = language === 'ar' ? 'font-arabic' : 'font-sans';
 
   const handleReload = () => {

@@ -9,6 +9,7 @@ export interface Person {
   relationship: string;       // English label (default) (e.g., "your daughter")
   relationshipAr: string;    // Arabic label (e.g., "ابنتك")
   primaryPhoto: string;       // URL to main photo
+  photoURL?: string;         // Alias for primaryPhoto (for compatibility)
   photos: string[];          // URLs to additional photos
   spouseId: string | null;   // Reference to spouse
   parentIds: string[];       // References to parents
@@ -94,10 +95,12 @@ export interface Memory {
   storytellerId: string;      // Person ID who's telling the story
   dateRecorded: Date;         // When was this video recorded
   durationSeconds: number;    // Video length in seconds
+  duration?: number;          // Alias for durationSeconds (for compatibility)
   featured?: boolean;         // Mark as featured (shows full width at top)
 
   // Optional metadata for future features
   featuredPeopleIds?: string[]; // Who's mentioned/shown in the video
+  people?: string[];          // Alias for featuredPeopleIds (for compatibility)
   tags?: string[];            // For future filtering/search
 
   createdAt: Date;
