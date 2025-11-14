@@ -41,8 +41,11 @@ export function MemoryVideoPanel({
   // Track if video has started loading successfully
   const hasLoadedDataRef = useRef(false);
 
-  // Detect if on mobile
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  // Video aspect ratio for flexible container sizing
+  const [videoAspectRatio, setVideoAspectRatio] = useState<number | null>(null);
+
+  // Detect iOS specifically for special handling
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
   // Reset states when memory changes
   useEffect(() => {
@@ -53,6 +56,7 @@ export function MemoryVideoPanel({
       setIsLoading(true);
       setIsPlaying(false);
       setHasUserInteracted(false);
+      setVideoAspectRatio(null); // Reset aspect ratio
     }
   }, [memory?.id]);
 
@@ -180,6 +184,13 @@ export function MemoryVideoPanel({
     hasLoadedDataRef.current = true;
     setIsLoading(false);
     setHasError(false);
+    
+    // Calculate and set video aspect ratio for flexible container sizing
+    const video = videoRef.current;
+    if (video && video.videoWidth && video.videoHeight) {
+      const aspectRatio = video.videoWidth / video.videoHeight;
+      setVideoAspectRatio(aspectRatio);
+    }
   };
 
   const handleVideoError = async () => {
@@ -264,9 +275,27 @@ export function MemoryVideoPanel({
         transition={{ duration: 0.3 }}
       />
 
-      {/* Video Panel */}
+      {/* Video Panel - Use dvh for better iOS Safari compatibility */}
       <motion.div
-        className="fixed bottom-0 left-0 right-0 z-50 bg-background rounded-t-3xl shadow-2xl overflow-hidden h-[50vh] md:h-[80vh]"
+        className="fixed bottom-0 left-0 right-0 z-50 bg-background rounded-t-3xl shadow-2xl flex flex-col"
+        style={{
+          // Use dvh (dynamic viewport height) for better iOS Safari compatibility
+          // Reserve space for close button (top) and safe areas
+          maxHeight: isIOS 
+            ? 'calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom))'
+            : '90dvh',
+          height: isIOS 
+            ? 'calc(100dvh - env(safe-area-inset-bottom))'
+            : '90dvh',
+          // Ensure panel uses flex layout
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden', // Prevent panel overflow, content scrolls internally
+          // iOS-specific: smooth scrolling
+          ...(isIOS && {
+            WebkitOverflowScrolling: 'touch',
+          }),
+        }}
         initial={{ y: '100%' }}
         animate={{
           y: isOpen ? 0 : '100%',
@@ -278,37 +307,65 @@ export function MemoryVideoPanel({
           stiffness: 300,
         }}
       >
-        {/* Header with Fullscreen Toggle (mobile only) */}
-        {isMobile && (
-          <div className="w-full flex items-center justify-between px-4 pt-3 pb-2 border-b border-text/10">
-            <button
-              onClick={handleFullscreen}
-              className="flex items-center gap-2 text-text/60 hover:text-text transition-colors text-sm"
-            >
-              <Maximize2 className="w-4 h-4" />
-              <span>{language === 'ar' ? 'ملء الشاشة' : 'Fullscreen'}</span>
-            </button>
-          </div>
-        )}
-
-        {/* Close Button */}
+        {/* Close Button - Fixed position, always visible */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-text/80 text-accent-text flex items-center justify-center hover:bg-text transition-colors"
+          className="absolute top-4 right-4 z-30 w-10 h-10 rounded-full bg-text/80 text-accent-text flex items-center justify-center hover:bg-text transition-colors"
+          style={{
+            // Account for safe area on iOS
+            top: isIOS ? 'calc(1rem + env(safe-area-inset-top))' : '1rem',
+            right: isIOS ? 'calc(1rem + env(safe-area-inset-right))' : '1rem',
+          }}
           aria-label={language === 'ar' ? 'إغلاق' : 'Close'}
         >
           <X className="w-5 h-5" />
         </button>
 
-        {/* Content Container */}
-        <div className="h-full px-4 pb-4 pt-2 flex flex-col overflow-hidden">
-          {/* Video Container */}
-          <div className="relative w-full bg-black rounded-xl overflow-hidden mb-4 flex-shrink-0" style={{ aspectRatio: '16/9' }}>
+        {/* Content Container - Flex layout with reserved caption space */}
+        <div 
+          className="px-4 pt-2 flex flex-col flex-1 min-h-0"
+          style={{
+            // iOS-specific: smooth scrolling
+            ...(isIOS && {
+              WebkitOverflowScrolling: 'touch',
+            }),
+            // Reserve space for close button at top
+            paddingTop: isIOS ? 'calc(3.5rem + env(safe-area-inset-top))' : '3.5rem',
+            // Reserve space for safe area at bottom
+            paddingBottom: isIOS ? 'calc(1.5rem + env(safe-area-inset-bottom))' : '1.5rem',
+          }}
+        >
+          {/* Video Container - Constrained to available space, never exceeds viewport */}
+          <div 
+            className="relative w-full bg-black rounded-xl overflow-hidden mb-4 flex items-center justify-center"
+            style={{ 
+              // Prevent video container from shrinking
+              flexShrink: 0,
+              width: '100%',
+              minHeight: '200px',
+              // Calculate max height: panel height - close button - caption reserve - padding
+              // Reserve minimum 140px for caption area (title + date + caption + people + nav)
+              maxHeight: isIOS
+                ? 'calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 3.5rem - 140px - 1rem)'
+                : 'calc(90dvh - 3.5rem - 140px - 1rem)',
+              // Use calculated aspect ratio if available, otherwise use default 16/9
+              // For vertical videos, allow more height; for horizontal, constrain width
+              ...(videoAspectRatio ? {
+                aspectRatio: `${videoAspectRatio}`,
+              } : {
+                aspectRatio: '16/9',
+              }),
+            }}
+          >
             <video
               ref={videoRef}
               src={currentVideoUrl}
               poster={memory.thumbnailUrl}
               className="w-full h-full object-contain"
+              style={{
+                // Video fills container while maintaining aspect ratio via object-contain
+                display: 'block',
+              }}
               playsInline
               crossOrigin="anonymous"
               muted={!hasUserInteracted}
@@ -321,16 +378,31 @@ export function MemoryVideoPanel({
               onPause={() => setIsPlaying(false)}
             />
 
+            {/* Fullscreen Button - Overlay on video, always visible */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleFullscreen();
+              }}
+              className="absolute bottom-3 right-3 z-20 px-3 py-2 rounded-lg bg-black/70 hover:bg-black/90 text-white flex items-center gap-2 transition-colors backdrop-blur-sm"
+              aria-label={language === 'ar' ? 'ملء الشاشة' : 'Fullscreen'}
+            >
+              <Maximize2 className="w-4 h-4" />
+              <span className="text-sm font-medium">
+                {language === 'ar' ? 'ملء الشاشة' : 'Fullscreen'}
+              </span>
+            </button>
+
             {/* Loading Spinner */}
             {isLoading && !hasError && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
                 <div className="w-12 h-12 border-4 border-accent border-t-transparent rounded-full animate-spin" />
               </div>
             )}
 
             {/* Error State */}
             {hasError && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 text-white p-4">
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 text-white p-4 z-10">
                 <AlertCircle className="w-12 h-12 mb-4 text-red-400" />
                 <p className="text-lg font-medium mb-2">
                   {language === 'ar' ? 'فشل تحميل الفيديو' : 'Failed to load video'}
@@ -352,7 +424,7 @@ export function MemoryVideoPanel({
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ duration: 0.2 }}
-                className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
               >
                 <div className="w-20 h-20 rounded-full bg-black/60 flex items-center justify-center">
                   {isPlaying ? (
@@ -365,8 +437,18 @@ export function MemoryVideoPanel({
             )}
           </div>
 
-          {/* Memory Info */}
-          <div className="space-y-3 flex-1 overflow-y-auto min-h-0">
+          {/* Memory Info - Reserved space, scrollable if needed */}
+          <div 
+            className="space-y-3 flex-shrink-0 overflow-y-auto"
+            style={{
+              // Ensure minimum height for caption area
+              minHeight: '120px',
+              // iOS-specific: smooth scrolling
+              ...(isIOS && {
+                WebkitOverflowScrolling: 'touch',
+              }),
+            }}
+          >
             {/* Title */}
             <h2 className="text-2xl md:text-3xl font-bold text-text">
               {title}
@@ -377,7 +459,7 @@ export function MemoryVideoPanel({
               {dateStr}
             </p>
 
-            {/* Caption */}
+            {/* Caption - Fully visible, no truncation */}
             {caption && (
               <p className="text-base md:text-lg text-text/80 leading-relaxed break-words whitespace-pre-wrap">
                 {caption}
@@ -406,29 +488,29 @@ export function MemoryVideoPanel({
                 ))}
               </div>
             )}
-          </div>
 
-          {/* Navigation Hints */}
-          {(onNext || onPrevious) && (
-            <div className="mt-6 flex justify-between items-center text-sm text-text/50">
-              {onPrevious && (
-                <button
-                  onClick={onPrevious}
-                  className="px-4 py-2 hover:text-text transition-colors"
-                >
-                  ← {language === 'ar' ? 'السابق' : 'Previous'}
-                </button>
-              )}
-              {onNext && (
-                <button
-                  onClick={onNext}
-                  className="px-4 py-2 hover:text-text transition-colors ml-auto"
-                >
-                  {language === 'ar' ? 'التالي' : 'Next'} →
-                </button>
-              )}
-            </div>
-          )}
+            {/* Navigation Hints */}
+            {(onNext || onPrevious) && (
+              <div className="mt-6 flex justify-between items-center text-sm text-text/50">
+                {onPrevious && (
+                  <button
+                    onClick={onPrevious}
+                    className="px-4 py-2 hover:text-text transition-colors"
+                  >
+                    ← {language === 'ar' ? 'السابق' : 'Previous'}
+                  </button>
+                )}
+                {onNext && (
+                  <button
+                    onClick={onNext}
+                    className="px-4 py-2 hover:text-text transition-colors ml-auto"
+                  >
+                    {language === 'ar' ? 'التالي' : 'Next'} →
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </motion.div>
     </>
