@@ -188,6 +188,7 @@ export const CollapsibleButtonMenu = memo(function CollapsibleButtonMenu({ butto
     <div
       ref={menuRef}
       className={`fixed top-0 safe-right z-50 ios-fixed-optimized ${className}`}
+      dir="ltr"
     >
       {/* Semi-circle toggle button - touches both edges of corner */}
       <motion.button
@@ -236,7 +237,7 @@ export const CollapsibleButtonMenu = memo(function CollapsibleButtonMenu({ butto
             title={button.label}
           >
             <span className="text-sm md:text-base text-text whitespace-nowrap flex-1 text-right">{button.label}</span>
-            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-accent/20 flex items-center justify-center shrink-0">
               {button.icon}
             </div>
           </button>
@@ -245,17 +246,19 @@ export const CollapsibleButtonMenu = memo(function CollapsibleButtonMenu({ butto
     </div>
   );
 }, (prevProps, nextProps) => {
-  // Only re-render if buttons array actually changed (by ID and show state)
+  // Only re-render if buttons array actually changed (by ID, show state, label, or icon)
   if (prevProps.buttons.length !== nextProps.buttons.length) return false;
   if (prevProps.className !== nextProps.className) return false;
   
   return prevProps.buttons.every((prevBtn, index) => {
     const nextBtn = nextProps.buttons[index];
+    // Compare labels to detect language changes - this ensures menu updates immediately when language changes
     return (
       prevBtn.id === nextBtn.id &&
       prevBtn.show === nextBtn.show &&
       prevBtn.disabled === nextBtn.disabled &&
-      prevBtn.beta === nextBtn.beta
+      prevBtn.beta === nextBtn.beta &&
+      prevBtn.label === nextBtn.label
     );
   });
 });
