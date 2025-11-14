@@ -366,7 +366,7 @@ export function MemoryVideoPanel({
           </div>
 
           {/* Memory Info */}
-          <div className="space-y-3 flex-1 overflow-y-auto">
+          <div className="space-y-3 flex-1 overflow-y-auto min-h-0">
             {/* Title */}
             <h2 className="text-2xl md:text-3xl font-bold text-text">
               {title}
@@ -379,7 +379,7 @@ export function MemoryVideoPanel({
 
             {/* Caption */}
             {caption && (
-              <p className="text-base md:text-lg text-text/80 leading-relaxed">
+              <p className="text-base md:text-lg text-text/80 leading-relaxed break-words whitespace-pre-wrap">
                 {caption}
               </p>
             )}
