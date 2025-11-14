@@ -75,7 +75,7 @@ export function PersonDetail() {
   const { language, toggleLanguage } = useLanguage();
   const { showNames } = useHiddenMode();
   const { navigationDirection: contextDirection } = useNavigation();
-  const { initialLoadComplete, user } = useAuth();
+  const { initialLoadComplete } = useAuth();
   const { isTouchDevice } = useDevice();
 
   // Navigation direction: check location state first (for forward nav with state),
