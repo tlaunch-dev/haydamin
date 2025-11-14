@@ -5,6 +5,7 @@ import { Memory, Person } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import { getTimeAgo } from '../utils/dateUtils';
 import { refreshVideoUrl } from '../services/storage';
+import { useIOSDetection } from '../hooks/useIOSDetection';
 
 
 
@@ -27,6 +28,7 @@ export function MemoryVideoPanel({
 }: MemoryVideoPanelProps) {
   const { language } = useLanguage();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { isIOS } = useIOSDetection();
 
   // Video playback state
   const [isPlaying, setIsPlaying] = useState(false);
@@ -41,11 +43,10 @@ export function MemoryVideoPanel({
   // Track if video has started loading successfully
   const hasLoadedDataRef = useRef(false);
 
-  // Video aspect ratio for flexible container sizing
-  const [videoAspectRatio, setVideoAspectRatio] = useState<number | null>(null);
-
-  // Detect iOS specifically for special handling
-  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  // Video aspect ratio - use stored value if available, otherwise detect from video
+  const [videoAspectRatio, setVideoAspectRatio] = useState<number | null>(
+    memory?.videoAspectRatio || null
+  );
 
   // Reset states when memory changes
   useEffect(() => {
@@ -56,9 +57,10 @@ export function MemoryVideoPanel({
       setIsLoading(true);
       setIsPlaying(false);
       setHasUserInteracted(false);
-      setVideoAspectRatio(null); // Reset aspect ratio
+      // Use stored aspect ratio if available, otherwise reset to null for detection
+      setVideoAspectRatio(memory.videoAspectRatio || null);
     }
-  }, [memory?.id]);
+  }, [memory?.id, memory?.videoAspectRatio]);
 
   // Auto-play when panel opens (muted initially for iOS compatibility)
   useEffect(() => {
@@ -184,12 +186,14 @@ export function MemoryVideoPanel({
     hasLoadedDataRef.current = true;
     setIsLoading(false);
     setHasError(false);
-    
-    // Calculate and set video aspect ratio for flexible container sizing
-    const video = videoRef.current;
-    if (video && video.videoWidth && video.videoHeight) {
-      const aspectRatio = video.videoWidth / video.videoHeight;
-      setVideoAspectRatio(aspectRatio);
+
+    // Only calculate aspect ratio if not already stored (backwards compatibility)
+    if (!memory?.videoAspectRatio) {
+      const video = videoRef.current;
+      if (video && video.videoWidth && video.videoHeight) {
+        const aspectRatio = video.videoWidth / video.videoHeight;
+        setVideoAspectRatio(aspectRatio);
+      }
     }
   };
 

@@ -98,6 +98,10 @@ export interface Memory {
   duration?: number;          // Alias for durationSeconds (for compatibility)
   featured?: boolean;         // Mark as featured (shows full width at top)
 
+  // Media dimensions (prevents layout shift)
+  thumbnailAspectRatio?: number;  // width / height of thumbnail (e.g., 1.78 for 16:9)
+  videoAspectRatio?: number;      // width / height of video (e.g., 0.56 for 9:16 vertical)
+
   // Optional metadata for future features
   featuredPeopleIds?: string[]; // Who's mentioned/shown in the video
   people?: string[];          // Alias for featuredPeopleIds (for compatibility)

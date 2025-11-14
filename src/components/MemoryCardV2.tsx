@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Play } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, memo } from 'react';
 import { Memory, Person } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
@@ -19,7 +19,7 @@ interface MemoryCardV2Props {
   onClick: () => void;
 }
 
-export function MemoryCardV2({
+function MemoryCardV2Component({
   memory,
   people,
   isFeatured = false,
@@ -55,23 +55,29 @@ export function MemoryCardV2({
   const caption = language === 'ar' ? memory.captionAr : memory.caption;
   const dateStr = getTimeAgo(memory.dateRecorded, language);
 
-  // Thumbnail aspect ratio detection
-  const [thumbnailAspectRatio, setThumbnailAspectRatio] = useState<number | null>(null);
+  // Thumbnail aspect ratio - use stored value if available, otherwise detect dynamically
+  const [thumbnailAspectRatio, setThumbnailAspectRatio] = useState<number | null>(
+    memory.thumbnailAspectRatio || null
+  );
   const thumbnailRef = useRef<HTMLImageElement>(null);
   const isVerticalThumbnail = thumbnailAspectRatio !== null && thumbnailAspectRatio < 1;
 
-  // Detect thumbnail orientation when image loads
+  // Only detect aspect ratio dynamically if not stored in database (backwards compatibility)
   useEffect(() => {
-    // Reset aspect ratio when memory changes
+    // If aspect ratio is already stored, don't recalculate
+    if (memory.thumbnailAspectRatio) {
+      setThumbnailAspectRatio(memory.thumbnailAspectRatio);
+      return;
+    }
+
+    // Fallback: Calculate dynamically for old memories without stored aspect ratio
     setThumbnailAspectRatio(null);
-    
+
     const img = thumbnailRef.current;
     if (img && img.complete) {
-      // Image already loaded
       const aspectRatio = img.naturalWidth / img.naturalHeight;
       setThumbnailAspectRatio(aspectRatio);
     } else if (img) {
-      // Wait for image to load
       const handleLoad = () => {
         const aspectRatio = img.naturalWidth / img.naturalHeight;
         setThumbnailAspectRatio(aspectRatio);
@@ -79,7 +85,7 @@ export function MemoryCardV2({
       img.addEventListener('load', handleLoad);
       return () => img.removeEventListener('load', handleLoad);
     }
-  }, [memory.thumbnailUrl, memory.id]);
+  }, [memory.thumbnailUrl, memory.id, memory.thumbnailAspectRatio]);
 
   // Handle menu close
   const handleMenuClose = () => {
@@ -244,3 +250,18 @@ export function MemoryCardV2({
     </motion.div>
   );
 }
+
+// Memoize to prevent unnecessary re-renders when parent updates
+export const MemoryCardV2 = memo(MemoryCardV2Component, (prevProps, nextProps) => {
+  // Only re-render if memory data or key props change
+  return (
+    prevProps.memory.id === nextProps.memory.id &&
+    prevProps.memory.thumbnailUrl === nextProps.memory.thumbnailUrl &&
+    prevProps.memory.title === nextProps.memory.title &&
+    prevProps.memory.titleAr === nextProps.memory.titleAr &&
+    prevProps.memory.featured === nextProps.memory.featured &&
+    prevProps.isFeatured === nextProps.isFeatured &&
+    prevProps.index === nextProps.index &&
+    prevProps.showNode === nextProps.showNode
+  );
+});

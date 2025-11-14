@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useMemories } from '../hooks/useMemories';
 import { usePeople } from '../hooks/usePeople';
@@ -25,25 +25,7 @@ export function MemoriesPageV2() {
   // Upload modal state
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
-  // Animation trigger state
-  const [shouldAnimate, setShouldAnimate] = useState(false);
-
   const loading = memoriesLoading || peopleLoading;
-
-  // Trigger animation when memories are loaded
-  useEffect(() => {
-    if (!loading && memories.length > 0) {
-      let rafId: number;
-      rafId = requestAnimationFrame(() => {
-        rafId = requestAnimationFrame(() => {
-          setShouldAnimate(true);
-        });
-      });
-      return () => cancelAnimationFrame(rafId);
-    } else if (memories.length === 0) {
-      setShouldAnimate(false);
-    }
-  }, [loading, memories.length]);
 
   // Handle memory card click - open video panel
   const handleMemoryClick = (memory: Memory) => {
@@ -180,7 +162,8 @@ export function MemoriesPageV2() {
                 style={{ zIndex: 20 }}
                 variants={containerVariants}
                 initial="hidden"
-                animate={shouldAnimate ? "visible" : "hidden"}
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.1 }}
               >
                 {memories.map((memory, index) => {
                   // Determine if this card should show a node (cards after the featured one)

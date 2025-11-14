@@ -21,6 +21,47 @@ interface MemoryUploadModalProps {
 
 const MAX_VIDEO_SIZE = 300 * 1024 * 1024; // 300MB in bytes
 
+// Helper to calculate video aspect ratio
+const getVideoAspectRatio = (videoFile: File): Promise<number> => {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+
+    video.onloadedmetadata = () => {
+      URL.revokeObjectURL(video.src);
+      const aspectRatio = video.videoWidth / video.videoHeight;
+      resolve(aspectRatio);
+    };
+
+    video.onerror = () => {
+      URL.revokeObjectURL(video.src);
+      reject(new Error('Failed to load video metadata'));
+    };
+
+    video.src = URL.createObjectURL(videoFile);
+  });
+};
+
+// Helper to calculate thumbnail aspect ratio
+const getThumbnailAspectRatio = (thumbnailBlob: Blob): Promise<number> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+
+    img.onload = () => {
+      URL.revokeObjectURL(img.src);
+      const aspectRatio = img.width / img.height;
+      resolve(aspectRatio);
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(img.src);
+      reject(new Error('Failed to load thumbnail'));
+    };
+
+    img.src = URL.createObjectURL(thumbnailBlob);
+  });
+};
+
 export function MemoryUploadModal({ isOpen, onClose, people, memory, onSuccess }: MemoryUploadModalProps) {
   const { language } = useLanguage();
   const isEditMode = !!memory;
@@ -177,6 +218,10 @@ export function MemoryUploadModal({ isOpen, onClose, people, memory, onSuccess }
         // Step 3: Get video duration
         const duration = await getVideoDuration(videoFile!);
 
+        // Step 3.5: Calculate aspect ratios
+        const videoAspectRatio = await getVideoAspectRatio(videoFile!);
+        const thumbnailAspectRatio = await getThumbnailAspectRatio(thumbnailBlob!);
+
         // Step 4: Save to Firestore
         setCurrentStep('saving');
         await addMemory({
@@ -189,6 +234,8 @@ export function MemoryUploadModal({ isOpen, onClose, people, memory, onSuccess }
           storytellerId,
           dateRecorded: recordedDate,
           durationSeconds: duration,
+          videoAspectRatio,
+          thumbnailAspectRatio,
           createdAt: new Date(),
           updatedAt: new Date(),
         });
