@@ -193,15 +193,6 @@ export function MemoryCardV2({
               )}
             </div>
           )}
-
-          {/* Featured Badge */}
-          {isFeatured && (
-            <div className="pt-2">
-              <span className="inline-flex items-center px-3 py-1 bg-accent/20 text-accent rounded-full text-xs font-medium">
-                ⭐ {language === 'ar' ? 'مميز' : 'Featured'}
-              </span>
-            </div>
-          )}
         </div>
       </motion.div>
 
