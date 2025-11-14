@@ -6,6 +6,8 @@ import { useLanguage } from '../context/LanguageContext';
 import { getTimeAgo } from '../utils/dateUtils';
 import { refreshVideoUrl } from '../services/storage';
 
+
+
 interface MemoryVideoPanelProps {
   memory: Memory | null;
   people: Person[];
@@ -41,9 +43,13 @@ export function MemoryVideoPanel({
   // User interaction state
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
 
+  // Track if video has started loading successfully
+  const hasLoadedDataRef = useRef(false);
+
   // Reset states when memory changes
   useEffect(() => {
     if (memory) {
+      hasLoadedDataRef.current = false;
       setCurrentVideoUrl(memory.videoUrl);
       setHasError(false);
       setIsLoading(true);
@@ -128,45 +134,34 @@ export function MemoryVideoPanel({
     .map((personId: string) => people.find((p: Person) => p.id === personId))
     .filter((p): p is Person => p !== undefined);
 
-  // Calculate panel height based on state
-  const getPanelHeight = () => {
-    if (!isOpen) return '0%';
-    if (isFullscreen) return '100vh';
-    return '75vh'; // Default expanded state
-  };
 
   // Handle drag end - snap to closest position
   const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const velocity = info.velocity.y;
-    const offset = info.offset.y;
+    const { offset, velocity } = info;
 
-    // Ignore very small drags (clicks or tiny movements)
-    if (Math.abs(offset) < 10 && Math.abs(velocity) < 100) {
-      return;
-    }
-
-    // Quick flick down - close
-    if (velocity > 500) {
+    // Fast swipe down - close
+    if (velocity.y > 500) {
       onClose();
       return;
     }
 
-    // Quick flick up from 75% - go fullscreen
-    if (velocity < -500 && !isFullscreen) {
+    // Fast swipe up - fullscreen
+    if (velocity.y < -500 && !isFullscreen) {
       setIsFullscreen(true);
       return;
     }
 
-    // Slow drag - snap based on distance
-    if (offset > 150) {
-      // Dragged down significantly - close
-      onClose();
-    } else if (offset < -150 && !isFullscreen) {
-      // Dragged up significantly - fullscreen
+    // Slow drag - check distance
+    if (offset.y > 100) {
+      // Dragged down
+      if (isFullscreen) {
+        setIsFullscreen(false); // Exit fullscreen
+      } else {
+        onClose(); // Close panel
+      }
+    } else if (offset.y < -100 && !isFullscreen) {
+      // Dragged up
       setIsFullscreen(true);
-    } else if (offset > 50 && isFullscreen) {
-      // Dragged down from fullscreen - go to 75%
-      setIsFullscreen(false);
     }
   };
 
@@ -210,7 +205,14 @@ export function MemoryVideoPanel({
     setTimeout(() => setShowPlayPause(false), 600);
   };
 
+  const handleVideoLoadedData = () => {
+    // Mark that video has successfully started loading
+    hasLoadedDataRef.current = true;
+  };
+
   const handleVideoReady = () => {
+    // Video is ready to play
+    hasLoadedDataRef.current = true;
     setIsLoading(false);
     setHasError(false);
   };
@@ -228,29 +230,38 @@ export function MemoryVideoPanel({
       });
     }
 
-    // Try refreshing the URL once
-    if (!hasError && memory) {
-      console.log('[VIDEO PANEL] Attempting URL refresh...');
-      try {
-        const freshUrl = await refreshVideoUrl(memory.videoUrl);
-        setCurrentVideoUrl(freshUrl);
-        if (video) {
-          video.src = freshUrl;
-          video.load();
+    // Only show error if video has started loading (not spurious initial error)
+    // Video readyState will be HAVE_NOTHING (0) or HAVE_METADATA (1) if it failed early
+    if (video && hasLoadedDataRef.current && video.readyState < 2) {
+      // Video genuinely failed after starting to load - try URL refresh
+      if (!hasError && memory) {
+        console.log('[VIDEO PANEL] Attempting URL refresh...');
+        try {
+          const freshUrl = await refreshVideoUrl(memory.videoUrl);
+          setCurrentVideoUrl(freshUrl);
+          hasLoadedDataRef.current = false; // Reset for new attempt
+          if (video) {
+            video.src = freshUrl;
+            video.load();
+          }
+        } catch (error) {
+          console.error('[VIDEO PANEL] URL refresh failed:', error);
+          setHasError(true);
+          setIsLoading(false);
         }
-      } catch (error) {
-        console.error('[VIDEO PANEL] URL refresh failed:', error);
+      } else {
         setHasError(true);
         setIsLoading(false);
       }
-    } else {
-      setHasError(true);
-      setIsLoading(false);
+    } else if (video && video.readyState >= 2) {
+      // Video has loaded data successfully - ignore transient errors
+      console.log('[VIDEO PANEL] Ignoring transient error, video has data');
     }
   };
 
   const handleRetry = () => {
     if (videoRef.current && memory) {
+      hasLoadedDataRef.current = false;
       setHasError(false);
       setIsLoading(true);
       videoRef.current.src = currentVideoUrl;
@@ -279,14 +290,16 @@ export function MemoryVideoPanel({
         drag="y"
         dragControls={dragControls}
         dragListener={false}
-        dragConstraints={{ top: 0, bottom: 300 }}
-        dragElastic={{ top: 0, bottom: 0.2 }}
+        dragConstraints={{ top: -200, bottom: 300 }}
+        dragElastic={0.2}
         onDragEnd={handleDragEnd}
         className="fixed bottom-0 left-0 right-0 z-50 bg-background rounded-t-3xl shadow-2xl overflow-hidden pb-safe"
+        style={{
+          height: isFullscreen ? '100vh' : '75vh',
+        }}
         initial={{ y: '100%' }}
         animate={{
           y: isOpen ? 0 : '100%',
-          height: getPanelHeight(),
         }}
         exit={{ y: '100%' }}
         transition={{
@@ -329,6 +342,7 @@ export function MemoryVideoPanel({
               muted={!hasUserInteracted}
               preload="auto"
               onClick={handleVideoClick}
+              onLoadedData={handleVideoLoadedData}
               onCanPlay={handleVideoReady}
               onError={handleVideoError}
               onPlay={() => setIsPlaying(true)}
