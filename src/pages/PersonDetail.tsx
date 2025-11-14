@@ -75,7 +75,7 @@ export function PersonDetail() {
   const { language, toggleLanguage } = useLanguage();
   const { showNames } = useHiddenMode();
   const { navigationDirection: contextDirection } = useNavigation();
-  const { initialLoadComplete } = useAuth();
+  const { initialLoadComplete, user } = useAuth();
   const { isTouchDevice } = useDevice();
 
   // Navigation direction: check location state first (for forward nav with state),
@@ -743,7 +743,9 @@ export function PersonDetail() {
                           {person.birthday && (
                             <>
                               <span className={`${fontClass} font-semibold`}>{t('age', language)}</span>
-                              <span className={fontClass}>{calculateAge(person.birthday)}</span>
+                              <span className={fontClass}>
+                                {personId === 'safa-1' ? 28 : personId === 'jiddo-1' ? '???' : calculateAge(person.birthday)}
+                              </span>
                             </>
                           )}
                           
