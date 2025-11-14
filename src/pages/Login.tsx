@@ -16,8 +16,9 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // Map username to email for Firebase
-      const email = username === 'sadder' ? 'family@haydamin.com' : `${username}@haydamin.local`;
+      // Map username to email for Firebase (case-insensitive)
+      const normalizedUsername = username.toLowerCase();
+      const email = normalizedUsername === 'sadder' ? 'family@haydamin.com' : `${normalizedUsername}@haydamin.local`;
       await signIn(email, password);
       navigate('/');
     } catch (err: any) {
