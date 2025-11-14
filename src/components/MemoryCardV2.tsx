@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Play } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
 import { Memory, Person } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
@@ -53,6 +54,32 @@ export function MemoryCardV2({
   const title = language === 'ar' ? memory.titleAr : memory.title;
   const caption = language === 'ar' ? memory.captionAr : memory.caption;
   const dateStr = getTimeAgo(memory.dateRecorded, language);
+
+  // Thumbnail aspect ratio detection
+  const [thumbnailAspectRatio, setThumbnailAspectRatio] = useState<number | null>(null);
+  const thumbnailRef = useRef<HTMLImageElement>(null);
+  const isVerticalThumbnail = thumbnailAspectRatio !== null && thumbnailAspectRatio < 1;
+
+  // Detect thumbnail orientation when image loads
+  useEffect(() => {
+    // Reset aspect ratio when memory changes
+    setThumbnailAspectRatio(null);
+    
+    const img = thumbnailRef.current;
+    if (img && img.complete) {
+      // Image already loaded
+      const aspectRatio = img.naturalWidth / img.naturalHeight;
+      setThumbnailAspectRatio(aspectRatio);
+    } else if (img) {
+      // Wait for image to load
+      const handleLoad = () => {
+        const aspectRatio = img.naturalWidth / img.naturalHeight;
+        setThumbnailAspectRatio(aspectRatio);
+      };
+      img.addEventListener('load', handleLoad);
+      return () => img.removeEventListener('load', handleLoad);
+    }
+  }, [memory.thumbnailUrl, memory.id]);
 
   // Handle menu close
   const handleMenuClose = () => {
@@ -116,12 +143,23 @@ export function MemoryCardV2({
         )}
 
         {/* Thumbnail with Play Button Overlay */}
-        <div className="relative w-full aspect-video bg-card-dark rounded-lg md:rounded-xl overflow-hidden mb-3 md:mb-4">
+        <div 
+          className="relative w-full bg-card-dark rounded-lg md:rounded-xl overflow-hidden mb-3 md:mb-4"
+          style={{
+            // Use detected aspect ratio if available, otherwise default to 16:9
+            aspectRatio: thumbnailAspectRatio ? `${thumbnailAspectRatio}` : '16/9',
+            // For vertical videos, limit max height to prevent cards from being too tall
+            ...(isVerticalThumbnail && {
+              maxHeight: '400px',
+            }),
+          }}
+        >
           {/* Thumbnail Image */}
           <img
+            ref={thumbnailRef}
             src={memory.thumbnailUrl}
             alt={title}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
             loading="lazy"
           />
 
