@@ -236,10 +236,14 @@ export function MemoryVideoPanel({
 
   const handleFullscreen = () => {
     if (videoRef.current) {
-      if (videoRef.current.requestFullscreen) {
+      // iOS Safari uses webkitEnterFullscreen for video elements
+      if ((videoRef.current as any).webkitEnterFullscreen) {
+        (videoRef.current as any).webkitEnterFullscreen();
+      } else if (videoRef.current.requestFullscreen) {
+        // Standard browsers
         videoRef.current.requestFullscreen();
       } else if ((videoRef.current as any).webkitRequestFullscreen) {
-        // Safari support
+        // Older Safari desktop
         (videoRef.current as any).webkitRequestFullscreen();
       }
     }
