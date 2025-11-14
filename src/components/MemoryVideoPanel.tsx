@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { motion, PanInfo, useDragControls } from 'framer-motion';
-import { X, Play, Pause, AlertCircle, RefreshCw } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { X, Play, Pause, AlertCircle, RefreshCw, Maximize2 } from 'lucide-react';
 import { Memory, Person } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import { getTimeAgo } from '../utils/dateUtils';
@@ -27,8 +27,6 @@ export function MemoryVideoPanel({
 }: MemoryVideoPanelProps) {
   const { language } = useLanguage();
   const videoRef = useRef<HTMLVideoElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const dragControls = useDragControls();
 
   // Video playback state
   const [isPlaying, setIsPlaying] = useState(false);
@@ -37,14 +35,14 @@ export function MemoryVideoPanel({
   const [showPlayPause, setShowPlayPause] = useState(false);
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string>('');
 
-  // Panel state
-  const [isFullscreen, setIsFullscreen] = useState(false);
-
   // User interaction state
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
 
   // Track if video has started loading successfully
   const hasLoadedDataRef = useRef(false);
+
+  // Detect if on mobile
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
   // Reset states when memory changes
   useEffect(() => {
@@ -55,7 +53,6 @@ export function MemoryVideoPanel({
       setIsLoading(true);
       setIsPlaying(false);
       setHasUserInteracted(false);
-      setIsFullscreen(false);
     }
   }, [memory?.id]);
 
@@ -134,40 +131,8 @@ export function MemoryVideoPanel({
     .map((personId: string) => people.find((p: Person) => p.id === personId))
     .filter((p): p is Person => p !== undefined);
 
-
-  // Handle drag end - snap to closest position
-  const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const { offset, velocity } = info;
-
-    // Fast swipe down - close
-    if (velocity.y > 500) {
-      onClose();
-      return;
-    }
-
-    // Fast swipe up - fullscreen
-    if (velocity.y < -500 && !isFullscreen) {
-      setIsFullscreen(true);
-      return;
-    }
-
-    // Slow drag - check distance
-    if (offset.y > 100) {
-      // Dragged down
-      if (isFullscreen) {
-        setIsFullscreen(false); // Exit fullscreen
-      } else {
-        onClose(); // Close panel
-      }
-    } else if (offset.y < -100 && !isFullscreen) {
-      // Dragged up
-      setIsFullscreen(true);
-    }
-  };
-
   // Video event handlers
   const handleVideoClick = async (e?: React.MouseEvent) => {
-    // Prevent drag system from detecting this as a drag
     e?.stopPropagation();
 
     if (!videoRef.current) return;
@@ -269,6 +234,17 @@ export function MemoryVideoPanel({
     }
   };
 
+  const handleFullscreen = () => {
+    if (videoRef.current) {
+      if (videoRef.current.requestFullscreen) {
+        videoRef.current.requestFullscreen();
+      } else if ((videoRef.current as any).webkitRequestFullscreen) {
+        // Safari support
+        (videoRef.current as any).webkitRequestFullscreen();
+      }
+    }
+  };
+
   return (
     <>
       {/* Background Dimmer */}
@@ -276,7 +252,7 @@ export function MemoryVideoPanel({
         className="fixed inset-0 bg-black z-40"
         initial={{ opacity: 0 }}
         animate={{
-          opacity: isOpen ? (isFullscreen ? 0.95 : 0.6) : 0,
+          opacity: isOpen ? 0.6 : 0,
           pointerEvents: isOpen ? 'auto' : 'none',
         }}
         exit={{ opacity: 0 }}
@@ -286,17 +262,7 @@ export function MemoryVideoPanel({
 
       {/* Video Panel */}
       <motion.div
-        ref={containerRef}
-        drag="y"
-        dragControls={dragControls}
-        dragListener={false}
-        dragConstraints={{ top: -200, bottom: 300 }}
-        dragElastic={0.2}
-        onDragEnd={handleDragEnd}
-        className="fixed bottom-0 left-0 right-0 z-50 bg-background rounded-t-3xl shadow-2xl overflow-hidden pb-safe"
-        style={{
-          height: isFullscreen ? '100vh' : '75vh',
-        }}
+        className="fixed bottom-0 left-0 right-0 z-50 bg-background rounded-t-3xl shadow-2xl overflow-hidden h-[50vh] md:h-[80vh]"
         initial={{ y: '100%' }}
         animate={{
           y: isOpen ? 0 : '100%',
@@ -308,13 +274,18 @@ export function MemoryVideoPanel({
           stiffness: 300,
         }}
       >
-        {/* Drag Handle */}
-        <div
-          onPointerDown={(e) => dragControls.start(e)}
-          className="w-full flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing"
-        >
-          <div className="w-12 h-1.5 bg-text/20 rounded-full" />
-        </div>
+        {/* Header with Fullscreen Toggle (mobile only) */}
+        {isMobile && (
+          <div className="w-full flex items-center justify-between px-4 pt-3 pb-2 border-b border-text/10">
+            <button
+              onClick={handleFullscreen}
+              className="flex items-center gap-2 text-text/60 hover:text-text transition-colors text-sm"
+            >
+              <Maximize2 className="w-4 h-4" />
+              <span>{language === 'ar' ? 'ملء الشاشة' : 'Fullscreen'}</span>
+            </button>
+          </div>
+        )}
 
         {/* Close Button */}
         <button
@@ -326,12 +297,9 @@ export function MemoryVideoPanel({
         </button>
 
         {/* Content Container */}
-        <div
-          className="h-full overflow-y-auto px-4 pb-4"
-          onPointerDown={(e) => e.stopPropagation()}
-        >
+        <div className="h-full px-4 pb-4 pt-2 flex flex-col overflow-hidden">
           {/* Video Container */}
-          <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden mb-4">
+          <div className="relative w-full bg-black rounded-xl overflow-hidden mb-4 flex-shrink-0" style={{ aspectRatio: '16/9' }}>
             <video
               ref={videoRef}
               src={currentVideoUrl}
@@ -394,7 +362,7 @@ export function MemoryVideoPanel({
           </div>
 
           {/* Memory Info */}
-          <div className="space-y-3">
+          <div className="space-y-3 flex-1 overflow-y-auto">
             {/* Title */}
             <h2 className="text-2xl md:text-3xl font-bold text-text">
               {title}
@@ -458,19 +426,6 @@ export function MemoryVideoPanel({
             </div>
           )}
         </div>
-
-        {/* Expand Indicator (when at 75%) */}
-        {!isFullscreen && isOpen && (
-          <motion.div
-            className="absolute top-16 right-4 text-text/40 text-xs flex items-center gap-1"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-          >
-            <span>{language === 'ar' ? 'اسحب للأعلى للملء الكامل' : 'Swipe up for fullscreen'}</span>
-            <span>↑</span>
-          </motion.div>
-        )}
       </motion.div>
     </>
   );
