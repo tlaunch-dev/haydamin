@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, Play, Pause, AlertCircle, RefreshCw, Maximize2 } from 'lucide-react';
+import { X, AlertCircle, RefreshCw } from 'lucide-react';
+import Plyr from 'plyr-react';
+import 'plyr-react/plyr.css';
+import '../styles/plyr-custom.css';
 import { Memory, Person } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import { getTimeAgo } from '../utils/dateUtils';
@@ -27,62 +30,24 @@ export function MemoryVideoPanel({
   onPrevious,
 }: MemoryVideoPanelProps) {
   const { language } = useLanguage();
-  const videoRef = useRef<HTMLVideoElement>(null);
   const { isIOS } = useIOSDetection();
+  const plyrRef = useRef<any>(null);
 
-  // Video playback state
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  // Simplified state - Plyr handles most playback state internally
   const [hasError, setHasError] = useState(false);
-  const [showPlayPause, setShowPlayPause] = useState(false);
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string>('');
 
-  // User interaction state
-  const [hasUserInteracted, setHasUserInteracted] = useState(false);
+  // Video aspect ratio - use stored value if available
+  const videoAspectRatio = memory?.videoAspectRatio || 16 / 9;
+  const isVerticalVideo = videoAspectRatio < 1;
 
-  // Track if video has started loading successfully
-  const hasLoadedDataRef = useRef(false);
-
-  // Video aspect ratio - use stored value if available, otherwise detect from video
-  const [videoAspectRatio, setVideoAspectRatio] = useState<number | null>(
-    memory?.videoAspectRatio || null
-  );
-
-  // Reset states when memory changes
+  // Reset video URL when memory changes
   useEffect(() => {
     if (memory) {
-      hasLoadedDataRef.current = false;
       setCurrentVideoUrl(memory.videoUrl);
       setHasError(false);
-      setIsLoading(true);
-      setIsPlaying(false);
-      setHasUserInteracted(false);
-      // Use stored aspect ratio if available, otherwise reset to null for detection
-      setVideoAspectRatio(memory.videoAspectRatio || null);
     }
-  }, [memory?.id, memory?.videoAspectRatio]);
-
-  // Auto-play when panel opens (muted initially for iOS compatibility)
-  useEffect(() => {
-    if (isOpen && videoRef.current && memory) {
-      const video = videoRef.current;
-
-      // Small delay to ensure video element is ready
-      const timer = setTimeout(() => {
-        video.play()
-          .then(() => {
-            console.log('[VIDEO PANEL] Auto-play succeeded');
-            setIsPlaying(true);
-          })
-          .catch((error) => {
-            console.error('[VIDEO PANEL] Auto-play failed:', error);
-            // Auto-play failed (expected on some browsers), will play on user interaction
-          });
-      }, 100);
-
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen, memory?.id]);
+  }, [memory?.id]);
 
   // Prevent body scroll when panel is open
   useEffect(() => {
@@ -96,7 +61,7 @@ export function MemoryVideoPanel({
     };
   }, [isOpen]);
 
-  // Keyboard shortcuts - must be after all other hooks
+  // Keyboard shortcuts for navigation (Plyr handles video controls)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isOpen) return;
@@ -105,17 +70,17 @@ export function MemoryVideoPanel({
         case 'Escape':
           onClose();
           break;
-        case ' ':
-          e.preventDefault();
-          handleVideoClick();
-          break;
         case 'ArrowLeft':
-          e.preventDefault();
-          onPrevious?.();
+          if (e.shiftKey) { // Shift+Left for previous video
+            e.preventDefault();
+            onPrevious?.();
+          }
           break;
         case 'ArrowRight':
-          e.preventDefault();
-          onNext?.();
+          if (e.shiftKey) { // Shift+Right for next video
+            e.preventDefault();
+            onNext?.();
+          }
           break;
       }
     };
@@ -137,130 +102,42 @@ export function MemoryVideoPanel({
     .map((personId: string) => people.find((p: Person) => p.id === personId))
     .filter((p): p is Person => p !== undefined);
 
-  // Video event handlers
-  const handleVideoClick = async (e?: React.MouseEvent) => {
-    e?.stopPropagation();
-
-    if (!videoRef.current) return;
-
-    const video = videoRef.current;
-
-    if (video.paused) {
-      // Video is paused - play it (and unmute if first time)
-      try {
-        if (!hasUserInteracted) {
-          video.muted = false;
-        }
-        setHasUserInteracted(true);
-        await video.play();
-        setIsPlaying(true);
-      } catch (error) {
-        console.error('[VIDEO PANEL] Play failed:', error);
-      }
-    } else if (video.muted && !hasUserInteracted) {
-      // Video is playing but muted - just unmute, keep playing
-      video.muted = false;
-      setHasUserInteracted(true);
-      // Don't show play/pause icon, just a brief flash to indicate unmute
-      setShowPlayPause(true);
-      setTimeout(() => setShowPlayPause(false), 400);
-      return; // Early return to avoid showing pause icon
-    } else {
-      // Video is playing and unmuted - pause it
-      video.pause();
-      setIsPlaying(false);
-    }
-
-    // Show play/pause icon feedback
-    setShowPlayPause(true);
-    setTimeout(() => setShowPlayPause(false), 600);
+  // Plyr configuration - minimal controls
+  const plyrOptions = {
+    autoplay: true,
+    muted: true,
+    clickToPlay: true, // Tap anywhere to play/pause
+    hideControls: false,
+    controls: [
+      'play-large', // Big play button in center when paused
+      'mute', // Unmute button for iOS autoplay
+      'fullscreen', // Fullscreen toggle
+    ],
+    fullscreen: {
+      enabled: true,
+      fallback: true,
+      iosNative: true, // Use native iOS fullscreen
+    },
   };
 
-  const handleVideoLoadedData = () => {
-    // Mark that video has successfully started loading
-    hasLoadedDataRef.current = true;
+  const plyrSource = {
+    type: 'video' as const,
+    sources: [
+      {
+        src: currentVideoUrl,
+        type: 'video/mp4',
+      },
+    ],
+    poster: memory.thumbnailUrl,
   };
 
-  const handleVideoReady = () => {
-    // Video is ready to play
-    hasLoadedDataRef.current = true;
-    setIsLoading(false);
-    setHasError(false);
-
-    // Only calculate aspect ratio if not already stored (backwards compatibility)
-    if (!memory?.videoAspectRatio) {
-      const video = videoRef.current;
-      if (video && video.videoWidth && video.videoHeight) {
-        const aspectRatio = video.videoWidth / video.videoHeight;
-        setVideoAspectRatio(aspectRatio);
-      }
-    }
-  };
-
-  const handleVideoError = async () => {
-    console.error('[VIDEO PANEL] Video error occurred');
-    const video = videoRef.current;
-
-    if (video && video.error) {
-      console.error('[VIDEO PANEL] Error details:', {
-        code: video.error.code,
-        message: video.error.message,
-        networkState: video.networkState,
-        readyState: video.readyState,
-      });
-    }
-
-    // Only show error if video has started loading (not spurious initial error)
-    // Video readyState will be HAVE_NOTHING (0) or HAVE_METADATA (1) if it failed early
-    if (video && hasLoadedDataRef.current && video.readyState < 2) {
-      // Video genuinely failed after starting to load - try URL refresh
-      if (!hasError && memory) {
-        console.log('[VIDEO PANEL] Attempting URL refresh...');
-        try {
-          const freshUrl = await refreshVideoUrl(memory.videoUrl);
-          setCurrentVideoUrl(freshUrl);
-          hasLoadedDataRef.current = false; // Reset for new attempt
-          if (video) {
-            video.src = freshUrl;
-            video.load();
-          }
-        } catch (error) {
-          console.error('[VIDEO PANEL] URL refresh failed:', error);
-          setHasError(true);
-          setIsLoading(false);
-        }
-      } else {
-        setHasError(true);
-        setIsLoading(false);
-      }
-    } else if (video && video.readyState >= 2) {
-      // Video has loaded data successfully - ignore transient errors
-      console.log('[VIDEO PANEL] Ignoring transient error, video has data');
-    }
-  };
-
-  const handleRetry = () => {
-    if (videoRef.current && memory) {
-      hasLoadedDataRef.current = false;
+  const handleRetry = async () => {
+    try {
+      const freshUrl = await refreshVideoUrl(memory.videoUrl);
+      setCurrentVideoUrl(freshUrl);
       setHasError(false);
-      setIsLoading(true);
-      videoRef.current.src = currentVideoUrl;
-      videoRef.current.load();
-    }
-  };
-
-  const handleFullscreen = () => {
-    if (videoRef.current) {
-      // iOS Safari uses webkitEnterFullscreen for video elements
-      if ((videoRef.current as any).webkitEnterFullscreen) {
-        (videoRef.current as any).webkitEnterFullscreen();
-      } else if (videoRef.current.requestFullscreen) {
-        // Standard browsers
-        videoRef.current.requestFullscreen();
-      } else if ((videoRef.current as any).webkitRequestFullscreen) {
-        // Older Safari desktop
-        (videoRef.current as any).webkitRequestFullscreen();
-      }
+    } catch (error) {
+      console.error('[VIDEO PANEL] URL refresh failed:', error);
     }
   };
 
@@ -339,73 +216,23 @@ export function MemoryVideoPanel({
             paddingBottom: isIOS ? 'calc(1.5rem + env(safe-area-inset-bottom))' : '1.5rem',
           }}
         >
-          {/* Video Container - Constrained to available space, never exceeds viewport */}
-          <div 
-            className="relative w-full bg-black rounded-xl overflow-hidden mb-4 flex items-center justify-center"
-            style={{ 
-              // Prevent video container from shrinking
-              flexShrink: 0,
-              width: '100%',
-              minHeight: '200px',
-              // Calculate max height: panel height - close button - caption reserve - padding
-              // Reserve minimum 140px for caption area (title + date + caption + people + nav)
-              maxHeight: isIOS
-                ? 'calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 3.5rem - 140px - 1rem)'
-                : 'calc(90dvh - 3.5rem - 140px - 1rem)',
-              // Use calculated aspect ratio if available, otherwise use default 16/9
-              // For vertical videos, allow more height; for horizontal, constrain width
-              ...(videoAspectRatio ? {
-                aspectRatio: `${videoAspectRatio}`,
-              } : {
-                aspectRatio: '16/9',
-              }),
+          {/* Video Container - Plyr uses natural video dimensions */}
+          <div
+            className="relative bg-black rounded-xl overflow-hidden mb-4"
+            style={{
+              width: isVerticalVideo ? '70%' : '100%',
+              margin: isVerticalVideo ? '0 auto' : undefined,
             }}
           >
-            <video
-              ref={videoRef}
-              src={currentVideoUrl}
-              poster={memory.thumbnailUrl}
-              className="w-full h-full object-contain"
-              style={{
-                // Video fills container while maintaining aspect ratio via object-contain
-                display: 'block',
-              }}
-              playsInline
-              crossOrigin="anonymous"
-              muted={!hasUserInteracted}
-              preload="auto"
-              onClick={handleVideoClick}
-              onLoadedData={handleVideoLoadedData}
-              onCanPlay={handleVideoReady}
-              onError={handleVideoError}
-              onPlay={() => setIsPlaying(true)}
-              onPause={() => setIsPlaying(false)}
-            />
-
-            {/* Fullscreen Button - Overlay on video, always visible */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleFullscreen();
-              }}
-              className="absolute bottom-3 right-3 z-20 px-3 py-2 rounded-lg bg-black/70 hover:bg-black/90 text-white flex items-center gap-2 transition-colors backdrop-blur-sm"
-              aria-label={language === 'ar' ? 'ملء الشاشة' : 'Fullscreen'}
-            >
-              <Maximize2 className="w-4 h-4" />
-              <span className="text-sm font-medium">
-                {language === 'ar' ? 'ملء الشاشة' : 'Fullscreen'}
-              </span>
-            </button>
-
-            {/* Loading Spinner */}
-            {isLoading && !hasError && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
-                <div className="w-12 h-12 border-4 border-accent border-t-transparent rounded-full animate-spin" />
-              </div>
-            )}
-
-            {/* Error State */}
-            {hasError && (
+            {!hasError ? (
+              <Plyr
+                ref={plyrRef}
+                source={plyrSource}
+                options={plyrOptions}
+                onError={() => setHasError(true)}
+              />
+            ) : (
+              /* Error State */
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 text-white p-4 z-10">
                 <AlertCircle className="w-12 h-12 mb-4 text-red-400" />
                 <p className="text-lg font-medium mb-2">
@@ -420,33 +247,14 @@ export function MemoryVideoPanel({
                 </button>
               </div>
             )}
-
-            {/* Play/Pause Icon Overlay */}
-            {showPlayPause && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ duration: 0.2 }}
-                className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
-              >
-                <div className="w-20 h-20 rounded-full bg-black/60 flex items-center justify-center">
-                  {isPlaying ? (
-                    <Pause className="w-10 h-10 text-white fill-white" />
-                  ) : (
-                    <Play className="w-10 h-10 text-white fill-white ml-1" />
-                  )}
-                </div>
-              </motion.div>
-            )}
           </div>
 
           {/* Memory Info - Reserved space, scrollable if needed */}
-          <div 
+          <div
             className="space-y-3 flex-shrink-0 overflow-y-auto"
             style={{
               // Ensure minimum height for caption area
-              minHeight: '120px',
+              minHeight: '180px',
               // iOS-specific: smooth scrolling
               ...(isIOS && {
                 WebkitOverflowScrolling: 'touch',
