@@ -258,11 +258,10 @@ body {
 }
 
 /* Safe area support for notched devices (iPhone X+, etc.) */
+/* Note: Safe areas handled per-component to avoid conflicts with fixed positioning */
 @supports (padding: env(safe-area-inset-top)) {
-  /* Adjust body padding for safe areas */
+  /* Only apply horizontal safe areas to body */
   body {
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
   }

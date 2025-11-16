@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { createPortal } from 'react-dom';
+import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
 import { X, AlertCircle, RefreshCw } from 'lucide-react';
 import Plyr from 'plyr-react';
 import 'plyr-react/plyr.css';
@@ -36,6 +37,10 @@ export function MemoryVideoPanel({
   // Simplified state - Plyr handles most playback state internally
   const [hasError, setHasError] = useState(false);
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string>('');
+
+  // Drag state for handle-based dragging (must be before any conditional returns)
+  const y = useMotionValue(0);
+  const opacity = useTransform(y, [0, 200], [1, 0.5]);
 
   // Video aspect ratio - use stored value if available
   const videoAspectRatio = memory?.videoAspectRatio || 16 / 9;
@@ -89,6 +94,91 @@ export function MemoryVideoPanel({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose, onNext, onPrevious]);
 
+  // Diagnostic logging for video playback issues
+  useEffect(() => {
+    let cleanup: (() => void) | undefined;
+
+    // Add a small delay to ensure Plyr is initialized
+    const timer = setTimeout(() => {
+      const player = plyrRef.current?.plyr;
+      if (!player || !memory) return;
+
+      const videoElement = player.media as HTMLVideoElement;
+      if (!videoElement) return;
+
+      console.log('[VIDEO DIAGNOSTICS] Memory:', {
+        id: memory.id,
+        title: memory.title,
+        duration: memory.durationSeconds,
+        videoUrl: currentVideoUrl.substring(0, 100) + '...',
+      });
+
+      // Track video loading events
+      const handleLoadStart = () => console.log('[VIDEO] Load started');
+      const handleLoadedMetadata = () => {
+        console.log('[VIDEO] Metadata loaded:', {
+          duration: videoElement.duration,
+          videoWidth: videoElement.videoWidth,
+          videoHeight: videoElement.videoHeight,
+          readyState: videoElement.readyState,
+        });
+      };
+      const handleCanPlay = () => console.log('[VIDEO] Can play - buffered enough');
+      const handlePlaying = () => console.log('[VIDEO] Playing');
+      const handleWaiting = () => console.warn('[VIDEO] Waiting/Buffering - playback paused');
+      const handleStalled = () => console.warn('[VIDEO] Stalled - network issue');
+      const handleSuspend = () => console.log('[VIDEO] Suspended - loading paused');
+      const handleProgress = () => {
+        if (videoElement.buffered.length > 0) {
+          const bufferedEnd = videoElement.buffered.end(videoElement.buffered.length - 1);
+          const duration = videoElement.duration;
+          const bufferedPercent = (bufferedEnd / duration) * 100;
+          console.log('[VIDEO] Progress:', {
+            buffered: `${bufferedPercent.toFixed(1)}%`,
+            currentTime: videoElement.currentTime.toFixed(1),
+          });
+        }
+      };
+      const handleError = (e: Event) => {
+        const error = (e.target as HTMLVideoElement).error;
+        console.error('[VIDEO] Playback error:', {
+          code: error?.code,
+          message: error?.message,
+          networkState: videoElement.networkState,
+          readyState: videoElement.readyState,
+        });
+      };
+
+      videoElement.addEventListener('loadstart', handleLoadStart);
+      videoElement.addEventListener('loadedmetadata', handleLoadedMetadata);
+      videoElement.addEventListener('canplay', handleCanPlay);
+      videoElement.addEventListener('playing', handlePlaying);
+      videoElement.addEventListener('waiting', handleWaiting);
+      videoElement.addEventListener('stalled', handleStalled);
+      videoElement.addEventListener('suspend', handleSuspend);
+      videoElement.addEventListener('progress', handleProgress);
+      videoElement.addEventListener('error', handleError);
+
+      // Store cleanup function
+      cleanup = () => {
+        videoElement.removeEventListener('loadstart', handleLoadStart);
+        videoElement.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        videoElement.removeEventListener('canplay', handleCanPlay);
+        videoElement.removeEventListener('playing', handlePlaying);
+        videoElement.removeEventListener('waiting', handleWaiting);
+        videoElement.removeEventListener('stalled', handleStalled);
+        videoElement.removeEventListener('suspend', handleSuspend);
+        videoElement.removeEventListener('progress', handleProgress);
+        videoElement.removeEventListener('error', handleError);
+      };
+    }, 100);
+
+    return () => {
+      clearTimeout(timer);
+      cleanup?.();
+    };
+  }, [memory?.id, currentVideoUrl]);
+
   // Early return after all hooks have been called
   if (!memory) return null;
 
@@ -141,11 +231,26 @@ export function MemoryVideoPanel({
     }
   };
 
-  return (
+  const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    // Close if dragged down more than 150px or with velocity > 500
+    if (info.offset.y > 150 || info.velocity.y > 500) {
+      onClose();
+    }
+  };
+
+  // Get portal root - no early return to avoid hooks issues
+  const modalRoot = document.getElementById('modal-root');
+  if (!modalRoot) {
+    console.warn('Modal root not found');
+    return null;
+  }
+
+  const panelContent = (
     <>
       {/* Background Dimmer */}
       <motion.div
-        className="fixed inset-0 bg-black z-40"
+        className="fixed inset-0 bg-black"
+        style={{ zIndex: 1040 }} // Use design system z-modal-backdrop
         initial={{ opacity: 0 }}
         animate={{
           opacity: isOpen ? 0.6 : 0,
@@ -156,26 +261,18 @@ export function MemoryVideoPanel({
         transition={{ duration: 0.3 }}
       />
 
-      {/* Video Panel - Use dvh for better iOS Safari compatibility */}
+      {/* Video Panel */}
       <motion.div
-        className="fixed bottom-0 left-0 right-0 z-50 bg-background rounded-t-3xl shadow-2xl flex flex-col"
+        className="fixed left-0 right-0 bg-background shadow-2xl flex flex-col"
         style={{
-          // Use dvh (dynamic viewport height) for better iOS Safari compatibility
-          // Reserve space for close button (top) and safe areas
-          maxHeight: isIOS 
-            ? 'calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom))'
-            : '90dvh',
-          height: isIOS 
-            ? 'calc(100dvh - env(safe-area-inset-bottom))'
-            : '90dvh',
-          // Ensure panel uses flex layout
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden', // Prevent panel overflow, content scrolls internally
-          // iOS-specific: smooth scrolling
-          ...(isIOS && {
-            WebkitOverflowScrolling: 'touch',
-          }),
+          zIndex: 1050, // Use design system z-modal
+          // Simple approach: use 100dvh height and position at bottom
+          bottom: 0,
+          height: isIOS ? '100dvh' : '90vh',
+          borderTopLeftRadius: '24px',
+          borderTopRightRadius: '24px',
+          y,
+          opacity,
         }}
         initial={{ y: '100%' }}
         animate={{
@@ -188,6 +285,28 @@ export function MemoryVideoPanel({
           stiffness: 300,
         }}
       >
+        {/* Drag Handle - Only this area is draggable */}
+        <motion.div
+          className="flex justify-center py-3 cursor-grab active:cursor-grabbing flex-shrink-0"
+          style={{
+            paddingTop: isIOS ? 'calc(0.75rem + env(safe-area-inset-top))' : '0.75rem',
+            touchAction: 'none', // Disable default touch actions for drag handle
+          }}
+          drag="y"
+          dragConstraints={{ top: 0, bottom: 0 }}
+          dragElastic={{ top: 0, bottom: 0.5 }}
+          dragMomentum={false}
+          onDrag={(_, info) => {
+            // Only allow dragging down
+            if (info.offset.y > 0) {
+              y.set(info.offset.y);
+            }
+          }}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="w-12 h-1 bg-text/20 rounded-full" />
+        </motion.div>
+
         {/* Close Button - Fixed position, always visible */}
         <button
           onClick={onClose}
@@ -202,18 +321,17 @@ export function MemoryVideoPanel({
           <X className="w-5 h-5" />
         </button>
 
-        {/* Content Container - Flex layout with reserved caption space */}
-        <div 
-          className="px-4 pt-2 flex flex-col flex-1 min-h-0"
+        {/* Content Container - Scrollable content area */}
+        <div
+          className="px-4 pt-2 flex flex-col flex-1 overflow-y-auto"
           style={{
-            // iOS-specific: smooth scrolling
-            ...(isIOS && {
-              WebkitOverflowScrolling: 'touch',
-            }),
+            // Prevent scroll from interfering with drag
+            overscrollBehavior: 'contain',
+            WebkitOverflowScrolling: 'touch',
             // Reserve space for close button at top
-            paddingTop: isIOS ? 'calc(3.5rem + env(safe-area-inset-top))' : '3.5rem',
+            paddingTop: '2rem',
             // Reserve space for safe area at bottom
-            paddingBottom: isIOS ? 'calc(1.5rem + env(safe-area-inset-bottom))' : '1.5rem',
+            paddingBottom: isIOS ? `calc(1.5rem + env(safe-area-inset-bottom))` : '1.5rem',
           }}
         >
           {/* Video Container - Plyr uses natural video dimensions */}
@@ -249,18 +367,8 @@ export function MemoryVideoPanel({
             )}
           </div>
 
-          {/* Memory Info - Reserved space, scrollable if needed */}
-          <div
-            className="space-y-3 flex-shrink-0 overflow-y-auto"
-            style={{
-              // Ensure minimum height for caption area
-              minHeight: '180px',
-              // iOS-specific: smooth scrolling
-              ...(isIOS && {
-                WebkitOverflowScrolling: 'touch',
-              }),
-            }}
-          >
+          {/* Memory Info */}
+          <div className="space-y-3 flex-shrink-0">
             {/* Title */}
             <h2 className="text-2xl md:text-3xl font-bold text-text">
               {title}
@@ -327,4 +435,7 @@ export function MemoryVideoPanel({
       </motion.div>
     </>
   );
+
+  // Render to portal root
+  return createPortal(panelContent, modalRoot);
 }
