@@ -31,7 +31,7 @@ export function MemoryVideoPanel({
   onPrevious,
 }: MemoryVideoPanelProps) {
   const { language } = useLanguage();
-  const { isIOS } = useIOSDetection();
+  const { isIOS, isStandalone } = useIOSDetection();
   const plyrRef = useRef<any>(null);
 
   // Simplified state - Plyr handles most playback state internally
